@@ -103,7 +103,7 @@ defmodule Sketch.LayoutEngine do
         Element.new(:text, [color: :white], ["flex: 3 — takes most of the space"]),
         Element.new(:text, [color: :bright_black], ["Grows to fill available height"])
       ]),
-      Element.new(:box, [height: 3, bg: {:rgb, 40, 40, 40}, align_items: :center,
+      Element.new(:box, [height: 3, bg: {40, 40, 40}, align_items: :center,
                          justify_content: :center], [
         Element.new(:text, [color: :bright_black], ["Footer — fixed height"])
       ])
@@ -164,7 +164,7 @@ defmodule Sketch.LayoutEngine do
         Element.new(:box, [flex: 1, bg: :magenta, align_items: :center, justify_content: :center], [
           Element.new(:text, [color: :bright_white], ["A1"])
         ]),
-        Element.new(:box, [flex: 1, bg: {:rgb, 100, 0, 100}, align_items: :center,
+        Element.new(:box, [flex: 1, bg: {100, 0, 100}, align_items: :center,
                            justify_content: :center], [
           Element.new(:text, [color: :bright_white], ["A2"])
         ])
@@ -174,7 +174,7 @@ defmodule Sketch.LayoutEngine do
         Element.new(:box, [flex: 1, bg: :cyan, align_items: :center, justify_content: :center], [
           Element.new(:text, [color: :black, bold: true], ["B1 (flex: 2 outer)"])
         ]),
-        Element.new(:box, [flex: 2, bg: {:rgb, 0, 100, 100}, align_items: :center,
+        Element.new(:box, [flex: 2, bg: {0, 100, 100}, align_items: :center,
                            justify_content: :center], [
           Element.new(:text, [color: :bright_white], ["B2"])
         ])
