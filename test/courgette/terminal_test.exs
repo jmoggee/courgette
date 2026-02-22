@@ -172,6 +172,85 @@ defmodule Courgette.TerminalTest do
     end
   end
 
+  describe "set_input_target/2" do
+    test "sets input target and forwards input" do
+      {_pid, _device, name} = start_terminal(input_target: nil)
+
+      Terminal.set_input_target(self(), name)
+
+      # Simulate input arriving at the terminal
+      send(Process.whereis(name), {:terminal_input, "hello"})
+      assert_receive {:terminal_input, "hello"}, 100
+
+      Terminal.stop(name)
+    end
+
+    test "swaps input target to new process" do
+      {_pid, _device, name} = start_terminal(input_target: self())
+
+      # Verify initial target works
+      send(Process.whereis(name), {:terminal_input, "first"})
+      assert_receive {:terminal_input, "first"}, 100
+
+      # Spawn a new target
+      test_pid = self()
+
+      new_target =
+        spawn(fn ->
+          receive do
+            msg -> send(test_pid, {:forwarded, msg})
+          end
+        end)
+
+      Terminal.set_input_target(new_target, name)
+
+      send(Process.whereis(name), {:terminal_input, "second"})
+      assert_receive {:forwarded, {:terminal_input, "second"}}, 100
+
+      Terminal.stop(name)
+    end
+
+    test "setting target to nil stops forwarding" do
+      {_pid, _device, name} = start_terminal(input_target: self())
+
+      Terminal.set_input_target(nil, name)
+
+      send(Process.whereis(name), {:terminal_input, "dropped"})
+      refute_receive {:terminal_input, _}, 50
+
+      Terminal.stop(name)
+    end
+
+    test "sigwinch forwarded to new target" do
+      {_pid, _device, name} = start_terminal(input_target: nil)
+
+      Terminal.set_input_target(self(), name)
+
+      send(Process.whereis(name), :sigwinch)
+      assert_receive {:terminal_resize, cols, rows}, 100
+      assert is_integer(cols)
+      assert is_integer(rows)
+
+      Terminal.stop(name)
+    end
+
+    test "internal state reflects new target" do
+      {pid, _device, name} = start_terminal(input_target: nil)
+
+      assert :sys.get_state(pid).input_target == nil
+      assert :sys.get_state(pid).input_reader == nil
+
+      Terminal.set_input_target(self(), name)
+
+      state = :sys.get_state(pid)
+      assert state.input_target == self()
+      # Reader is nil because skip_raw_mode: true (no raw mode = no reader)
+      assert state.input_reader == nil
+
+      Terminal.stop(name)
+    end
+  end
+
   describe "teardown" do
     test "does not write teardown sequences when raw mode was skipped" do
       {pid, device, _name} = start_terminal()

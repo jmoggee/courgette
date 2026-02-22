@@ -105,6 +105,17 @@ defmodule Courgette.Terminal do
     GenServer.call(server, :size)
   end
 
+  @doc """
+  Change the input target at runtime.
+
+  Kills the old input reader (if any), updates the target, and spawns
+  a new reader if `target` is non-nil and raw mode is active.
+  Pass `nil` to stop consuming input.
+  """
+  def set_input_target(target, server \\ __MODULE__) do
+    GenServer.call(server, {:set_input_target, target})
+  end
+
   @doc "Stop the terminal server, restoring terminal state."
   def stop(server \\ __MODULE__) do
     GenServer.stop(server, :normal)
@@ -173,6 +184,23 @@ defmodule Courgette.Terminal do
 
   def handle_call(:size, _from, state) do
     {:reply, get_size(), state}
+  end
+
+  def handle_call({:set_input_target, target}, _from, state) do
+    # Kill old reader if present
+    if state.input_reader do
+      Process.unlink(state.input_reader)
+      Process.exit(state.input_reader, :kill)
+    end
+
+    # Spawn new reader if target given and in raw mode
+    new_reader =
+      if state.raw && target do
+        me = self()
+        spawn_link(fn -> input_loop(me) end)
+      end
+
+    {:reply, :ok, %{state | input_target: target, input_reader: new_reader}}
   end
 
   @impl true
