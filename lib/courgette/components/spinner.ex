@@ -15,13 +15,7 @@ defmodule Courgette.Components.Spinner do
 
   use Courgette.LiveComponent
 
-  @frames %{
-    dots: ~w(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏),
-    line: ~w(- \\ | /),
-    circle: ~w(◐ ◓ ◑ ◒),
-    wave: ~w(▁ ▂ ▃ ▄ ▅ ▆ ▇ █ ▇ ▆ ▅ ▄ ▃ ▂),
-    bounce: ~w(⠁ ⠂ ⠄ ⡀ ⢀ ⠠ ⠐ ⠈)
-  }
+  alias Courgette.Animation.Frames
 
   @impl true
   def mount(assigns) do
@@ -31,7 +25,9 @@ defmodule Courgette.Components.Spinner do
       |> assign_new(:label, fn -> nil end)
       |> assign_new(:color, fn -> :cyan end)
       |> assign_new(:interval, fn -> 80 end)
-      |> assign(:frame, 0)
+
+    frames = frames_for_style(assigns.style)
+    assigns = assign(assigns, :frames, frames)
 
     schedule_tick(assigns.interval)
     {:ok, assigns}
@@ -39,8 +35,7 @@ defmodule Courgette.Components.Spinner do
 
   @impl true
   def render(assigns) do
-    frames = Map.fetch!(@frames, assigns.style)
-    char = Enum.at(frames, assigns.frame)
+    char = Frames.current(assigns.frames)
 
     box flex_direction: :row do
       text fg: assigns.color do
@@ -55,10 +50,9 @@ defmodule Courgette.Components.Spinner do
 
   @impl true
   def handle_info(:tick, assigns) do
-    frames = Map.fetch!(@frames, assigns.style)
-    next_frame = rem(assigns.frame + 1, length(frames))
+    {_frame, frames} = Frames.next(assigns.frames)
     schedule_tick(assigns.interval)
-    {:noreply, assign(assigns, :frame, next_frame)}
+    {:noreply, assign(assigns, :frames, frames)}
   end
 
   def handle_info(_msg, assigns) do
@@ -73,4 +67,10 @@ defmodule Courgette.Components.Spinner do
   defp schedule_tick(interval) do
     Process.send_after(self(), :tick, interval)
   end
+
+  defp frames_for_style(:dots), do: Frames.dots()
+  defp frames_for_style(:line), do: Frames.line()
+  defp frames_for_style(:circle), do: Frames.circle()
+  defp frames_for_style(:wave), do: Frames.wave()
+  defp frames_for_style(:bounce), do: Frames.bounce()
 end
