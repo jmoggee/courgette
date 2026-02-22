@@ -195,6 +195,127 @@ defmodule Courgette.Layout.EngineTest do
     end
   end
 
+  # ── Scrollable area (end-to-end) ─────────────────────────────────
+
+  describe "scrollable_area end-to-end" do
+    test "text children with offset=0 paint correctly" do
+      el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
+        Element.new(:scrollable_area, [flex: 1, scroll_offset: 0], [
+          Element.new(:text, [], ["Line A"]),
+          Element.new(:text, [], ["Line B"]),
+          Element.new(:text, [], ["Line C"]),
+          Element.new(:text, [], ["Line D"]),
+          Element.new(:text, [], ["Line E"]),
+          Element.new(:text, [], ["Line F"]),
+          Element.new(:text, [], ["Line G"]),
+          Element.new(:text, [], ["Line H"])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 30, 6))
+      buffer = Buffer.new(30, 6)
+      painted = Painter.paint(result, buffer)
+
+      # First line visible at row 0
+      cell = Buffer.get_cell(painted, 0, 0)
+      assert cell.grapheme == "L"
+      cell = Buffer.get_cell(painted, 5, 0)
+      assert cell.grapheme == "A"
+
+      # Line at row 5 visible
+      cell = Buffer.get_cell(painted, 5, 5)
+      assert cell.grapheme == "F"
+    end
+
+    test "text children with scroll_offset shift content" do
+      el = Element.new(:box, [width: 30, height: 4, flex_direction: :column], [
+        Element.new(:scrollable_area, [flex: 1, scroll_offset: 3], [
+          Element.new(:text, [], ["Line A"]),
+          Element.new(:text, [], ["Line B"]),
+          Element.new(:text, [], ["Line C"]),
+          Element.new(:text, [], ["Line D"]),
+          Element.new(:text, [], ["Line E"]),
+          Element.new(:text, [], ["Line F"]),
+          Element.new(:text, [], ["Line G"])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 30, 4))
+      buffer = Buffer.new(30, 4)
+      painted = Painter.paint(result, buffer)
+
+      # With offset=3, row 0 shows "Line D"
+      cell = Buffer.get_cell(painted, 5, 0)
+      assert cell.grapheme == "D"
+      cell = Buffer.get_cell(painted, 5, 1)
+      assert cell.grapheme == "E"
+      cell = Buffer.get_cell(painted, 5, 2)
+      assert cell.grapheme == "F"
+      cell = Buffer.get_cell(painted, 5, 3)
+      assert cell.grapheme == "G"
+    end
+
+    test "with border and scroll_offset" do
+      el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
+        Element.new(:scrollable_area, [flex: 1, border: :single, scroll_offset: 2], [
+          Element.new(:text, [], ["Line A"]),
+          Element.new(:text, [], ["Line B"]),
+          Element.new(:text, [], ["Line C"]),
+          Element.new(:text, [], ["Line D"]),
+          Element.new(:text, [], ["Line E"]),
+          Element.new(:text, [], ["Line F"])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 30, 6))
+      buffer = Buffer.new(30, 6)
+      painted = Painter.paint(result, buffer)
+
+      # Border at viewport edges
+      cell = Buffer.get_cell(painted, 0, 0)
+      assert cell.grapheme == "┌"
+      cell = Buffer.get_cell(painted, 29, 5)
+      assert cell.grapheme == "┘"
+
+      # Inner content: with offset=2, "Line C" visible at row 1 (inside border)
+      cell = Buffer.get_cell(painted, 1, 1)
+      assert cell.grapheme == "L"
+    end
+
+    test "dashboard with scrollable panel" do
+      header = Element.new(:text, [color: :bright_white, bold: true, height: 1], ["Dashboard"])
+
+      log_lines = for i <- 1..20 do
+        Element.new(:text, [], ["Log entry #{i}"])
+      end
+
+      scroll_panel = Element.new(:scrollable_area, [flex: 1, border: :single, scroll_offset: 5], log_lines)
+
+      el = Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
+        header,
+        scroll_panel
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 12))
+      buffer = Buffer.new(40, 12)
+      painted = Painter.paint(result, buffer)
+
+      # Header at top
+      cell = Buffer.get_cell(painted, 0, 0)
+      assert cell.grapheme == "D"
+      assert cell.fg == :bright_white
+
+      # Scroll panel border starts at row 1
+      cell = Buffer.get_cell(painted, 0, 1)
+      assert cell.grapheme == "┌"
+
+      # Content inside border is scrolled — "Log entry 6" should be first visible
+      # The text "Log entry 6" starts with "L" at x=1 (inside border), y=2 (row 1 is border top)
+      cell = Buffer.get_cell(painted, 1, 2)
+      assert cell.grapheme == "L"
+    end
+  end
+
   # ── Edge cases ───────────────────────────────────────────────────
 
   describe "edge cases" do

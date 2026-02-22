@@ -493,6 +493,287 @@ defmodule Courgette.PainterTest do
     end
   end
 
+  # ── Scrollable area ─────────────────────────────────────────────
+
+  describe "scrollable_area" do
+    test "scroll_offset=0 shows top content" do
+      buffer = Buffer.new(20, 5)
+
+      children = [
+        text_node("Line 0", [], Bounds.new(0, 0, 6, 1)),
+        text_node("Line 1", [], Bounds.new(0, 1, 6, 1)),
+        text_node("Line 2", [], Bounds.new(0, 2, 6, 1)),
+        text_node("Line 3", [], Bounds.new(0, 3, 6, 1)),
+        text_node("Line 4", [], Bounds.new(0, 4, 6, 1)),
+        text_node("Line 5", [], Bounds.new(0, 5, 6, 1)),
+        text_node("Line 6", [], Bounds.new(0, 6, 6, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 0], Bounds.new(0, 0, 20, 5), children)
+      result = Painter.paint(sa, buffer)
+
+      assert grapheme_at(result, 0, 0) == "L"
+      assert grapheme_at(result, 5, 0) == "0"
+      assert grapheme_at(result, 5, 4) == "4"
+      # Line 5 and 6 are below viewport — not visible
+    end
+
+    test "scroll_offset shifts content up" do
+      buffer = Buffer.new(20, 5)
+
+      children = [
+        text_node("AAA", [], Bounds.new(0, 0, 3, 1)),
+        text_node("BBB", [], Bounds.new(0, 1, 3, 1)),
+        text_node("CCC", [], Bounds.new(0, 2, 3, 1)),
+        text_node("DDD", [], Bounds.new(0, 3, 3, 1)),
+        text_node("EEE", [], Bounds.new(0, 4, 3, 1)),
+        text_node("FFF", [], Bounds.new(0, 5, 3, 1)),
+        text_node("GGG", [], Bounds.new(0, 6, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 5), children)
+      result = Painter.paint(sa, buffer)
+
+      # With offset=2, row 0 shows "CCC" (originally at y=2)
+      assert grapheme_at(result, 0, 0) == "C"
+      assert grapheme_at(result, 0, 1) == "D"
+      assert grapheme_at(result, 0, 2) == "E"
+      assert grapheme_at(result, 0, 3) == "F"
+      assert grapheme_at(result, 0, 4) == "G"
+    end
+
+    test "content above viewport is clipped after shift" do
+      buffer = Buffer.new(20, 3)
+
+      children = [
+        text_node("TOP", [], Bounds.new(0, 0, 3, 1)),
+        text_node("MID", [], Bounds.new(0, 1, 3, 1)),
+        text_node("BOT", [], Bounds.new(0, 2, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 3), children)
+      result = Painter.paint(sa, buffer)
+
+      # Only "BOT" is visible at row 0; TOP and MID shifted above viewport
+      assert grapheme_at(result, 0, 0) == "B"
+      assert grapheme_at(result, 1, 0) == "O"
+      assert grapheme_at(result, 2, 0) == "T"
+      # Rows 1 and 2 are empty
+      assert grapheme_at(result, 0, 1) == " "
+    end
+
+    test "content below viewport is clipped" do
+      buffer = Buffer.new(20, 3)
+
+      children = [
+        text_node("AAA", [], Bounds.new(0, 0, 3, 1)),
+        text_node("BBB", [], Bounds.new(0, 1, 3, 1)),
+        text_node("CCC", [], Bounds.new(0, 2, 3, 1)),
+        text_node("DDD", [], Bounds.new(0, 3, 3, 1)),
+        text_node("EEE", [], Bounds.new(0, 4, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 0], Bounds.new(0, 0, 20, 3), children)
+      result = Painter.paint(sa, buffer)
+
+      # Only first 3 lines visible
+      assert grapheme_at(result, 0, 0) == "A"
+      assert grapheme_at(result, 0, 1) == "B"
+      assert grapheme_at(result, 0, 2) == "C"
+    end
+
+    test "large offset shows bottom content" do
+      buffer = Buffer.new(20, 3)
+
+      children = [
+        text_node("AAA", [], Bounds.new(0, 0, 3, 1)),
+        text_node("BBB", [], Bounds.new(0, 1, 3, 1)),
+        text_node("CCC", [], Bounds.new(0, 2, 3, 1)),
+        text_node("DDD", [], Bounds.new(0, 3, 3, 1)),
+        text_node("EEE", [], Bounds.new(0, 4, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 3), children)
+      result = Painter.paint(sa, buffer)
+
+      assert grapheme_at(result, 0, 0) == "C"
+      assert grapheme_at(result, 0, 1) == "D"
+      assert grapheme_at(result, 0, 2) == "E"
+    end
+
+    test "offset beyond content shows empty viewport" do
+      buffer = Buffer.new(20, 3)
+
+      children = [
+        text_node("AAA", [], Bounds.new(0, 0, 3, 1)),
+        text_node("BBB", [], Bounds.new(0, 1, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 10], Bounds.new(0, 0, 20, 3), children)
+      result = Painter.paint(sa, buffer)
+
+      # All content shifted above viewport
+      assert grapheme_at(result, 0, 0) == " "
+      assert grapheme_at(result, 0, 1) == " "
+      assert grapheme_at(result, 0, 2) == " "
+    end
+
+    test "border renders correctly with scrolled content" do
+      buffer = Buffer.new(12, 5)
+
+      children = [
+        text_node("Hello", [], Bounds.new(1, 1, 5, 1)),
+        text_node("World", [], Bounds.new(1, 2, 5, 1)),
+        text_node("Foo!!", [], Bounds.new(1, 3, 5, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [border: :single, scroll_offset: 1],
+             Bounds.new(0, 0, 12, 5), children)
+      result = Painter.paint(sa, buffer)
+
+      # Border is at viewport bounds (unshifted)
+      assert grapheme_at(result, 0, 0) == "┌"
+      assert grapheme_at(result, 11, 0) == "┐"
+      assert grapheme_at(result, 0, 4) == "└"
+      assert grapheme_at(result, 11, 4) == "┘"
+
+      # Content shifted by -1: "World" (y=2 -> y=1) visible inside border
+      assert grapheme_at(result, 1, 1) == "W"
+      assert grapheme_at(result, 1, 2) == "F"
+    end
+
+    test "border not overwritten by shifted content" do
+      buffer = Buffer.new(12, 4)
+
+      # Content at y=0 shifted by -0 means it's at y=0 (top border row)
+      children = [
+        text_node("XXXXXXXX", [], Bounds.new(1, 0, 8, 1)),
+        text_node("YYYYYYYY", [], Bounds.new(1, 1, 8, 1)),
+        text_node("ZZZZZZZZ", [], Bounds.new(1, 2, 8, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [border: :single, scroll_offset: 0],
+             Bounds.new(0, 0, 12, 4), children)
+      result = Painter.paint(sa, buffer)
+
+      # Top border row preserved
+      assert grapheme_at(result, 0, 0) == "┌"
+      assert grapheme_at(result, 11, 0) == "┐"
+      # Content only shows in inner area (rows 1-2)
+      assert grapheme_at(result, 1, 1) == "Y"
+      assert grapheme_at(result, 1, 2) == "Z"
+      # Bottom border
+      assert grapheme_at(result, 0, 3) == "└"
+    end
+
+    test "background fills full viewport (not shifted)" do
+      buffer = Buffer.new(10, 4)
+
+      children = [
+        text_node("Hi", [], Bounds.new(0, 0, 2, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [bg: :blue, scroll_offset: 2],
+             Bounds.new(0, 0, 10, 4), children)
+      result = Painter.paint(sa, buffer)
+
+      # Background fills entire viewport
+      assert bg_at(result, 0, 0) == :blue
+      assert bg_at(result, 5, 2) == :blue
+      assert bg_at(result, 9, 3) == :blue
+    end
+
+    test "background and border both render" do
+      buffer = Buffer.new(10, 4)
+
+      sa = layout_node(:scrollable_area, [bg: :red, border: :single],
+             Bounds.new(0, 0, 10, 4), [])
+      result = Painter.paint(sa, buffer)
+
+      # Border corners
+      assert grapheme_at(result, 0, 0) == "┌"
+      assert grapheme_at(result, 9, 3) == "┘"
+      # Background in interior
+      assert bg_at(result, 3, 2) == :red
+    end
+
+    test "without scroll_offset defaults to 0" do
+      buffer = Buffer.new(20, 3)
+
+      children = [
+        text_node("AAA", [], Bounds.new(0, 0, 3, 1)),
+        text_node("BBB", [], Bounds.new(0, 1, 3, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [], Bounds.new(0, 0, 20, 3), children)
+      result = Painter.paint(sa, buffer)
+
+      # Default offset=0, top content visible
+      assert grapheme_at(result, 0, 0) == "A"
+      assert grapheme_at(result, 0, 1) == "B"
+    end
+
+    test "nested scrollable areas clip independently" do
+      buffer = Buffer.new(20, 6)
+
+      inner_children = [
+        text_node("AA", [], Bounds.new(2, 2, 2, 1)),
+        text_node("BB", [], Bounds.new(2, 3, 2, 1)),
+        text_node("CC", [], Bounds.new(2, 4, 2, 1)),
+        text_node("DD", [], Bounds.new(2, 5, 2, 1))
+      ]
+
+      inner_sa = layout_node(:scrollable_area, [scroll_offset: 1],
+                   Bounds.new(2, 2, 16, 3), inner_children)
+
+      outer_children = [inner_sa]
+      outer_sa = layout_node(:scrollable_area, [scroll_offset: 0],
+                   Bounds.new(0, 0, 20, 6), outer_children)
+
+      result = Painter.paint(outer_sa, buffer)
+
+      # Inner SA is at (2,2) with height 3, scroll_offset=1
+      # Inner children shifted by -1: BB at y=2, CC at y=3, DD at y=4
+      # Inner viewport clips to y=2..4
+      assert grapheme_at(result, 2, 2) == "B"
+      assert grapheme_at(result, 2, 3) == "C"
+      assert grapheme_at(result, 2, 4) == "D"
+    end
+
+    test "scrollable area respects parent clip rect" do
+      buffer = Buffer.new(20, 10)
+
+      children = [
+        text_node("Hello", [], Bounds.new(2, 2, 5, 1)),
+        text_node("World", [], Bounds.new(2, 3, 5, 1))
+      ]
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 0],
+             Bounds.new(2, 2, 16, 6), children)
+
+      # Parent is smaller — clips the scrollable area
+      parent = layout_node(:box, [], Bounds.new(0, 0, 10, 5), [sa])
+      result = Painter.paint(parent, buffer)
+
+      # SA content at x=2..6 is within parent (x=0..9)
+      assert grapheme_at(result, 2, 2) == "H"
+      # Row 4 is at y=4, still within parent height=5 (rows 0-4)
+      # But y=3 shifted by -0 → y=3 visible
+      assert grapheme_at(result, 2, 3) == "W"
+    end
+
+    test "empty scrollable area does not crash" do
+      buffer = Buffer.new(20, 5)
+
+      sa = layout_node(:scrollable_area, [scroll_offset: 5, bg: :green],
+             Bounds.new(0, 0, 20, 5), [])
+      result = Painter.paint(sa, buffer)
+
+      # Background still painted
+      assert bg_at(result, 0, 0) == :green
+    end
+  end
+
   # ── Integration scenarios ───────────────────────────────────────
 
   describe "integration" do

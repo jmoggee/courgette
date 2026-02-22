@@ -1094,6 +1094,18 @@ defmodule Courgette.Layout.Engine.Flex do
     []
   end
 
+  defp layout_children(element, style, available) when element.type == :scrollable_area do
+    if element.children == [] do
+      []
+    else
+      # Children flow in a column with unlimited height
+      scroll_style = %{style | flex_direction: :column, height: nil, min_height: nil, max_height: nil}
+      content_available = %{width: available.width, height: nil}
+      result = compute_flex_container(element, scroll_style, content_available)
+      result.children
+    end
+  end
+
   defp layout_children(element, style, available) do
     if element.children == [] do
       []

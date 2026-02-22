@@ -31,7 +31,6 @@ defmodule Courgette.Painter do
 
   - Text wrapping/truncation (needs layout engine)
   - Padding offset computation (layout's job)
-  - Scroll offset / viewport clipping (Phase 3c)
   """
 
   alias Courgette.Buffer
@@ -64,6 +63,32 @@ defmodule Courgette.Painter do
 
   # ── Internal ──────────────────────────────────────────────────────
 
+  defp paint_node(%{element: %Element{type: :scrollable_area} = element, bounds: bounds, children: children}, buffer, clip) do
+    effective_clip = compute_clip(bounds, clip)
+
+    case effective_clip do
+      nil ->
+        buffer
+
+      clip_rect ->
+        # Paint background + borders at viewport bounds (unshifted)
+        buffer = paint_element(buffer, element, bounds, clip_rect)
+
+        # Inner clip: inside borders, so scrolled content doesn't overwrite them
+        inner_clip = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
+
+        case inner_clip do
+          nil ->
+            buffer
+
+          inner ->
+            scroll_offset = Map.get(element.props, :scroll_offset, 0)
+            shifted_children = shift_tree(children, 0, -scroll_offset)
+            paint_children(buffer, shifted_children, inner)
+        end
+    end
+  end
+
   defp paint_node(%{element: element, bounds: bounds, children: children}, buffer, clip) do
     # The effective clip is the intersection of the parent's clip and this node's bounds
     effective_clip = compute_clip(bounds, clip)
@@ -89,6 +114,12 @@ defmodule Courgette.Painter do
   # ── Element painting ──────────────────────────────────────────────
 
   defp paint_element(buffer, %Element{type: :box} = element, bounds, clip) do
+    buffer
+    |> paint_background(element.props, bounds, clip)
+    |> paint_border(element.props, bounds, clip)
+  end
+
+  defp paint_element(buffer, %Element{type: :scrollable_area} = element, bounds, clip) do
     buffer
     |> paint_background(element.props, bounds, clip)
     |> paint_border(element.props, bounds, clip)
@@ -225,6 +256,28 @@ defmodule Courgette.Painter do
         value when key == :color -> [{:fg, value} | opts]
         value -> [{key, value} | opts]
       end
+    end)
+  end
+
+  # ── Scrollable area helpers ──────────────────────────────────────
+
+  defp inner_content_bounds(bounds, props) do
+    has_border = Map.get(props, :border) in [:single, :double, :rounded]
+    inset = if has_border, do: 1, else: 0
+
+    %Bounds{
+      x: bounds.x + inset,
+      y: bounds.y + inset,
+      width: max(bounds.width - inset * 2, 0),
+      height: max(bounds.height - inset * 2, 0)
+    }
+  end
+
+  defp shift_tree(children, dx, dy) do
+    Enum.map(children, fn %{bounds: %Bounds{} = bounds} = node ->
+      shifted_bounds = %{bounds | x: bounds.x + dx, y: bounds.y + dy}
+      shifted_children = shift_tree(node.children, dx, dy)
+      %{node | bounds: shifted_bounds, children: shifted_children}
     end)
   end
 
