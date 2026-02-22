@@ -32,6 +32,9 @@ defmodule Courgette.LiveComponent do
   ## Callbacks
 
   - `mount/1` — called once on startup with initial assigns. Must return `{:ok, assigns}`.
+  - `update/2` — called when a parent re-renders with new props for this component.
+    Receives the new props map and current assigns. Must return `{:ok, assigns}`.
+    Optional — default behavior merges new props into assigns.
   - `render/1` — called after mount and after every state change. Returns an element tree.
   - `handle_event/2` — called with parsed key/mouse events and current assigns. Optional.
   - `handle_info/2` — called with raw Erlang messages. Optional.
@@ -53,6 +56,14 @@ defmodule Courgette.LiveComponent do
   @doc "Called to produce the element tree. Must return an `Element.t()`."
   @callback render(assigns :: map()) :: Courgette.Element.t()
 
+  @doc """
+  Called when a parent re-renders with new props for this component.
+
+  Receives the new props and current assigns. Return `{:ok, updated_assigns}`.
+  Optional — if not implemented, new props are merged into assigns.
+  """
+  @callback update(new_props :: map(), assigns :: map()) :: {:ok, map()}
+
   @doc "Called with a parsed input event. Returns `{:noreply, assigns}`."
   @callback handle_event(event :: term(), assigns :: map()) :: {:noreply, map()}
 
@@ -62,7 +73,7 @@ defmodule Courgette.LiveComponent do
   @doc "Called on shutdown."
   @callback terminate(reason :: term(), assigns :: map()) :: term()
 
-  @optional_callbacks handle_event: 2, handle_info: 2, terminate: 2
+  @optional_callbacks update: 2, handle_event: 2, handle_info: 2, terminate: 2
 
   defmacro __using__(_opts) do
     quote do

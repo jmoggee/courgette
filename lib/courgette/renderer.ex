@@ -6,11 +6,18 @@ defmodule Courgette.Renderer do
   (Engine → Painter → Diff → Writer → Terminal), and maintains the front
   buffer for incremental updates.
 
+  ## Frame Batching
+
+  In normal mode (real terminal), pushes mark the renderer dirty and rendering
+  happens on a ~16ms tick loop (≈60 FPS). Multiple pushes between ticks are
+  collapsed — only the last tree is rendered. Use `flush/1` to force an
+  immediate render.
+
   ## Headless Mode
 
-  In tests, start with `headless: true` to skip Terminal writes. The
-  renderer still runs the full pipeline and stores the last tree and
-  painted buffer for assertions.
+  In tests, start with `headless: true` to skip Terminal writes and disable
+  the tick loop. Pushes render immediately (synchronous behavior), so existing
+  tests work unchanged.
   """
 
   use GenServer
@@ -24,13 +31,16 @@ defmodule Courgette.Renderer do
   alias Courgette.Painter
   alias Courgette.Terminal
 
+  @frame_ms 16
+
   @type state :: %{
           front: Buffer.t(),
           terminal: pid() | atom() | nil,
           width: pos_integer(),
           height: pos_integer(),
           headless: boolean(),
-          last_tree: Courgette.Element.t() | nil
+          last_tree: Courgette.Element.t() | nil,
+          dirty: boolean()
         }
 
   # -- Public API --
@@ -44,7 +54,7 @@ defmodule Courgette.Renderer do
   - `:width` — buffer width in columns.
   - `:height` — buffer height in rows.
   - `:name` — GenServer name registration.
-  - `:headless` — if `true`, skip Terminal.write calls. For tests.
+  - `:headless` — if `true`, skip Terminal.write calls and tick loop. For tests.
   """
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
@@ -53,11 +63,21 @@ defmodule Courgette.Renderer do
   @doc """
   Push an element tree through the render pipeline.
 
-  Computes layout, paints into a back buffer, diffs against the front
-  buffer, and writes the changes to the terminal.
+  In headless mode, renders immediately. In normal mode, stores the tree and
+  marks dirty — actual rendering happens on the next tick.
   """
   def push(tree, server) do
     GenServer.call(server, {:push, tree})
+  end
+
+  @doc """
+  Force an immediate render if dirty.
+
+  In normal mode, this bypasses the tick loop and renders right away.
+  Returns `:ok` regardless of whether a render was needed.
+  """
+  def flush(server) do
+    GenServer.call(server, :flush)
   end
 
   @doc """
@@ -89,15 +109,68 @@ defmodule Courgette.Renderer do
       width: width,
       height: height,
       headless: headless,
-      last_tree: nil
+      last_tree: nil,
+      dirty: false
     }
+
+    unless headless do
+      schedule_tick()
+    end
 
     {:ok, state}
   end
 
   @impl true
   def handle_call({:push, tree}, _from, state) do
-    %{front: front, width: w, height: h} = state
+    state = %{state | last_tree: tree}
+
+    if state.headless do
+      # Headless: render immediately (synchronous, test-friendly)
+      {:reply, :ok, do_render(state)}
+    else
+      # Normal: mark dirty, render on next tick
+      {:reply, :ok, %{state | dirty: true}}
+    end
+  end
+
+  def handle_call(:flush, _from, state) do
+    if state.dirty do
+      {:reply, :ok, do_render(%{state | dirty: false})}
+    else
+      {:reply, :ok, state}
+    end
+  end
+
+  def handle_call({:resize, cols, rows}, _from, state) do
+    unless state.headless do
+      Terminal.write([ANSI.clear_screen(), ANSI.cursor_home()], state.terminal)
+    end
+
+    {:reply, :ok,
+     %{state | front: Buffer.new(cols, rows), width: cols, height: rows, last_tree: nil, dirty: false}}
+  end
+
+  def handle_call(:get_last_tree, _from, state) do
+    {:reply, state.last_tree, state}
+  end
+
+  @impl true
+  def handle_info(:tick, state) do
+    state =
+      if state.dirty do
+        do_render(%{state | dirty: false})
+      else
+        state
+      end
+
+    schedule_tick()
+    {:noreply, state}
+  end
+
+  # -- Private --
+
+  defp do_render(state) do
+    %{front: front, width: w, height: h, last_tree: tree} = state
 
     # 1. Layout
     layout = Engine.compute(tree, Bounds.new(0, 0, w, h))
@@ -115,19 +188,10 @@ defmodule Courgette.Renderer do
     end
 
     # 5. Swap front buffer
-    {:reply, :ok, %{state | front: back, last_tree: tree}}
+    %{state | front: back}
   end
 
-  def handle_call({:resize, cols, rows}, _from, state) do
-    unless state.headless do
-      Terminal.write([ANSI.clear_screen(), ANSI.cursor_home()], state.terminal)
-    end
-
-    {:reply, :ok,
-     %{state | front: Buffer.new(cols, rows), width: cols, height: rows, last_tree: nil}}
-  end
-
-  def handle_call(:get_last_tree, _from, state) do
-    {:reply, state.last_tree, state}
+  defp schedule_tick do
+    Process.send_after(self(), :tick, @frame_ms)
   end
 end

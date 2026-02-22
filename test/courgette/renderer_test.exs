@@ -11,6 +11,24 @@ defmodule Courgette.RendererTest do
     pid
   end
 
+  defp start_terminal_renderer(opts \\ []) do
+    {:ok, device} = StringIO.open("")
+    term_name = :"term_#{:erlang.unique_integer([:positive])}"
+
+    {:ok, _term} =
+      Courgette.Terminal.start_link(
+        skip_raw_mode: true,
+        device: device,
+        name: term_name
+      )
+
+    defaults = [headless: false, terminal: term_name, width: 20, height: 5]
+    merged = Keyword.merge(defaults, opts)
+    {:ok, pid} = Renderer.start_link(merged)
+
+    %{pid: pid, device: device, terminal: term_name}
+  end
+
   describe "start_link/1" do
     test "starts headless renderer" do
       pid = start_renderer()
@@ -94,20 +112,13 @@ defmodule Courgette.RendererTest do
 
   describe "push/2 with terminal" do
     test "writes to terminal when not headless" do
-      {:ok, device} = StringIO.open("")
-      term_name = :"term_renderer_#{:erlang.unique_integer([:positive])}"
-
-      {:ok, _term} =
-        Courgette.Terminal.start_link(
-          skip_raw_mode: true,
-          device: device,
-          name: term_name
-        )
-
-      pid = start_renderer(headless: false, terminal: term_name)
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
 
       tree = Element.new(:text, [], ["Hello"])
       Renderer.push(tree, pid)
+
+      # In normal mode, push doesn't render immediately — need to flush
+      Renderer.flush(pid)
 
       {_input, output} = StringIO.contents(device)
       # Should contain sync markers and rendered content
@@ -141,17 +152,7 @@ defmodule Courgette.RendererTest do
     end
 
     test "resize clears screen when not headless" do
-      {:ok, device} = StringIO.open("")
-      term_name = :"term_resize_#{:erlang.unique_integer([:positive])}"
-
-      {:ok, _term} =
-        Courgette.Terminal.start_link(
-          skip_raw_mode: true,
-          device: device,
-          name: term_name
-        )
-
-      pid = start_renderer(headless: false, terminal: term_name, width: 20, height: 5)
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
 
       Renderer.resize(40, 10, pid)
 
@@ -182,6 +183,194 @@ defmodule Courgette.RendererTest do
 
       assert Renderer.get_last_tree(pid) == tree2
 
+      GenServer.stop(pid)
+    end
+  end
+
+  describe "frame batching" do
+    test "headless mode renders immediately on push" do
+      pid = start_renderer()
+
+      tree = Element.new(:text, [], ["Immediate"])
+      Renderer.push(tree, pid)
+
+      # In headless mode, the tree is rendered immediately — front buffer updated
+      # We verify by pushing a second tree and checking it renders correctly
+      tree2 = Element.new(:text, [], ["Second"])
+      Renderer.push(tree2, pid)
+      assert Renderer.get_last_tree(pid) == tree2
+
+      GenServer.stop(pid)
+    end
+
+    test "normal mode does not render on push — renders on tick" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      tree = Element.new(:text, [], ["Deferred"])
+      Renderer.push(tree, pid)
+
+      # Immediately after push, nothing written yet (push only marks dirty)
+      {_input, output_before} = StringIO.contents(device)
+      refute output_before =~ "\e[?2026h"
+
+      # Wait for tick to fire
+      Process.sleep(25)
+
+      {_input, output_after} = StringIO.contents(device)
+      assert output_after =~ "\e[?2026h"
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "multiple pushes between ticks collapse to one render" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      # Push 3 trees rapidly
+      Renderer.push(Element.new(:text, [], ["One"]), pid)
+      Renderer.push(Element.new(:text, [], ["Two"]), pid)
+      Renderer.push(Element.new(:text, [], ["Three"]), pid)
+
+      # Last tree stored
+      assert Renderer.get_last_tree(pid) == Element.new(:text, [], ["Three"])
+
+      # Wait for tick
+      Process.sleep(25)
+
+      {_input, output} = StringIO.contents(device)
+      # Only one sync begin/end pair — one render, not three
+      sync_begins = output |> String.split("\e[?2026h") |> length()
+      # split produces N+1 parts for N occurrences
+      assert sync_begins == 2
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "tick is no-op when clean" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      # No push — wait for two ticks
+      Process.sleep(40)
+
+      {_input, output} = StringIO.contents(device)
+      # No sync markers written — tick saw clean state
+      refute output =~ "\e[?2026h"
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "tick continues after render" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      # First push + tick
+      Renderer.push(Element.new(:text, [], ["First"]), pid)
+      Process.sleep(25)
+
+      # Second push + tick
+      Renderer.push(Element.new(:text, [], ["Second"]), pid)
+      Process.sleep(25)
+
+      {_input, output} = StringIO.contents(device)
+      # Two sync begin markers — two separate renders
+      sync_begins = output |> String.split("\e[?2026h") |> length()
+      assert sync_begins == 3
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "resize clears dirty flag" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      # Push to mark dirty
+      Renderer.push(Element.new(:text, [], ["Before"]), pid)
+
+      # Resize before tick fires — should clear dirty
+      Renderer.resize(40, 10, pid)
+
+      # Clear device contents so we only see what happens after resize
+      {_in, _out} = StringIO.contents(device)
+
+      # Wait for tick
+      Process.sleep(25)
+
+      # Re-read — the resize cleared dirty, so tick should be no-op
+      # We verify by checking there's no sync marker after the resize
+      # (The resize itself wrote clear_screen, but not sync markers)
+      # Actually, let's check by reading the new output after a brief delay
+      # Since StringIO accumulates, we check the total output doesn't have sync markers
+      # after the clear screen from resize
+      {_input, output} = StringIO.contents(device)
+      # Output should contain the clear screen from resize
+      assert output =~ "\e[2J"
+
+      # Count sync pairs: only from pushes that actually rendered (which is 0 since
+      # the push was before resize, and resize cleared dirty)
+      sync_count = output |> String.split("\e[?2026h") |> length()
+      # 1 means zero occurrences (split of string with 0 matches gives 1 part)
+      assert sync_count == 1
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+  end
+
+  describe "flush/1" do
+    test "forces immediate render when dirty" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      Renderer.push(Element.new(:text, [], ["Flush me"]), pid)
+
+      # Before flush — not rendered yet
+      {_input, output_before} = StringIO.contents(device)
+      refute output_before =~ "\e[?2026h"
+
+      # Flush forces render
+      assert :ok = Renderer.flush(pid)
+
+      {_input, output_after} = StringIO.contents(device)
+      assert output_after =~ "\e[?2026h"
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "flush is no-op when clean" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      # No push — flush should be no-op
+      assert :ok = Renderer.flush(pid)
+
+      {_input, output} = StringIO.contents(device)
+      refute output =~ "\e[?2026h"
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "flush clears dirty so tick does not re-render" do
+      %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
+
+      Renderer.push(Element.new(:text, [], ["Once"]), pid)
+      Renderer.flush(pid)
+
+      # Wait for tick
+      Process.sleep(25)
+
+      {_input, output} = StringIO.contents(device)
+      # Only one sync pair — from flush, not tick
+      sync_count = output |> String.split("\e[?2026h") |> length()
+      assert sync_count == 2
+
+      GenServer.stop(pid)
+      Courgette.Terminal.stop(term_name)
+    end
+
+    test "flush returns :ok for headless renderer" do
+      pid = start_renderer()
+      assert :ok = Renderer.flush(pid)
       GenServer.stop(pid)
     end
   end

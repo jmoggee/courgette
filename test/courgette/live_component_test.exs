@@ -44,6 +44,24 @@ defmodule Courgette.LiveComponentTest do
     end
   end
 
+  # Module with update/2 callback
+  defmodule UpdatableComponent do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(_assigns), do: {:ok, %{count: 0}}
+
+    @impl true
+    def update(new_props, assigns) do
+      {:ok, Map.merge(assigns, new_props)}
+    end
+
+    @impl true
+    def render(assigns) do
+      text(do: "count: #{assigns.count}")
+    end
+  end
+
   # Module with only required callbacks
   defmodule MinimalComponent do
     use Courgette.LiveComponent
@@ -79,6 +97,16 @@ defmodule Courgette.LiveComponentTest do
       # Verify render returns an Element
       tree = TestComponent.render(%{count: 5})
       assert %Courgette.Element{type: :text} = tree
+    end
+  end
+
+  describe "update/2 callback" do
+    test "module with update/2 compiles and exports it" do
+      assert function_exported?(UpdatableComponent, :update, 2)
+    end
+
+    test "update/2 is optional — module without it still compiles" do
+      refute function_exported?(MinimalComponent, :update, 2)
     end
   end
 
