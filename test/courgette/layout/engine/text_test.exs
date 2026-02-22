@@ -65,45 +65,37 @@ defmodule Courgette.Layout.Engine.TextTest do
 
   # ── Char wrap ─────────────────────────────────────────────────────
 
-  describe "measure/3 :wrap" do
+  describe "measure/3 :char_wrap" do
     test "text fits — no wrapping" do
-      assert Text.measure("Hello", 10.0, :wrap) == {5.0, 1.0}
+      assert Text.measure("Hello", 10.0, :char_wrap) == {5.0, 1.0}
     end
 
     test "wraps at character boundary" do
-      assert Text.measure("ABCDEF", 4.0, :wrap) == {4.0, 2.0}
+      assert Text.measure("ABCDEF", 4.0, :char_wrap) == {4.0, 2.0}
     end
 
     test "exact multiple" do
-      assert Text.measure("ABCDEF", 3.0, :wrap) == {3.0, 2.0}
+      assert Text.measure("ABCDEF", 3.0, :char_wrap) == {3.0, 2.0}
     end
 
     test "single char constraint" do
-      assert Text.measure("ABC", 1.0, :wrap) == {1.0, 3.0}
+      assert Text.measure("ABC", 1.0, :char_wrap) == {1.0, 3.0}
     end
   end
 
-  # ── Truncate ──────────────────────────────────────────────────────
+  # ── No wrap ────────────────────────────────────────────────────────
 
-  describe "measure/3 :truncate" do
+  describe "measure/3 :no_wrap" do
     test "text fits — returns full width" do
-      assert Text.measure("Hello", 10.0, :truncate) == {5.0, 1.0}
+      assert Text.measure("Hello", 10.0, :no_wrap) == {5.0, 1.0}
     end
 
-    test "text exceeds — truncated width, height 1" do
-      assert Text.measure("Hello World", 5.0, :truncate) == {5.0, 1.0}
+    test "text exceeds — clamped width, height 1" do
+      assert Text.measure("Hello World", 5.0, :no_wrap) == {5.0, 1.0}
     end
 
     test "multiline text — only first line" do
-      assert Text.measure("AB\nCDEF", 10.0, :truncate) == {2.0, 1.0}
-    end
-  end
-
-  # ── Visible ───────────────────────────────────────────────────────
-
-  describe "measure/3 :visible" do
-    test "ignores constraint" do
-      assert Text.measure("Hello World", 5.0, :visible) == {11.0, 1.0}
+      assert Text.measure("AB\nCDEF", 10.0, :no_wrap) == {2.0, 1.0}
     end
   end
 

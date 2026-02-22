@@ -86,13 +86,17 @@ defmodule Courgette.Layout.Engine.Flex do
 
     width_constraint = if width_constraint != nil, do: max(width_constraint, 0.0), else: nil
 
-    overflow =
-      case style.overflow do
-        :visible -> :word_wrap
-        other -> other
+    wrap_mode =
+      case style.white_space do
+        :nowrap -> :no_wrap
+        _ ->
+          case style.overflow_wrap do
+            :break_word -> :char_wrap
+            _ -> :word_wrap
+          end
       end
 
-    {text_w, text_h} = Text.measure(text, width_constraint, overflow)
+    {text_w, text_h} = Text.measure(text, width_constraint, wrap_mode)
 
     inner_w = if style.width != nil, do: style.width - inset_h, else: text_w
     inner_h = if style.height != nil, do: style.height - inset_v, else: text_h
@@ -429,13 +433,17 @@ defmodule Courgette.Layout.Engine.Flex do
             nil
           end
 
-        overflow =
-          case style.overflow do
-            :visible -> :word_wrap
-            other -> other
+        wrap_mode =
+          case style.white_space do
+            :nowrap -> :no_wrap
+            _ ->
+              case style.overflow_wrap do
+                :break_word -> :char_wrap
+                _ -> :word_wrap
+              end
           end
 
-        {text_w, text_h} = Text.measure(text, constraint, overflow)
+        {text_w, text_h} = Text.measure(text, constraint, wrap_mode)
 
         case axis do
           :row -> text_w + content_box_inset
@@ -489,8 +497,8 @@ defmodule Courgette.Layout.Engine.Flex do
         text = element.children |> Enum.filter(&is_binary/1) |> Enum.join()
 
         min_w =
-          case style.overflow do
-            :truncate -> 0.0
+          case style.white_space do
+            :nowrap -> 0.0
             _ -> Text.min_content_width(text)
           end
 
@@ -1071,10 +1079,14 @@ defmodule Courgette.Layout.Engine.Flex do
       :text ->
         text = item.element.children |> Enum.filter(&is_binary/1) |> Enum.join()
 
-        overflow =
-          case style.overflow do
-            :visible -> :word_wrap
-            other -> other
+        wrap_mode =
+          case style.white_space do
+            :nowrap -> :no_wrap
+            _ ->
+              case style.overflow_wrap do
+                :break_word -> :char_wrap
+                _ -> :word_wrap
+              end
           end
 
         constraint =
@@ -1083,7 +1095,7 @@ defmodule Courgette.Layout.Engine.Flex do
             :column -> if available.width != nil, do: max(available.width - border_cross - padding_cross, 0.0), else: nil
           end
 
-        {text_w, text_h} = Text.measure(text, constraint, overflow)
+        {text_w, text_h} = Text.measure(text, constraint, wrap_mode)
 
         case axis do
           :row -> text_h

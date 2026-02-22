@@ -31,7 +31,10 @@ defmodule Courgette.Layout.Engine.Style do
           border: Geometry.rect(),
           gap_main: float(),
           gap_cross: float(),
-          overflow: :visible | :hidden | :word_wrap | :wrap | :truncate
+          overflow: :visible | :hidden,
+          white_space: :normal | :nowrap,
+          overflow_wrap: :normal | :break_word,
+          text_overflow: :clip | :ellipsis
         }
 
   defstruct flex_direction: :row,
@@ -54,7 +57,10 @@ defmodule Courgette.Layout.Engine.Style do
             border: %{left: 0.0, top: 0.0, right: 0.0, bottom: 0.0},
             gap_main: 0.0,
             gap_cross: 0.0,
-            overflow: :visible
+            overflow: :visible,
+            white_space: :normal,
+            overflow_wrap: :normal,
+            text_overflow: :clip
 
   @doc """
   Resolves an Element's props map into a `%Style{}`.
@@ -76,7 +82,7 @@ defmodule Courgette.Layout.Engine.Style do
     |> resolve_flex(props)
     |> resolve_alignment(props)
     |> resolve_gap(props)
-    |> resolve_overflow(props)
+    |> resolve_text_props(props)
   end
 
   # ── Border ────────────────────────────────────────────────────────
@@ -209,10 +215,15 @@ defmodule Courgette.Layout.Engine.Style do
     }
   end
 
-  # ── Overflow ──────────────────────────────────────────────────────
+  # ── Text / Overflow ─────────────────────────────────────────────
 
-  defp resolve_overflow(style, props) do
-    %{style | overflow: Map.get(props, :overflow, :visible)}
+  defp resolve_text_props(style, props) do
+    %{style |
+      overflow: Map.get(props, :overflow, :visible),
+      white_space: Map.get(props, :white_space, :normal),
+      overflow_wrap: Map.get(props, :overflow_wrap, :normal),
+      text_overflow: Map.get(props, :text_overflow, :clip)
+    }
   end
 
   # ── Helpers ───────────────────────────────────────────────────────

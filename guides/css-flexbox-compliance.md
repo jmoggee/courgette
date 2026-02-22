@@ -73,6 +73,12 @@ Taffy ships 537 test fixtures generated from browser rendering. Each fixture def
 | | `hidden` | Supported | — | Suppresses automatic minimum sizing |
 | | `scroll` | Not supported | 10 | Would need scrollbar space reservation. We handle scrolling at component level (ScrollableArea) |
 | | `auto` | Not supported | — | Like scroll but only when content overflows |
+| **white-space** | `normal` | Supported | — | Default — text wraps at word boundaries |
+| | `nowrap` | Supported | — | Single line, no wrapping |
+| **overflow-wrap** | `normal` | Supported | — | Default — only wraps at word boundaries |
+| | `break-word` | Supported | — | Allows breaking within words at character boundaries |
+| **text-overflow** | `clip` | Supported | — | Default — overflowing text is clipped |
+| | `ellipsis` | Not supported | — | Future: append ellipsis to clipped text (Painter work) |
 | **position** | `static` | Supported | — | Only mode — normal flex flow |
 | | `relative` | Not supported | — | Offset from normal position. Could be useful but rare in TUI |
 | | `absolute` | Not supported | 58 | Removes from flow, positions relative to containing block. Root portal pattern is simpler for TUI overlays |
@@ -119,9 +125,6 @@ These are Courgette additions that go beyond CSS:
 
 | Feature | What it does |
 |---|---|
-| `overflow: :word_wrap` | Wraps text at word boundaries within the content area |
-| `overflow: :wrap` | Wraps text at character boundaries |
-| `overflow: :truncate` | Truncates text that exceeds the content area |
 | `border: :single / :double / :rounded` | Semantic border styles (always 1-cell inset). CSS uses pixel widths; TUI cells are the atomic unit |
 | `padding_h` / `padding_v` | Horizontal/vertical padding shorthand (not in CSS) |
 | Cumulative rounding | Float→cell rounding uses cumulative absolute coordinates to prevent 1-cell gaps between siblings |

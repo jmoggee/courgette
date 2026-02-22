@@ -11,17 +11,16 @@ defmodule Courgette.Layout.Engine.Text do
   @type measurement :: {float(), float()}
 
   @doc """
-  Measures text given a width constraint and overflow mode.
+  Measures text given a width constraint and wrap mode.
 
   Returns `{width, height}` in cell units (as floats).
 
-  ## Overflow modes
+  ## Wrap modes
 
   - `:word_wrap` (default) — wraps at word boundaries. Words longer than
     the constraint wrap at character boundaries.
-  - `:wrap` — wraps at character boundaries only.
-  - `:truncate` — single line, truncated to constraint width.
-  - `:visible` — no wrapping, full text width (same as unconstrained).
+  - `:char_wrap` — wraps at character boundaries only.
+  - `:no_wrap` — single line, width clamped to constraint.
 
   ## Width constraint
 
@@ -29,30 +28,25 @@ defmodule Courgette.Layout.Engine.Text do
   - `float` — maximum width in cells
   """
   @spec measure(String.t(), float() | nil, atom()) :: measurement()
-  def measure(text, width_constraint \\ nil, overflow \\ :word_wrap)
+  def measure(text, width_constraint \\ nil, wrap_mode \\ :word_wrap)
 
-  def measure("", _constraint, _overflow), do: {0.0, 0.0}
+  def measure("", _constraint, _wrap_mode), do: {0.0, 0.0}
 
-  def measure(text, nil, _overflow) do
+  def measure(text, nil, _wrap_mode) do
     lines = String.split(text, "\n")
     max_width = lines |> Enum.map(&grapheme_count/1) |> Enum.max()
     {max_width / 1, length(lines) / 1}
   end
 
-  def measure(text, constraint, :truncate) when is_number(constraint) do
+  def measure(text, constraint, :no_wrap) when is_number(constraint) do
     lines = String.split(text, "\n")
-    # Truncate mode: only the first line matters
+    # No-wrap mode: only the first line matters, clamped to constraint
     first = hd(lines)
     w = min(grapheme_count(first), max(constraint, 0))
     {w / 1, 1.0}
   end
 
-  def measure(text, _constraint, :visible) do
-    # Visible = no wrapping, same as unconstrained
-    measure(text, nil, :visible)
-  end
-
-  def measure(text, constraint, :wrap) when is_number(constraint) do
+  def measure(text, constraint, :char_wrap) when is_number(constraint) do
     constraint = max(constraint, 1) / 1
 
     lines = String.split(text, "\n")
@@ -66,7 +60,7 @@ defmodule Courgette.Layout.Engine.Text do
     {min(max_width / 1, constraint), length(wrapped) / 1}
   end
 
-  def measure(text, constraint, _overflow) when is_number(constraint) do
+  def measure(text, constraint, _wrap_mode) when is_number(constraint) do
     # Default: word_wrap
     constraint = max(constraint, 1) / 1
 

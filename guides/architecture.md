@@ -66,7 +66,8 @@ Key capabilities:
 - **Gaps** — `gap` for spacing between flex items
 - **Constraints** — `min_width`, `max_width`, `min_height`, `max_height`
 - **Content sizing** — automatic minimum sizes based on text content
-- **Overflow** — `:visible`, `:word_wrap`, `:truncate`, `:hidden`
+- **Overflow** — `:visible`, `:hidden`
+- **Text wrapping** — `white_space` (`:normal`, `:nowrap`), `overflow_wrap` (`:normal`, `:break_word`)
 - **Scrollable areas** — unlimited height with content-driven width
 
 The output is a layout tree where each node is `{element, bounds, children}`.

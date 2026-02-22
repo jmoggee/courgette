@@ -226,9 +226,51 @@ defmodule Courgette.Layout.Engine.StyleTest do
       assert s.overflow == :visible
     end
 
-    test "word_wrap" do
-      s = style_for(overflow: :word_wrap)
-      assert s.overflow == :word_wrap
+    test "hidden" do
+      s = style_for(overflow: :hidden)
+      assert s.overflow == :hidden
+    end
+  end
+
+  # ── White space ────────────────────────────────────────────────────
+
+  describe "white_space" do
+    test "default is :normal" do
+      s = style_for([])
+      assert s.white_space == :normal
+    end
+
+    test "nowrap" do
+      s = style_for(white_space: :nowrap)
+      assert s.white_space == :nowrap
+    end
+  end
+
+  # ── Overflow wrap ──────────────────────────────────────────────────
+
+  describe "overflow_wrap" do
+    test "default is :normal" do
+      s = style_for([])
+      assert s.overflow_wrap == :normal
+    end
+
+    test "break_word" do
+      s = style_for(overflow_wrap: :break_word)
+      assert s.overflow_wrap == :break_word
+    end
+  end
+
+  # ── Text overflow ──────────────────────────────────────────────────
+
+  describe "text_overflow" do
+    test "default is :clip" do
+      s = style_for([])
+      assert s.text_overflow == :clip
+    end
+
+    test "ellipsis" do
+      s = style_for(text_overflow: :ellipsis)
+      assert s.text_overflow == :ellipsis
     end
   end
 end
