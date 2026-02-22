@@ -28,7 +28,7 @@ defmodule Courgette.Terminal do
 
   On terminate (or crash), the Terminal restores all terminal state:
   shows the cursor, exits the alternate screen (if fullscreen), resets
-  colors/styles. This is guaranteed by `GenServer.terminate/2`.
+  colors/styles. This is guaranteed by the GenServer `terminate/2` callback.
 
   ## Writing
 
