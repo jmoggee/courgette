@@ -1,0 +1,230 @@
+# Events & Input
+
+## Key Events {: .col-2}
+
+### Characters
+
+```elixir
+{:key, {:char, "a"}}        # printable character
+{:key, {:char, "ñ"}}        # UTF-8 supported
+```
+
+### Named Keys
+
+```elixir
+{:key, :enter}
+{:key, :tab}
+{:key, :escape}
+{:key, :backspace}
+{:key, :delete}
+{:key, :insert}
+{:key, :home}
+{:key, :end}
+{:key, :page_up}
+{:key, :page_down}
+```
+
+### Arrow Keys
+
+```elixir
+{:key, :arrow_up}
+{:key, :arrow_down}
+{:key, :arrow_left}
+{:key, :arrow_right}
+```
+
+### Function Keys
+
+```elixir
+{:key, :f1}   {:key, :f2}   {:key, :f3}
+{:key, :f4}   {:key, :f5}   {:key, :f6}
+{:key, :f7}   {:key, :f8}   {:key, :f9}
+{:key, :f10}  {:key, :f11}  {:key, :f12}
+```
+
+### Modifier Combinations
+
+```elixir
+{:key, {:ctrl, "a"}}        # Ctrl+A (lowercase)
+{:key, {:alt, "x"}}         # Alt+X
+{:key, {:shift, :tab}}      # Shift+Tab
+
+# Modifiers on named keys (sorted list)
+{:key, :arrow_up, [:ctrl]}
+{:key, :home, [:shift]}
+{:key, :f1, [:alt, :ctrl]}
+```
+
+Modifier atoms: `:shift`, `:alt`, `:ctrl`, `:super`, `:hyper`
+
+## Mouse Events {: .col-2}
+
+### Button Press & Release
+
+```elixir
+{:mouse, :press, :left, col, row}
+{:mouse, :release, :left, col, row}
+{:mouse, :press, :middle, col, row}
+{:mouse, :press, :right, col, row}
+
+# With modifiers
+{:mouse, :press, :left, col, row, [:ctrl]}
+```
+
+Coordinates are 1-indexed (col, row).
+
+### Scroll
+
+```elixir
+{:mouse, :scroll_up, col, row}
+{:mouse, :scroll_down, col, row}
+
+# With modifiers
+{:mouse, :scroll_up, col, row, [:shift]}
+```
+
+## Other Events
+
+### Focus, Paste, Resize
+
+```elixir
+# Terminal focus
+{:focus, :in}               # terminal gained focus
+{:focus, :out}              # terminal lost focus
+
+# Bracketed paste markers
+{:paste, :start}
+{:paste, :end}
+
+# Terminal resize
+{:resize, cols, rows}
+
+# Cursor position response
+{:cursor_position, row, col}
+```
+
+## Handling Events {: .col-2}
+
+### handle_event/2
+
+Define in any `LiveComponent` to handle input. Return `{:noreply, assigns}`.
+
+```elixir
+defmodule MyComponent do
+  use Courgette.LiveComponent
+
+  def handle_event({:key, :arrow_up}, assigns) do
+    {:noreply, update(assigns, :count, &(&1 + 1))}
+  end
+
+  def handle_event({:key, {:char, "q"}}, assigns) do
+    Courgette.stop()
+    {:noreply, assigns}
+  end
+
+  def handle_event(_event, assigns) do
+    {:noreply, assigns}
+  end
+end
+```
+
+### Focus Routing
+
+Tab and Shift-Tab are intercepted by the root component to cycle focus between children.
+
+```elixir
+# These are handled automatically:
+{:key, :tab}                # focus next child
+{:key, {:shift, :tab}}      # focus previous child
+
+# Children receive these atoms on focus change:
+:focus                      # component gained focus
+:blur                       # component lost focus
+```
+
+Other events are routed to the currently focused child.
+
+### handle_info/2
+
+Handle arbitrary messages sent to the component process.
+
+```elixir
+def handle_info(:tick, assigns) do
+  {:noreply, update(assigns, :elapsed, &(&1 + 1))}
+end
+
+def handle_info({:child_crashed, {mod, id}, reason}, assigns) do
+  # Notified when a child crashes
+  {:noreply, assigns}
+end
+```
+
+## Test Helpers {: .col-2}
+
+### Mounting
+
+```elixir
+use Courgette.ComponentTestHelpers
+
+# Defaults: 80x24, empty assigns
+view = mount(MyComponent)
+
+# With options
+view = mount(MyComponent,
+  initial_assigns: %{count: 5},
+  width: 120,
+  height: 40
+)
+```
+
+### Sending Events
+
+```elixir
+send_event(view, {:key, :arrow_up})
+send_event(view, {:key, {:char, "a"}})
+send_event(view, {:mouse, :press, :left, 10, 5})
+
+# Convenience helpers
+send_tab(view)
+send_shift_tab(view)
+
+# Arbitrary messages to handle_info/2
+send_info(view, :my_message)
+```
+
+All event functions are synchronous — they block until the component processes the event.
+
+### Rendering & Assertions
+
+```elixir
+# All text content as a string
+assert render_text(view) =~ "Count: 5"
+
+# Raw element tree for structural assertions
+tree = render_tree(view)
+assert tree.type == :box
+assert length(tree.children) == 3
+```
+
+### Full Example
+
+```elixir
+defmodule CounterTest do
+  use ExUnit.Case
+  use Courgette.ComponentTestHelpers
+
+  test "arrow up increments" do
+    view = mount(Counter, initial_assigns: %{count: 0})
+    assert render_text(view) =~ "Count: 0"
+
+    send_event(view, {:key, :arrow_up})
+    assert render_text(view) =~ "Count: 1"
+  end
+
+  test "tab cycles focus" do
+    view = mount(MyApp)
+    send_tab(view)
+    assert render_text(view) =~ "focused"
+  end
+end
+```

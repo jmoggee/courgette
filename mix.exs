@@ -38,12 +38,15 @@ defmodule Courgette.MixProject do
         "README.md",
         "guides/architecture.md",
         "guides/css-flexbox-compliance.md",
+        "guides/cheatsheets/dsl.cheatmd",
+        "guides/cheatsheets/events.cheatmd",
         "AGENTS.md"
       ],
       source_ref: "v#{@version}",
       source_url: @source_url,
       groups_for_extras: [
-        Guides: ["guides/architecture.md", "guides/css-flexbox-compliance.md", "AGENTS.md"]
+        Guides: ["guides/architecture.md", "guides/css-flexbox-compliance.md", "AGENTS.md"],
+        Cheatsheets: ["guides/cheatsheets/dsl.cheatmd", "guides/cheatsheets/events.cheatmd"]
       ],
       groups_for_modules: [
         "Core": [

@@ -1,0 +1,342 @@
+# DSL & Styling
+
+## Element Macros
+
+### box
+
+Flexbox container for layout. Supports borders, backgrounds, and all flex properties.
+
+```elixir
+box padding: 2, border: :single do
+  text do: "Hello"
+end
+```
+
+### text
+
+Styled text content. Children are plain strings.
+
+```elixir
+text color: :cyan, bold: true do
+  "Hello, world!"
+end
+```
+
+### input
+
+Raw input field.
+
+```elixir
+input placeholder: "Type..."
+```
+
+### button
+
+Clickable action element.
+
+```elixir
+button padding_h: 1, border: :rounded do
+  text do: "Submit"
+end
+```
+
+### scrollable_area
+
+Clipping viewport with scroll offset.
+
+```elixir
+scrollable_area scroll_offset: @offset, height: 10 do
+  # content taller than 10 rows
+end
+```
+
+### grid / col
+
+Grid container and column children.
+
+```elixir
+grid do
+  col flex: 1 do
+    text do: "Left"
+  end
+  col flex: 2 do
+    text do: "Right (wider)"
+  end
+end
+```
+
+### live_component
+
+Stateful child component. Requires `id` for lifecycle reconciliation.
+
+```elixir
+live_component(Counter, id: "main", initial_count: 5)
+```
+
+## Flex Layout {: .col-2}
+
+### Direction & Wrapping
+
+```elixir
+flex_direction: :row       # default
+flex_direction: :column
+
+flex_wrap: :no_wrap         # default
+flex_wrap: :wrap
+```
+
+### Growth & Shrinking
+
+```elixir
+flex_grow: 0.0              # default
+flex_shrink: 1.0            # default
+flex_basis: :auto           # default, or a float
+
+# Shorthand — flex: N expands to:
+#   flex_grow: N, flex_shrink: 1.0, flex_basis: 0.0
+flex: 1
+```
+
+### Justify Content (main axis)
+
+```elixir
+justify_content: :flex_start    # default
+justify_content: :flex_end
+justify_content: :center
+justify_content: :space_between
+justify_content: :space_around
+justify_content: :space_evenly
+```
+
+### Align Items (cross axis)
+
+```elixir
+align_items: :stretch       # default
+align_items: :flex_start
+align_items: :flex_end
+align_items: :center
+align_items: :baseline
+```
+
+### Align Self (child override)
+
+```elixir
+align_self: :auto           # default (inherits align_items)
+align_self: :flex_start
+align_self: :flex_end
+align_self: :center
+align_self: :stretch
+align_self: :baseline
+```
+
+### Align Content (wrapped lines)
+
+```elixir
+align_content: :stretch       # default
+align_content: :flex_start
+align_content: :flex_end
+align_content: :center
+align_content: :space_between
+align_content: :space_around
+```
+
+## Sizing & Spacing {: .col-2}
+
+### Dimensions
+
+```elixir
+width: 40
+height: 10
+min_width: 20
+min_height: 5
+max_width: 80
+max_height: 24
+```
+
+All accept a float or `nil` (unconstrained, the default).
+
+### Padding
+
+```elixir
+padding: 2                  # all sides
+padding_h: 1                # left + right
+padding_v: 1                # top + bottom
+padding_left: 1             # individual sides
+padding_right: 1
+padding_top: 1
+padding_bottom: 1
+```
+
+### Margin
+
+```elixir
+margin: 1                   # all sides
+margin_left: 1              # individual sides
+margin_right: 1
+margin_top: 1
+margin_bottom: 1
+```
+
+### Gap
+
+```elixir
+gap: 1                      # both axes
+gap_main: 1                 # main axis only
+gap_cross: 1                # cross axis only
+```
+
+## Borders & Overflow {: .col-2}
+
+### Border Styles
+
+```elixir
+border: :single    # ┌ ─ ┐ │ └ ┘
+border: :double    # ╔ ═ ╗ ║ ╚ ╝
+border: :rounded   # ╭ ─ ╮ │ ╰ ╯
+
+border_color: :cyan
+```
+
+Borders create a 1-cell inset on each side, reducing inner content space.
+
+### Text Overflow
+
+```elixir
+overflow: :visible          # default — content can exceed bounds
+overflow: :hidden           # clip content outside bounds
+
+white_space: :normal        # default — text wraps
+white_space: :nowrap        # prevent wrapping
+
+overflow_wrap: :normal      # default
+overflow_wrap: :break_word  # break long words
+
+text_overflow: :clip        # default
+text_overflow: :ellipsis    # show "…" at truncation point
+```
+
+## Text Styling {: .col-2}
+
+### Text Decorations
+
+```elixir
+bold: true
+dim: true
+italic: true
+strikethrough: true
+overline: true
+reverse: true               # swap fg/bg
+hidden: true                # conceal text
+blink: true
+```
+
+### Underline
+
+```elixir
+underline: true             # straight underline
+
+underline_style: :straight  # or :double, :curly,
+                            #    :dotted, :dashed, :none
+underline_color: :red       # independent underline color
+```
+
+## Colors {: .col-2}
+
+### Named Colors
+
+```elixir
+# Basic 8
+:black  :red      :green    :yellow
+:blue   :magenta  :cyan     :white
+
+# Bright variants
+:bright_black    :bright_red
+:bright_green    :bright_yellow
+:bright_blue     :bright_magenta
+:bright_cyan     :bright_white
+
+# Aliases
+:dark_gray       # = :bright_black
+:light_gray      # = :white
+:default         # reset to terminal default
+```
+
+### 256-Color & RGB
+
+```elixir
+# 256-color palette (0–255)
+color: 196                  # bright red
+bg: 21                      # bright blue
+
+# Truecolor RGB tuple
+color: {255, 0, 128}
+bg: {64, 64, 200}
+```
+
+### Color Props
+
+Colors work on these props:
+
+- `color` (or `fg`) — text foreground
+- `bg` — background fill
+- `border_color` — border foreground
+- `underline_color` — underline color
+
+### Theme Tokens
+
+```elixir
+# Default theme tokens
+:bg        # :black
+:fg        # :white
+:primary   # :blue
+:secondary # :cyan
+:success   # :green
+:warning   # :yellow
+:danger    # :red
+:muted     # :bright_black
+:border    # :white
+:surface   # :bright_black
+```
+
+Use in components:
+
+```elixir
+color = theme(assigns, :primary)
+```
+
+## Built-in Components {: .col-2}
+
+### divider
+
+```elixir
+import Courgette.Components
+
+divider(orientation: :horizontal)
+divider(orientation: :vertical, color: :cyan)
+```
+
+### badge
+
+```elixir
+badge(label: "OK", color: :green)
+badge(label: "Error", color: :red)
+```
+
+### heading
+
+```elixir
+heading(text: "Dashboard")
+heading(text: "Status", color: :cyan, divider: false)
+```
+
+### key_value
+
+```elixir
+key_value(label: "Name", value: "Jeff")
+```
+
+### empty_state
+
+```elixir
+empty_state(message: "No items found")
+```
