@@ -43,6 +43,7 @@ defmodule Courgette.LiveComponent.Server do
           assigns: map(),
           renderer: pid() | atom(),
           key_buffer: binary(),
+          escape_timer: reference() | nil,
           parent: pid() | nil,
           component_id: {module(), term()} | nil,
           children: %{{module(), term()} => {pid(), map()}},
@@ -114,6 +115,7 @@ defmodule Courgette.LiveComponent.Server do
       assigns: assigns,
       renderer: renderer,
       key_buffer: <<>>,
+      escape_timer: nil,
       parent: parent,
       component_id: component_id,
       children: %{},
@@ -163,6 +165,7 @@ defmodule Courgette.LiveComponent.Server do
 
   @impl true
   def handle_info({:terminal_input, bytes}, state) when is_binary(bytes) do
+    state = cancel_escape_timer(state)
     {events, new_buffer} = KeyParser.parse(bytes, state.key_buffer)
 
     new_state =
@@ -170,7 +173,17 @@ defmodule Courgette.LiveComponent.Server do
         dispatch_event(event, acc)
       end)
 
+    new_state = maybe_start_escape_timer(new_state)
     {:noreply, new_state}
+  end
+
+  def handle_info(:escape_timeout, %{key_buffer: <<0x1B>>} = state) do
+    new_state = dispatch_event({:key, :escape}, %{state | key_buffer: <<>>, escape_timer: nil})
+    {:noreply, new_state}
+  end
+
+  def handle_info(:escape_timeout, state) do
+    {:noreply, %{state | escape_timer: nil}}
   end
 
   def handle_info({:terminal_resize, cols, rows}, state) do
@@ -314,6 +327,20 @@ defmodule Courgette.LiveComponent.Server do
       state
     end
   end
+
+  defp cancel_escape_timer(%{escape_timer: nil} = state), do: state
+
+  defp cancel_escape_timer(%{escape_timer: ref} = state) do
+    Process.cancel_timer(ref)
+    %{state | escape_timer: nil}
+  end
+
+  defp maybe_start_escape_timer(%{key_buffer: <<0x1B>>} = state) do
+    ref = Process.send_after(self(), :escape_timeout, 50)
+    %{state | escape_timer: ref}
+  end
+
+  defp maybe_start_escape_timer(state), do: state
 
   defp handle_focus_change(state, old_focused, new_focused) do
     # Send :blur to old focused child

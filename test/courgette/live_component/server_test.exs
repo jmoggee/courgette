@@ -1639,6 +1639,83 @@ defmodule Courgette.LiveComponent.ServerTest do
     end
   end
 
+  # -- Escape Timeout Test Component --
+
+  defmodule EscapeTracker do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :escape_count, fn -> 0 end) |> assign_new(:last_event, fn -> nil end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      text(do: "esc:#{assigns.escape_count}:last=#{inspect(assigns.last_event)}")
+    end
+
+    @impl true
+    def handle_event({:key, :escape}, assigns) do
+      {:noreply, assigns |> assign(:escape_count, assigns.escape_count + 1) |> assign(:last_event, :escape)}
+    end
+
+    def handle_event(event, assigns) do
+      {:noreply, assign(assigns, :last_event, event)}
+    end
+  end
+
+  # -- Escape Timeout Tests --
+
+  describe "escape timeout" do
+    test "lone escape byte emits {:key, :escape} after timeout" do
+      ctx = start_server(EscapeTracker)
+
+      # Send lone ESC byte
+      send(ctx.server, {:terminal_input, <<0x1B>>})
+      :sys.get_state(ctx.server)
+
+      # Should NOT have dispatched yet (buffered)
+      assert extract_text(last_tree(ctx)) == "esc:0:last=nil"
+
+      # Wait for the 50ms timer to fire
+      Process.sleep(60)
+      :sys.get_state(ctx.server)
+
+      # Now escape should have been dispatched
+      assert extract_text(last_tree(ctx)) == "esc:1:last=:escape"
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
+    test "escape timer cancelled by follow-up input completing sequence" do
+      ctx = start_server(EscapeTracker)
+
+      # Send lone ESC byte (starts timer)
+      send(ctx.server, {:terminal_input, <<0x1B>>})
+      :sys.get_state(ctx.server)
+
+      # Immediately send the rest of arrow_up sequence: [ A
+      send(ctx.server, {:terminal_input, <<0x5B, 0x41>>})
+      :sys.get_state(ctx.server)
+
+      # arrow_up should be the last event, NOT escape
+      tree = last_tree(ctx)
+      text = extract_text(tree)
+      assert text =~ "last={:key, :arrow_up}"
+      assert text =~ "esc:0"
+
+      # Wait past the timeout to confirm no escape fires
+      Process.sleep(60)
+      :sys.get_state(ctx.server)
+
+      assert extract_text(last_tree(ctx)) =~ "esc:0"
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+  end
+
   # -- Text extraction helper for child component tests --
 
   defp collect_all_text(nil), do: []
