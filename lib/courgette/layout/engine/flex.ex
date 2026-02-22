@@ -27,7 +27,28 @@ defmodule Courgette.Layout.Engine.Flex do
   @spec layout(Courgette.Element.t(), Geometry.size()) :: map()
   def layout(element, available) do
     style = Style.from_element(element)
-    compute_node(element, style, available)
+    result = compute_node(element, style, available)
+    round_layout(result, 0.0, 0.0)
+  end
+
+  # Rounding pass — snaps layout coordinates to pixel boundaries using cumulative
+  # absolute coordinates, following Taffy/Yoga's approach. This prevents gaps
+  # between children by computing sizes as the difference between rounded edges.
+  defp round_layout(node, cum_x, cum_y) do
+    abs_x = cum_x + node.x
+    abs_y = cum_y + node.y
+
+    rounded_x = Float.round(node.x)
+    rounded_y = Float.round(node.y)
+    rounded_w = Float.round(abs_x + node.width) - Float.round(abs_x)
+    rounded_h = Float.round(abs_y + node.height) - Float.round(abs_y)
+
+    children =
+      Enum.map(node.children, fn child ->
+        round_layout(child, abs_x, abs_y)
+      end)
+
+    %{node | x: rounded_x, y: rounded_y, width: rounded_w, height: rounded_h, children: children}
   end
 
   # ── Node dispatch ─────────────────────────────────────────────────
@@ -106,17 +127,33 @@ defmodule Courgette.Layout.Engine.Flex do
     inset_main = Geometry.main_inset(axis, border) + Geometry.main_inset(axis, padding)
     inset_cross = Geometry.cross_inset(axis, border) + Geometry.cross_inset(axis, padding)
 
-    # Resolve outer container size (from style or available)
-    container_width = style.width || available.width
-    container_height = style.height || available.height
+    # Resolve outer container size (from style or available).
+    # Apply min/max only when the container has its own explicit size —
+    # the available space fallback is not the container's dimension.
+    container_width =
+      if style.width != nil do
+        Geometry.maybe_clamp(style.width, style.min_width, style.max_width)
+      else
+        available.width
+      end
+
+    container_height =
+      if style.height != nil do
+        Geometry.maybe_clamp(style.height, style.min_height, style.max_height)
+      else
+        available.height
+      end
+
     container_size = %{width: container_width, height: container_height}
 
     outer_main = Geometry.main(axis, container_size)
     outer_cross = Geometry.cross(axis, container_size)
 
-    # Inner space = outer - insets
+    # Inner space = outer - insets (floor at 0 — padding/border can't go negative)
     inner_main = Geometry.maybe_sub_definite(outer_main, inset_main)
+    inner_main = if inner_main != nil, do: max(inner_main, 0.0), else: nil
     inner_cross = Geometry.maybe_sub_definite(outer_cross, inset_cross)
+    inner_cross = if inner_cross != nil, do: max(inner_cross, 0.0), else: nil
 
     inner_available = Geometry.from_main_cross(axis, inner_main, inner_cross)
 
@@ -127,7 +164,16 @@ defmodule Courgette.Layout.Engine.Flex do
     items = determine_flex_base_sizes(items, axis, inner_available)
 
     # Step 4: Collect flex lines
-    lines = collect_flex_lines(items, style, axis, inner_main)
+    # For wrapping, if no definite main size, use max constraint as wrapping boundary
+    wrap_main =
+      if inner_main == nil and style.flex_wrap == :wrap do
+        max_main = Geometry.main(axis, %{width: style.max_width, height: style.max_height})
+        Geometry.maybe_sub_definite(max_main, inset_main)
+      else
+        inner_main
+      end
+
+    lines = collect_flex_lines(items, style, axis, wrap_main)
 
     # Step 5: Determine container main size
     {container_main_inner, lines} = determine_container_main_size(lines, style, axis, inner_main)
@@ -139,7 +185,7 @@ defmodule Courgette.Layout.Engine.Flex do
     lines = determine_hypothetical_cross_sizes(lines, axis, inner_available)
 
     # Step 8: Calculate line cross sizes
-    lines = calculate_line_cross_sizes(lines, axis)
+    lines = calculate_line_cross_sizes(lines, axis, style, inner_cross)
 
     # Step 9: Handle align-content: stretch
     container_cross_inner = Geometry.or_else(inner_cross, 0.0)
@@ -171,13 +217,16 @@ defmodule Courgette.Layout.Engine.Flex do
     children = final_layout_pass(lines, axis, style)
 
     # Compute final container outer size
-    final_main = container_main_inner + inset_main
-    final_cross = container_cross_inner + inset_cross
+    # Ensure padding/border can't be squeezed below their minimum
+    final_main = max(container_main_inner + inset_main, inset_main)
+    final_cross = max(container_cross_inner + inset_cross, inset_cross)
 
-    # Apply min/max to container
+    # Apply min/max to container, but padding+border is an absolute floor
     final_size = Geometry.from_main_cross(axis, final_main, final_cross)
-    final_w = Geometry.maybe_clamp(final_size.width, style.min_width, style.max_width)
-    final_h = Geometry.maybe_clamp(final_size.height, style.min_height, style.max_height)
+    inset_w = Geometry.rect_horizontal(border) + Geometry.rect_horizontal(padding)
+    inset_h = Geometry.rect_vertical(border) + Geometry.rect_vertical(padding)
+    final_w = max(Geometry.maybe_clamp(final_size.width, style.min_width, style.max_width), inset_w)
+    final_h = max(Geometry.maybe_clamp(final_size.height, style.min_height, style.max_height), inset_h)
 
     # Apply margin to position
     margin_left = margin.left
@@ -268,7 +317,10 @@ defmodule Courgette.Layout.Engine.Flex do
             value + content_box_inset
         end
 
-      inner_flex_basis = max(flex_basis - content_box_inset, 0.0)
+      # Floor flex-basis at padding+border sum (CSS spec violation that matches Chrome/Firefox)
+      # This ensures inner_flex_basis is never negative.
+      flex_basis = max(flex_basis, content_box_inset)
+      inner_flex_basis = flex_basis - content_box_inset
 
       # Hypothetical main size = flex_basis clamped to min/max
       # CSS automatic minimum size: if no explicit min is set, use content min size
@@ -282,17 +334,30 @@ defmodule Courgette.Layout.Engine.Flex do
           # CSS automatic minimum size:
           # - If item has specified main size: min(specified, content_min)
           # - Otherwise: content_min
+          # - Always clamped by max main size (CSS spec: "further clamped to
+          #   not exceed the item's max main size property")
           content_min = compute_content_min_main(item.element, style, axis, available)
           specified_main = Geometry.main(axis, %{width: style.width, height: style.height})
 
-          if specified_main != nil do
-            min(specified_main, content_min)
-          else
-            content_min
-          end
+          auto_min =
+            if specified_main != nil do
+              min(specified_main, content_min)
+            else
+              content_min
+            end
+
+          # Clamp by max constraint
+          Geometry.maybe_clamp(auto_min, nil, max_main)
         end
 
-      hyp_inner_main = Geometry.maybe_clamp(inner_flex_basis, min_main, max_main)
+      # Convert outer min/max to inner values for clamping inner_flex_basis
+      min_main_inner =
+        if min_main != nil, do: max(min_main - content_box_inset, 0.0), else: nil
+
+      max_main_inner =
+        if max_main != nil, do: max(max_main - content_box_inset, 0.0), else: nil
+
+      hyp_inner_main = Geometry.maybe_clamp(inner_flex_basis, min_main_inner, max_main_inner)
       hyp_outer_main = hyp_inner_main + content_box_inset + item.margin_main
 
       # Cross size — use explicit if set, otherwise will be computed later
@@ -300,7 +365,18 @@ defmodule Courgette.Layout.Engine.Flex do
 
       hyp_inner_cross =
         if cross_size != nil do
-          max(cross_size - content_box_inset_cross, 0.0)
+          inner = max(cross_size - content_box_inset_cross, 0.0)
+          # Clamp to min/max cross (converted to inner values)
+          min_cross = Geometry.cross(axis, item.min_size)
+          max_cross = Geometry.cross(axis, item.max_size)
+
+          min_cross_inner =
+            if min_cross != nil, do: max(min_cross - content_box_inset_cross, 0.0), else: nil
+
+          max_cross_inner =
+            if max_cross != nil, do: max(max_cross - content_box_inset_cross, 0.0), else: nil
+
+          Geometry.maybe_clamp(inner, min_cross_inner, max_cross_inner)
         else
           nil
         end
@@ -367,14 +443,21 @@ defmodule Courgette.Layout.Engine.Flex do
         end
 
       _ ->
-        # For container children, compute max-content size (unconstrained main axis)
+        # For container children, compute max-content size (unconstrained main axis).
+        # Strip min/max from style so that the intrinsic size reflects content only —
+        # min/max constraints are applied separately during flex resolution (step 6).
+        content_style = %{style |
+          min_width: nil, max_width: nil,
+          min_height: nil, max_height: nil
+        }
+
         max_content_available =
           case axis do
             :row -> %{width: nil, height: available.height}
             :column -> %{width: available.width, height: nil}
           end
 
-        child_result = compute_node(element, style, max_content_available)
+        child_result = compute_node(element, content_style, max_content_available)
 
         case axis do
           :row -> child_result.width
@@ -389,11 +472,18 @@ defmodule Courgette.Layout.Engine.Flex do
   # For text: uses min-content width (longest word) or 0 for truncated text.
   # For containers: recursively computes min-content sizes of children and
   # aggregates based on flex direction (sum for main axis, max for cross axis).
+  #
+  # CSS spec: When overflow is not visible, the automatic minimum size is 0
+  # (content can't overflow, so it doesn't contribute to minimum sizing).
   defp compute_content_min_main(element, style, axis, _available) do
     border_main = Geometry.main_inset(axis, style.border)
     padding_main = Geometry.main_inset(axis, style.padding)
     content_box_inset = border_main + padding_main
 
+    # overflow:hidden → automatic minimum is just padding+border (content is clipped)
+    if style.overflow == :hidden do
+      content_box_inset
+    else
     case element.type do
       :text ->
         text = element.children |> Enum.filter(&is_binary/1) |> Enum.join()
@@ -410,6 +500,10 @@ defmodule Courgette.Layout.Engine.Flex do
         end
 
       _ ->
+        # Scrollable areas can overflow — their auto minimum is just insets
+        if element.type == :scrollable_area do
+          content_box_inset
+        else
         children =
           element.children
           |> Enum.filter(fn
@@ -471,6 +565,8 @@ defmodule Courgette.Layout.Engine.Flex do
 
           children_contribution + content_box_inset
         end
+        end
+    end
     end
   end
 
@@ -527,26 +623,16 @@ defmodule Courgette.Layout.Engine.Flex do
     if inner_main != nil do
       {inner_main, lines}
     else
-      # Sum hypothetical main sizes + gaps
-      container_main =
-        lines
-        |> Enum.map(fn line ->
-          item_sum =
-            line.items
-            |> Enum.map(fn item -> Geometry.main(axis, item.hypothetical_outer_size) || 0.0 end)
-            |> Enum.sum()
+      # No definite main size — compute using CSS intrinsic item contributions
+      # (https://www.w3.org/TR/css-flexbox-1/#intrinsic-main-sizes)
+      inset_main =
+        Geometry.main_inset(axis, style.border) + Geometry.main_inset(axis, style.padding)
 
-          gap_sum = max(length(line.items) - 1, 0) * style.gap_main
-          item_sum + gap_sum
-        end)
-        |> Enum.max(fn -> 0.0 end)
+      {container_main, lines} = compute_intrinsic_container_main(lines, axis, style, inset_main)
 
       # Clamp to min/max
       min_main = Geometry.main(axis, %{width: style.min_width, height: style.min_height})
       max_main = Geometry.main(axis, %{width: style.max_width, height: style.max_height})
-
-      inset_main =
-        Geometry.main_inset(axis, style.border) + Geometry.main_inset(axis, style.padding)
 
       container_main =
         Geometry.maybe_clamp(
@@ -558,6 +644,148 @@ defmodule Courgette.Layout.Engine.Flex do
       {container_main, lines}
     end
   end
+
+  # CSS intrinsic main size algorithm for auto-sized flex containers.
+  # Computes each item's content contribution, flex fraction, and derives the
+  # container's max-content main size following Taffy's implementation of
+  # https://www.w3.org/TR/css-flexbox-1/#intrinsic-item-contributions
+  defp compute_intrinsic_container_main(lines, axis, style, _inset_main) do
+    lines =
+      Enum.map(lines, fn line ->
+        items =
+          Enum.map(line.items, fn item ->
+            style = item.style
+            padding_border_main =
+              Geometry.main_inset(axis, style.border) + Geometry.main_inset(axis, style.padding)
+            specified_main =
+              Geometry.main(axis, %{width: style.width, height: style.height})
+
+            # Clamping basis = max(flex_basis, specified_size)
+            clamping_basis =
+              if specified_main != nil do
+                max(item.flex_basis, specified_main)
+              else
+                item.flex_basis
+              end
+
+            # flex_basis_min/max only apply when the item can't grow/shrink
+            flex_basis_min = if style.flex_shrink == 0.0, do: clamping_basis, else: nil
+            flex_basis_max = if style.flex_grow == 0.0, do: clamping_basis, else: nil
+
+            style_min = Geometry.main(axis, item.min_size)
+            style_max = Geometry.main(axis, item.max_size)
+
+            min_main_size =
+              [style_min, flex_basis_min]
+              |> Enum.reject(&is_nil/1)
+              |> case do
+                [] -> item.resolved_min_main || 0.0
+                vals -> Enum.max(vals) |> max(item.resolved_min_main || 0.0)
+              end
+
+            max_main_size =
+              [style_max, flex_basis_max]
+              |> Enum.reject(&is_nil/1)
+              |> case do
+                [] -> :infinity
+                vals -> Enum.min(vals)
+              end
+
+            content_contribution =
+              cond do
+                # If clamping values are such that max <= min, skip the expensive content computation
+                max_main_size != :infinity and max_main_size <= min_main_size ->
+                  min_main_size + item.margin_main
+
+                specified_main != nil and max_main_size != :infinity and max_main_size <= specified_main ->
+                  val = specified_main |> maybe_min(max_main_size) |> max(min_main_size)
+                  val + item.margin_main
+
+                true ->
+                  # Compute content size using InherentSize (includes item's own size properties)
+                  inherent_available =
+                    case axis do
+                      :row -> %{width: nil, height: Geometry.cross(axis, %{width: style.width, height: style.height})}
+                      :column -> %{width: Geometry.cross(axis, %{width: style.width, height: style.height}), height: nil}
+                    end
+
+                  content_result = compute_node(item.element, style, inherent_available)
+                  content_main_size =
+                    case axis do
+                      :row -> content_result.width
+                      :column -> content_result.height
+                    end
+                  content_main_size = content_main_size + item.margin_main
+
+                  # For row direction, just clamp. For column, also use max with flex_basis.
+                  if axis == :row do
+                    content_main_size
+                    |> maybe_clamp_val(style_min, style_max)
+                    |> max(padding_border_main)
+                  else
+                    content_main_size
+                    |> max(item.flex_basis)
+                    |> maybe_clamp_val(style_min, style_max)
+                    |> max(padding_border_main)
+                  end
+              end
+
+            # Compute flex fraction
+            diff = content_contribution - item.flex_basis
+            content_flex_fraction =
+              cond do
+                diff > 0.0 -> diff / max(1.0, style.flex_grow)
+                diff < 0.0 -> diff / max(1.0, style.flex_shrink * item.inner_flex_basis)
+                true -> 0.0
+              end
+
+            Map.put(item, :content_flex_fraction, content_flex_fraction)
+          end)
+
+        # Compute final item sizes using flex fractions
+        items =
+          Enum.map(items, fn item ->
+            flex_fraction = item.content_flex_fraction
+
+            flex_contribution =
+              cond do
+                flex_fraction > 0.0 -> max(1.0, item.style.flex_grow) * flex_fraction
+                flex_fraction < 0.0 -> max(1.0, item.style.flex_shrink) * item.inner_flex_basis * flex_fraction
+                true -> 0.0
+              end
+
+            size = item.flex_basis + flex_contribution
+
+            item
+            |> Map.put(:outer_target_size, Geometry.set_main(axis, item.outer_target_size, size))
+            |> Map.put(:target_size, Geometry.set_main(axis, item.target_size, size))
+          end)
+
+        item_main_sum =
+          items
+          |> Enum.map(fn item -> Geometry.main(axis, item.outer_target_size) || 0.0 end)
+          |> Enum.sum()
+
+        gap_sum = max(length(items) - 1, 0) * style.gap_main
+
+        {%{line | items: items}, item_main_sum + gap_sum}
+      end)
+
+    {lines, line_sizes} = Enum.unzip(lines)
+
+    container_main =
+      line_sizes
+      |> Enum.max(fn -> 0.0 end)
+
+    {container_main, lines}
+  end
+
+  defp maybe_min(val, cap), do: min(val, cap)
+
+  defp maybe_clamp_val(val, nil, nil), do: val
+  defp maybe_clamp_val(val, min_v, nil) when min_v != nil, do: max(val, min_v)
+  defp maybe_clamp_val(val, nil, max_v) when max_v != nil, do: min(val, max_v)
+  defp maybe_clamp_val(val, min_v, max_v), do: val |> max(min_v) |> min(max_v)
 
   # ── Step 6: Resolve flexible lengths ──────────────────────────────
 
@@ -572,17 +800,19 @@ defmodule Courgette.Layout.Engine.Flex do
     if items == [] do
       items
     else
-      # Calculate initial free space (subtract gaps)
-      used =
+      total_gap = max(length(items) - 1, 0) * gap_main
+
+      # 1. Determine used flex factor
+      total_hyp_outer =
         Enum.reduce(items, 0.0, fn item, acc ->
           acc + (Geometry.main(axis, item.hypothetical_outer_size) || 0.0)
         end)
 
-      total_gap = max(length(items) - 1, 0) * gap_main
-      initial_free = container_main - used - total_gap
-      growing = initial_free >= 0
+      used_flex_factor = total_gap + total_hyp_outer
+      growing = used_flex_factor < (container_main || 0.0)
+      shrinking = used_flex_factor > (container_main || 0.0)
 
-      # Initialize: set target to hypothetical, freeze inflexible items
+      # 2. Size inflexible items — freeze, setting target to hypothetical
       items =
         Enum.map(items, fn item ->
           style = item.style
@@ -592,14 +822,18 @@ defmodule Courgette.Layout.Engine.Flex do
           padding_main = Geometry.main_inset(axis, style.padding)
           content_box_inset = border_main + padding_main
 
+          # All items start with target = hypothetical
+          # Compare in the same space (inner) for freeze check
           freeze =
             cond do
-              growing and style.flex_grow == 0.0 -> true
-              not growing and style.flex_shrink == 0.0 -> true
+              not growing and not shrinking -> true
+              style.flex_grow == 0.0 and style.flex_shrink == 0.0 -> true
+              growing and item.inner_flex_basis > hyp_inner -> true
+              shrinking and item.inner_flex_basis < hyp_inner -> true
               true -> false
             end
 
-          target = if freeze, do: hyp_inner, else: item.inner_flex_basis
+          target = hyp_inner
 
           item
           |> Map.put(:frozen, freeze)
@@ -611,79 +845,93 @@ defmodule Courgette.Layout.Engine.Flex do
           |> Map.put(:content_box_inset, content_box_inset)
         end)
 
-      # Iterative resolution
-      do_resolve_flex(items, axis, container_main, growing, total_gap, 10)
+      if not growing and not shrinking do
+        finalize_flex_items(items, axis)
+      else
+        # 3. Calculate initial free space
+        initial_used =
+          total_gap +
+            Enum.reduce(items, 0.0, fn item, acc ->
+              if item.frozen do
+                acc + (Geometry.main(axis, item.outer_target_size) || 0.0)
+              else
+                acc + item.flex_basis + item.margin_main
+              end
+            end)
+
+        initial_free = if container_main != nil, do: container_main - initial_used, else: 0.0
+
+        # 4. Loop
+        do_resolve_flex(items, axis, container_main, growing, shrinking, total_gap, initial_free, 10)
+      end
     end
   end
 
-  defp do_resolve_flex(items, axis, container_main, growing, total_gap, iterations_left) do
+  defp do_resolve_flex(items, axis, container_main, growing, shrinking, total_gap, initial_free, iterations_left) do
     all_frozen = Enum.all?(items, & &1.frozen)
 
     if all_frozen or iterations_left <= 0 do
       finalize_flex_items(items, axis)
     else
-      # Calculate free space among unfrozen items
-      {frozen_space, unfrozen_flex_factor, unfrozen_items} =
-        Enum.reduce(items, {0.0, 0.0, []}, fn item, {fs, ff, ui} ->
-          if item.frozen do
-            outer = Geometry.main(axis, item.outer_target_size) || 0.0
-            {fs + outer, ff, ui}
-          else
-            factor = if growing, do: item.style.flex_grow, else: item.style.flex_shrink
-            {fs, ff + factor, [item | ui]}
-          end
+      # b. Calculate remaining free space
+      used =
+        total_gap +
+          Enum.reduce(items, 0.0, fn item, acc ->
+            if item.frozen do
+              acc + (Geometry.main(axis, item.outer_target_size) || 0.0)
+            else
+              acc + item.flex_basis + item.margin_main
+            end
+          end)
+
+      {sum_flex_grow, sum_flex_shrink} =
+        Enum.reduce(items, {0.0, 0.0}, fn item, {sg, ss} ->
+          if item.frozen, do: {sg, ss}, else: {sg + item.style.flex_grow, ss + item.style.flex_shrink}
         end)
 
-      unfrozen_items = Enum.reverse(unfrozen_items)
-      free_space = container_main - frozen_space - total_gap
+      remaining_free = if container_main != nil, do: container_main - used, else: 0.0
 
-      # Distribute free space to unfrozen items
+      # When sum of flex factors < 1, only distribute that fraction of initial free space
+      free_space =
+        cond do
+          growing and sum_flex_grow < 1.0 ->
+            scaled = initial_free * sum_flex_grow
+            min(scaled, remaining_free)
+          shrinking and sum_flex_shrink < 1.0 ->
+            scaled = initial_free * sum_flex_shrink
+            max(scaled, remaining_free)
+          true ->
+            remaining_free
+        end
+
+      # c. Distribute free space proportional to flex factors
+      #    Target is computed from flex_basis (outer), then converted to inner
       items =
         Enum.map(items, fn item ->
           if item.frozen do
             item
           else
-            factor = if growing, do: item.style.flex_grow, else: item.style.flex_shrink
-
-            new_target =
-              if unfrozen_flex_factor == 0.0 do
-                item.inner_flex_basis
-              else
-                if growing do
-                  ratio = factor / unfrozen_flex_factor
-
-                  # Free space relative to unfrozen bases
-                  unfrozen_bases =
-                    Enum.reduce(unfrozen_items, 0.0, fn ui, acc ->
-                      acc + ui.inner_flex_basis + ui.content_box_inset + ui.margin_main
-                    end)
-
-                  item.inner_flex_basis + (free_space - unfrozen_bases) * ratio
-                else
-                  # Shrink
-                  scaled_factor = item.inner_flex_basis * factor
-
+            outer_target =
+              cond do
+                growing and sum_flex_grow > 0.0 ->
+                  item.flex_basis + free_space * (item.style.flex_grow / sum_flex_grow)
+                shrinking and sum_flex_shrink > 0.0 ->
+                  scaled_factor = item.inner_flex_basis * item.style.flex_shrink
                   total_scaled =
-                    Enum.reduce(unfrozen_items, 0.0, fn ui, acc ->
-                      acc + ui.inner_flex_basis * ui.style.flex_shrink
-                    end)
+                    items
+                    |> Enum.reject(& &1.frozen)
+                    |> Enum.reduce(0.0, fn ui, acc -> acc + ui.inner_flex_basis * ui.style.flex_shrink end)
 
-                  if total_scaled == 0.0 do
-                    item.inner_flex_basis
+                  if total_scaled > 0.0 do
+                    item.flex_basis + free_space * (scaled_factor / total_scaled)
                   else
-                    ratio = scaled_factor / total_scaled
-
-                    unfrozen_bases =
-                      Enum.reduce(unfrozen_items, 0.0, fn ui, acc ->
-                        acc + ui.inner_flex_basis + ui.content_box_inset + ui.margin_main
-                      end)
-
-                    item.inner_flex_basis + (free_space - unfrozen_bases) * ratio
+                    item.flex_basis
                   end
-                end
+                true ->
+                  item.flex_basis
               end
 
-            new_target = max(new_target, 0.0)
+            new_target = max(outer_target - item.content_box_inset, 0.0)
             Map.put(item, :target_size, Geometry.set_main(axis, item.target_size, new_target))
           end
         end)
@@ -744,7 +992,7 @@ defmodule Courgette.Layout.Engine.Flex do
           end
         end)
 
-      do_resolve_flex(items, axis, container_main, growing, total_gap, iterations_left - 1)
+      do_resolve_flex(items, axis, container_main, growing, shrinking, total_gap, initial_free, iterations_left - 1)
     end
   end
 
@@ -784,11 +1032,11 @@ defmodule Courgette.Layout.Engine.Flex do
             padding_cross = Geometry.cross_inset(axis, style.padding)
             content_box_inset_cross = border_cross + padding_cross
 
-            # Clamp cross to min/max
+            # Clamp cross to min/max (floor inner values at 0 — padding can't go negative)
             min_cross = Geometry.cross(axis, item.min_size)
             max_cross = Geometry.cross(axis, item.max_size)
-            min_inner = Geometry.maybe_sub_definite(min_cross, content_box_inset_cross)
-            max_inner = Geometry.maybe_sub_definite(max_cross, content_box_inset_cross)
+            min_inner = if min_cross != nil, do: max(min_cross - content_box_inset_cross, 0.0), else: nil
+            max_inner = if max_cross != nil, do: max(max_cross - content_box_inset_cross, 0.0), else: nil
             cross = Geometry.maybe_clamp(cross, min_inner, max_inner)
 
             outer_cross = cross + content_box_inset_cross + item.margin_cross
@@ -842,12 +1090,27 @@ defmodule Courgette.Layout.Engine.Flex do
           :column -> text_w
         end
 
+      :scrollable_area ->
+        # Scrollable areas overflow — their cross size is 0 (content doesn't
+        # determine the container's cross dimension). Stretch will size them.
+        0.0
+
       _ ->
-        # For container children, lay out recursively
+        # For container children, lay out recursively.
+        # Wrapping containers need the parent's cross-axis available space
+        # so they know when to wrap. Non-wrapping containers use nil for
+        # cross-axis to get content-based sizing.
         child_available =
-          case axis do
-            :row -> %{width: resolved_main, height: available.height}
-            :column -> %{width: available.width, height: resolved_main}
+          if style.flex_wrap == :wrap do
+            case axis do
+              :row -> %{width: resolved_main, height: Geometry.cross(axis, available)}
+              :column -> %{width: Geometry.cross(axis, available), height: resolved_main}
+            end
+          else
+            case axis do
+              :row -> %{width: resolved_main, height: nil}
+              :column -> %{width: nil, height: resolved_main}
+            end
           end
 
         child_result = compute_node(item.element, style, child_available)
@@ -861,21 +1124,52 @@ defmodule Courgette.Layout.Engine.Flex do
 
   # ── Step 8: Calculate line cross sizes ────────────────────────────
 
-  defp calculate_line_cross_sizes(lines, axis) do
-    Enum.map(lines, fn line ->
-      if line.items == [] do
-        line
-      else
-        max_cross =
-          line.items
-          |> Enum.map(fn item ->
-            Geometry.cross(axis, item.hypothetical_outer_size) || 0.0
-          end)
-          |> Enum.max(fn -> 0.0 end)
+  defp calculate_line_cross_sizes(lines, axis, style, inner_cross) do
+    is_wrap = style.flex_wrap == :wrap
 
-        %{line | cross_size: max_cross}
+    if not is_wrap and inner_cross != nil and length(lines) == 1 do
+      # Single-line with definite cross: line cross = container inner cross
+      min_cross = Geometry.cross(axis, %{width: style.min_width, height: style.min_height})
+      max_cross = Geometry.cross(axis, %{width: style.max_width, height: style.max_height})
+      inset_cross = Geometry.cross_inset(axis, style.border) + Geometry.cross_inset(axis, style.padding)
+      line_cross =
+        Geometry.maybe_clamp(inner_cross + inset_cross, min_cross, max_cross)
+        |> Kernel.-(inset_cross)
+        |> max(0.0)
+
+      Enum.map(lines, fn line -> %{line | cross_size: line_cross} end)
+    else
+      lines = Enum.map(lines, fn line ->
+        if line.items == [] do
+          line
+        else
+          max_cross =
+            line.items
+            |> Enum.map(fn item ->
+              Geometry.cross(axis, item.hypothetical_outer_size) || 0.0
+            end)
+            |> Enum.max(fn -> 0.0 end)
+
+          %{line | cross_size: max_cross}
+        end
+      end)
+
+      # Single-line without definite cross: clamp by min/max
+      if not is_wrap and length(lines) == 1 do
+        min_cross = Geometry.cross(axis, %{width: style.min_width, height: style.min_height})
+        max_cross = Geometry.cross(axis, %{width: style.max_width, height: style.max_height})
+        inset_cross = Geometry.cross_inset(axis, style.border) + Geometry.cross_inset(axis, style.padding)
+
+        Enum.map(lines, fn line ->
+          min_inner = if min_cross != nil, do: max(min_cross - inset_cross, 0.0), else: nil
+          max_inner = if max_cross != nil, do: max(max_cross - inset_cross, 0.0), else: nil
+          clamped = Geometry.maybe_clamp(line.cross_size, min_inner, max_inner)
+          %{line | cross_size: clamped}
+        end)
+      else
+        lines
       end
-    end)
+    end
   end
 
   # ── Step 9: align-content: stretch ────────────────────────────────
@@ -917,11 +1211,11 @@ defmodule Courgette.Layout.Engine.Flex do
             # Stretch to fill line cross size minus margins
             target_cross = max(line.cross_size - item.margin_cross - cross_inset, 0.0)
 
-            # Clamp to min/max
+            # Clamp to min/max (floor inner values at 0 — padding can't go negative)
             min_cross = Geometry.cross(axis, item.min_size)
             max_cross = Geometry.cross(axis, item.max_size)
-            min_inner = Geometry.maybe_sub_definite(min_cross, cross_inset)
-            max_inner = Geometry.maybe_sub_definite(max_cross, cross_inset)
+            min_inner = if min_cross != nil, do: max(min_cross - cross_inset, 0.0), else: nil
+            max_inner = if max_cross != nil, do: max(max_cross - cross_inset, 0.0), else: nil
             target_cross = Geometry.maybe_clamp(target_cross, min_inner, max_inner)
 
             # Only stretch if no explicit cross size is set
@@ -935,8 +1229,9 @@ defmodule Courgette.Layout.Engine.Flex do
                 Geometry.set_cross(axis, item.outer_target_size, target_cross + cross_inset + item.margin_cross)
               )
             else
-              # Use explicit cross size
+              # Use explicit cross size, clamped to min/max
               inner = max(explicit_cross - cross_inset, 0.0)
+              inner = Geometry.maybe_clamp(inner, min_inner, max_inner)
 
               item
               |> Map.put(:target_size, Geometry.set_cross(axis, item.target_size, inner))
@@ -953,6 +1248,13 @@ defmodule Courgette.Layout.Engine.Flex do
             border_cross = Geometry.cross_inset(axis, style.border)
             padding_cross = Geometry.cross_inset(axis, style.padding)
             cross_inset = border_cross + padding_cross
+
+            # Clamp to min/max (floor inner values at 0 — padding can't go negative)
+            min_cross = Geometry.cross(axis, item.min_size)
+            max_cross = Geometry.cross(axis, item.max_size)
+            min_inner = if min_cross != nil, do: max(min_cross - cross_inset, 0.0), else: nil
+            max_inner = if max_cross != nil, do: max(max_cross - cross_inset, 0.0), else: nil
+            hyp_cross = Geometry.maybe_clamp(hyp_cross, min_inner, max_inner)
 
             item
             |> Map.put(:target_size, Geometry.set_cross(axis, item.target_size, hyp_cross))
@@ -996,18 +1298,11 @@ defmodule Courgette.Layout.Engine.Flex do
         gap_total = max(n - 1, 0) * style.gap_main
         free = container_main - used - gap_total
 
+        # Apply alignment fallback per CSS spec
+        mode = apply_alignment_fallback(style.justify_content, n, free)
+
         {initial_offset, between_offset} =
-          case style.justify_content do
-            :flex_start -> {0.0, 0.0}
-            :flex_end -> {max(free, 0.0), 0.0}
-            :center -> {max(free / 2, 0.0), 0.0}
-            :space_between ->
-              if n <= 1, do: {0.0, 0.0}, else: {0.0, max(free, 0.0) / (n - 1)}
-            :space_around ->
-              if n == 0, do: {0.0, 0.0}, else: {max(free, 0.0) / (n * 2), max(free, 0.0) / n}
-            :space_evenly ->
-              if n == 0, do: {0.0, 0.0}, else: {max(free, 0.0) / (n + 1), max(free, 0.0) / (n + 1)}
-          end
+          compute_alignment_offsets(mode, n, free, style.gap_main)
 
         {items, _} =
           Enum.map_reduce(items, initial_offset, fn item, offset ->
@@ -1021,6 +1316,45 @@ defmodule Courgette.Layout.Engine.Flex do
     end)
   end
 
+  # CSS alignment fallback per spec + w3c/csswg-drafts#10154:
+  # 1. If only 1 item or negative free space, distributed modes fall back (with is_safe=true)
+  # 2. If free_space <= 0 and is_safe, fall back to flex_start
+  defp apply_alignment_fallback(mode, num_items, free_space) do
+    {mode, is_safe} =
+      if num_items <= 1 or free_space <= 0.0 do
+        case mode do
+          :stretch -> {:flex_start, true}
+          :space_between -> {:flex_start, true}
+          :space_around -> {:center, true}
+          :space_evenly -> {:center, true}
+          other -> {other, false}
+        end
+      else
+        {mode, false}
+      end
+
+    if free_space <= 0.0 and is_safe do
+      :flex_start
+    else
+      mode
+    end
+  end
+
+  defp compute_alignment_offsets(mode, n, free, _gap) do
+    case mode do
+      :flex_start -> {0.0, 0.0}
+      :flex_end -> {free, 0.0}
+      :center -> {free / 2.0, 0.0}
+      :space_between ->
+        if n <= 1, do: {0.0, 0.0}, else: {0.0, max(free, 0.0) / (n - 1)}
+      :space_around ->
+        {free / (n * 2), free / n}
+      :space_evenly ->
+        {free / (n + 1), free / (n + 1)}
+      :stretch -> {0.0, 0.0}
+    end
+  end
+
   # ── Step 12: Cross-axis alignment ─────────────────────────────────
 
   defp resolve_cross_axis_alignment(lines, axis, container_style) do
@@ -1029,13 +1363,14 @@ defmodule Courgette.Layout.Engine.Flex do
         Enum.map(line.items, fn item ->
           align = resolve_align_self(item.style, container_style)
           outer_cross = Geometry.cross(axis, item.outer_target_size) || 0.0
-          line_cross = line.cross_size
+          free_space = line.cross_size - outer_cross
 
+          # Allow negative positioning when child is bigger than line
           offset =
             case align do
               :flex_start -> 0.0
-              :flex_end -> max(line_cross - outer_cross, 0.0)
-              :center -> max((line_cross - outer_cross) / 2, 0.0)
+              :flex_end -> free_space
+              :center -> free_space / 2.0
               :stretch -> 0.0
               :baseline -> 0.0
             end
@@ -1057,17 +1392,8 @@ defmodule Courgette.Layout.Engine.Flex do
     gap_total = max(n - 1, 0) * style.gap_cross
     free = container_cross - total_cross - gap_total
 
-    {initial_offset, between_offset} =
-      case style.align_content do
-        :flex_start -> {0.0, 0.0}
-        :flex_end -> {max(free, 0.0), 0.0}
-        :center -> {max(free / 2, 0.0), 0.0}
-        :stretch -> {0.0, 0.0}
-        :space_between ->
-          if n <= 1, do: {0.0, 0.0}, else: {0.0, max(free, 0.0) / (n - 1)}
-        :space_around ->
-          if n == 0, do: {0.0, 0.0}, else: {max(free, 0.0) / (n * 2), max(free, 0.0) / n}
-      end
+    mode = apply_alignment_fallback(style.align_content, n, free)
+    {initial_offset, between_offset} = compute_alignment_offsets(mode, n, free, style.gap_cross)
 
     {lines, _} =
       Enum.map_reduce(lines, initial_offset, fn line, offset ->
@@ -1119,6 +1445,7 @@ defmodule Courgette.Layout.Engine.Flex do
             :row -> {outer_main, outer_cross}
             :column -> {outer_cross, outer_main}
           end
+
 
         # Recurse into children
         child_available = %{width: w, height: h}

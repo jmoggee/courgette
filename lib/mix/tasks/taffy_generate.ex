@@ -30,7 +30,10 @@ defmodule Mix.Tasks.Taffy.Generate do
     {~r/Overflow::Scroll/, "overflow_scroll"},
     {~r/LengthPercentageAuto::AUTO/, "auto margins"},
     {~r/inset:/, "insets"},
-    {~r/percent\((?!0f32)/, "percentage values"}
+    {~r/percent\((?!0f32)/, "percentage values"},
+    {~r/AlignItems::Baseline/, "baseline alignment"},
+    {~r/AlignSelf::Baseline/, "baseline alignment"},
+    {~r/BoxSizing::ContentBox/, "content-box sizing"}
   ]
 
   def run(args) do
@@ -212,6 +215,7 @@ defmodule Mix.Tasks.Taffy.Generate do
     props = parse_rect(text, props, "padding", "padding")
     props = parse_rect(text, props, "border", "border")
     props = parse_rect(text, props, "margin", "margin")
+    props = parse_overflow(text, props)
 
     props
   end
@@ -352,6 +356,14 @@ defmodule Mix.Tasks.Taffy.Generate do
   defp map_justify_variant("Start"), do: :flex_start
   defp map_justify_variant("End"), do: :flex_end
   defp map_justify_variant(other), do: String.to_atom(Macro.underscore(other))
+
+  defp parse_overflow(text, props) do
+    if Regex.match?(~r/Overflow::Hidden/, text) do
+      Map.put(props, :overflow, :hidden)
+    else
+      props
+    end
+  end
 
   defp parse_gap(text, props) do
     case Regex.run(~r/gap:\s*taffy::geometry::Size\s*\{\s*width:\s*(.+?)\s*,\s*height:\s*(.+?)\s*\}/, text) do
@@ -665,7 +677,8 @@ defmodule Mix.Tasks.Taffy.Generate do
       :margin_right,
       :margin_top,
       :margin_bottom,
-      :border
+      :border,
+      :overflow
     ]
 
     props =

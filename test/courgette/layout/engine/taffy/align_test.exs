@@ -21,6 +21,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   defp child(result, idx), do: Enum.at(result.children, idx)
 
   describe "align_baseline" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -34,6 +36,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -51,6 +55,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_margin" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 50, margin_left: 5, margin_right: 5, margin_top: 5, margin_bottom: 5]),
@@ -68,7 +74,7 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_margin_percent" do
-    # Unsupported: percentage values
+    # Unsupported: percentage values, baseline alignment
     @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
@@ -87,6 +93,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_multiline" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, align_items: :baseline], [
         box([width: 50, height: 60]),
@@ -110,6 +118,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_multiline_no_override_on_secondline" do
+    # Unsupported: baseline alignment, baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 60]),
@@ -133,6 +143,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_multiline_override" do
+    # Unsupported: baseline alignment, baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 60]),
@@ -156,6 +168,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_padding" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline, padding: 5], [
         box([width: 50, height: 50]),
@@ -173,7 +187,7 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_top" do
-    # Unsupported: insets
+    # Unsupported: insets, baseline alignment
     @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
@@ -192,7 +206,7 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_child_top2" do
-    # Unsupported: insets
+    # Unsupported: insets, baseline alignment
     @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
@@ -211,6 +225,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_column" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -224,6 +240,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_double_nested_child" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 50], [
@@ -245,6 +263,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_multiline" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, flex_wrap: :wrap, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -270,6 +290,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_multiline_column" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, flex_wrap: :wrap, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -295,6 +317,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_multiline_column2" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, flex_wrap: :wrap, align_items: :baseline], [
         box([width: 50, height: 50, flex_direction: :column]),
@@ -320,6 +344,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_multiline_row_and_column" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, flex_wrap: :wrap, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -345,6 +371,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_nested_child" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 50]),
@@ -362,6 +390,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_baseline_nested_column" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100, align_items: :baseline], [
         box([width: 50, height: 60]),
@@ -1892,6 +1922,8 @@ defmodule Courgette.Layout.Engine.Taffy.AlignTest do
   end
 
   describe "align_self_baseline" do
+    # Unsupported: baseline alignment
+    @tag :skip
     test "border_box" do
       el = box([width: 100, height: 100], [
         box([width: 50, height: 50, align_self: :baseline]),

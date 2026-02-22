@@ -173,8 +173,9 @@ defmodule Courgette.Layout.Engine.FlexTest do
       c0 = child(result, 0)
       c1 = child(result, 1)
 
-      assert_in_delta c0.width, 33.33, 0.01
-      assert_in_delta c1.width, 66.67, 0.01
+      # After pixel rounding: 33 + 67 = 100 (exact pixel fit)
+      assert_in_delta c0.width, 33, 0.5
+      assert_in_delta c1.width, 67, 0.5
     end
 
     test "flex_grow with flex_basis" do

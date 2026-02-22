@@ -157,7 +157,9 @@ defmodule Courgette.Layout.Engine.Geometry do
   def maybe_clamp(val, nil, max_val) when is_number(max_val), do: min(val, max_val)
 
   def maybe_clamp(val, min_val, max_val) when is_number(min_val) and is_number(max_val) do
-    val |> max(min_val) |> min(max_val)
+    # CSS spec: min wins over max when min > max
+    effective_max = max(max_val, min_val)
+    val |> max(min_val) |> min(effective_max)
   end
 
   @doc "Adds a definite value to a maybe-nil value. Returns nil if the base is nil."

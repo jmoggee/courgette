@@ -31,7 +31,7 @@ defmodule Courgette.Layout.Engine.Style do
           border: Geometry.rect(),
           gap_main: float(),
           gap_cross: float(),
-          overflow: :visible | :word_wrap | :wrap | :truncate
+          overflow: :visible | :hidden | :word_wrap | :wrap | :truncate
         }
 
   defstruct flex_direction: :row,
