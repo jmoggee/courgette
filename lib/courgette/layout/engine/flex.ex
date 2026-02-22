@@ -385,7 +385,11 @@ defmodule Courgette.Layout.Engine.Flex do
 
   # Compute automatic minimum main size (CSS "implied minimum main size")
   # This computes the minimum size based on CONTENT only, ignoring explicit main size.
-  defp compute_content_min_main(element, style, axis, available) do
+  #
+  # For text: uses min-content width (longest word) or 0 for truncated text.
+  # For containers: recursively computes min-content sizes of children and
+  # aggregates based on flex direction (sum for main axis, max for cross axis).
+  defp compute_content_min_main(element, style, axis, _available) do
     border_main = Geometry.main_inset(axis, style.border)
     padding_main = Geometry.main_inset(axis, style.padding)
     content_box_inset = border_main + padding_main
@@ -393,7 +397,12 @@ defmodule Courgette.Layout.Engine.Flex do
     case element.type do
       :text ->
         text = element.children |> Enum.filter(&is_binary/1) |> Enum.join()
-        min_w = Text.min_content_width(text)
+
+        min_w =
+          case style.overflow do
+            :truncate -> 0.0
+            _ -> Text.min_content_width(text)
+          end
 
         case axis do
           :row -> min_w + content_box_inset
@@ -401,29 +410,66 @@ defmodule Courgette.Layout.Engine.Flex do
         end
 
       _ ->
-        if element.children == [] do
+        children =
+          element.children
+          |> Enum.filter(fn
+            child when is_binary(child) -> false
+            _ -> true
+          end)
+
+        if children == [] do
           # Empty container — content minimum is just border + padding
           content_box_inset
         else
-          # Override the style to remove explicit main size for content sizing
-          override_style =
-            case axis do
-              :row -> %{style | width: nil}
-              :column -> %{style | height: nil}
+          # Recursively compute each child's min-content size in the requested axis.
+          # If a child has an explicit size in the measured axis, use that directly
+          # (its specified size IS its min-content contribution).
+          child_mins =
+            Enum.map(children, fn child ->
+              child_style = Style.from_element(child)
+
+              margin_in_axis =
+                case axis do
+                  :row -> Geometry.rect_horizontal(child_style.margin)
+                  :column -> Geometry.rect_vertical(child_style.margin)
+                end
+
+              explicit_size =
+                case axis do
+                  :row -> child_style.width
+                  :column -> child_style.height
+                end
+
+              child_min =
+                if explicit_size != nil do
+                  explicit_size
+                else
+                  compute_content_min_main(child, child_style, axis, %{width: nil, height: nil})
+                end
+
+              child_min + margin_in_axis
+            end)
+
+          # Aggregate based on whether the container's flex direction aligns with
+          # the axis we're measuring:
+          #   Same axis (main) → children stack along it → sum (no-wrap) or max (wrap)
+          #   Cross axis       → children stack perpendicular → max
+          same_axis = axis == style.flex_direction
+
+          children_contribution =
+            if same_axis do
+              gap_total = max(length(child_mins) - 1, 0) * style.gap_main
+
+              if style.flex_wrap == :wrap do
+                Enum.max(child_mins)
+              else
+                Enum.sum(child_mins) + gap_total
+              end
+            else
+              Enum.max(child_mins)
             end
 
-          min_content_available =
-            case axis do
-              :row -> %{width: nil, height: available.height}
-              :column -> %{width: available.width, height: nil}
-            end
-
-          child_result = compute_node(element, override_style, min_content_available)
-
-          case axis do
-            :row -> child_result.width
-            :column -> child_result.height
-          end
+          children_contribution + content_box_inset
         end
     end
   end

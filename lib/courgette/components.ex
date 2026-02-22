@@ -37,7 +37,7 @@ defmodule Courgette.Components do
 
     char = if orientation == :vertical, do: @vertical_rule, else: @horizontal_rule
 
-    text color: color do
+    text color: color, overflow: :truncate do
       char
     end
   end
