@@ -662,6 +662,127 @@ defmodule Courgette.LiveComponent.ServerTest do
     def handle_event(_event, assigns), do: {:noreply, assigns}
   end
 
+  # -- Bubbling Test Components --
+
+  defmodule SelectiveChild do
+    @moduledoc """
+    A child that only handles {:key, {:char, "x"}} (changes assigns).
+    All other events pass through the catch-all unchanged → bubbles.
+    """
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :x_count, fn -> 0 end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      text(do: "selective:x=#{assigns.x_count}")
+    end
+
+    @impl true
+    def handle_event(:focus, assigns), do: {:noreply, assign(assigns, :focused, true)}
+    def handle_event(:blur, assigns), do: {:noreply, assign(assigns, :focused, false)}
+
+    def handle_event({:key, {:char, "x"}}, assigns) do
+      {:noreply, update(assigns, :x_count, &(&1 + 1))}
+    end
+
+    def handle_event(_event, assigns) do
+      {:noreply, assigns}
+    end
+  end
+
+  defmodule SideEffectChild do
+    @moduledoc """
+    On Enter, sends a message to parent_pid but returns unchanged assigns.
+    This tests the "side-effect-only handler" pattern.
+    """
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assigns}
+    end
+
+    @impl true
+    def render(_assigns) do
+      text(do: "side-effect-child")
+    end
+
+    @impl true
+    def handle_event(:focus, assigns), do: {:noreply, assign(assigns, :focused, true)}
+    def handle_event(:blur, assigns), do: {:noreply, assign(assigns, :focused, false)}
+
+    def handle_event({:key, :enter}, assigns) do
+      if assigns[:parent_pid] do
+        send(assigns.parent_pid, {:side_effect, :enter_pressed})
+      end
+
+      {:noreply, assigns}
+    end
+
+    def handle_event(_event, assigns), do: {:noreply, assigns}
+  end
+
+  defmodule BubblingParent do
+    @moduledoc """
+    Parent that uses SelectiveChild. Tracks bubbled events in :root_event.
+    """
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :root_event, fn -> nil end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      box do
+        text(do: "root:event=#{inspect(assigns.root_event)}")
+        live_component(SelectiveChild, id: "sc1", focusable: true)
+      end
+    end
+
+    @impl true
+    def handle_event(event, assigns) do
+      {:noreply, assign(assigns, :root_event, event)}
+    end
+  end
+
+  defmodule SideEffectParent do
+    @moduledoc """
+    Parent that uses SideEffectChild. Tracks bubbled events and side-effect messages.
+    """
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :root_event, fn -> nil end) |> assign_new(:side_effect_msg, fn -> nil end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      box do
+        text(do: "root:event=#{inspect(assigns.root_event)}:msg=#{inspect(assigns.side_effect_msg)}")
+        live_component(SideEffectChild, id: "se1", focusable: true)
+      end
+    end
+
+    @impl true
+    def handle_event(event, assigns) do
+      {:noreply, assign(assigns, :root_event, event)}
+    end
+
+    @impl true
+    def handle_info({:side_effect, msg}, assigns) do
+      {:noreply, assign(assigns, :side_effect_msg, msg)}
+    end
+
+    def handle_info(_msg, assigns), do: {:noreply, assigns}
+  end
+
   # -- Focus Tests --
 
   describe "focus management" do
@@ -682,13 +803,11 @@ defmodule Courgette.LiveComponent.ServerTest do
       GenServer.stop(ctx.renderer)
     end
 
-    test "Tab cycles focus to first focusable child" do
+    test "first focusable child receives :focus on mount (auto-focus)" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
-
-      {:ok, child_pid} = ComponentRegistry.lookup(FocusableChild, "f1")
-      :sys.get_state(child_pid)
+      {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
+      :sys.get_state(child1)
       :sys.get_state(ctx.server)
 
       tree = last_tree(ctx)
@@ -699,10 +818,9 @@ defmodule Courgette.LiveComponent.ServerTest do
       GenServer.stop(ctx.renderer)
     end
 
-    test "Tab twice focuses second child" do
+    test "Tab advances focus from auto-focused first to second child" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
       GenServer.call(ctx.server, {:test_event, {:key, :tab}})
 
       {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
@@ -720,11 +838,32 @@ defmodule Courgette.LiveComponent.ServerTest do
       GenServer.stop(ctx.renderer)
     end
 
+    test "Tab twice focuses third child" do
+      ctx = start_server(ParentWithFocusableChildren)
+
+      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+
+      for i <- 1..3 do
+        {:ok, pid} = ComponentRegistry.lookup(FocusableChild, "f#{i}")
+        :sys.get_state(pid)
+      end
+      :sys.get_state(ctx.server)
+
+      tree = last_tree(ctx)
+      text = collect_all_text(tree) |> Enum.join(" ")
+      assert text =~ "f2:focused=false"
+      assert text =~ "f3:focused=true"
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
     test "Tab wraps from last to first" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      # Tab 3 times (focus f1, f2, f3), then one more wraps to f1
-      for _ <- 1..4 do
+      # Auto-focused f1, then Tab 3 times: f1→f2→f3→f1 (wraps)
+      for _ <- 1..3 do
         GenServer.call(ctx.server, {:test_event, {:key, :tab}})
       end
 
@@ -747,10 +886,12 @@ defmodule Courgette.LiveComponent.ServerTest do
     test "Shift-Tab cycles backward and wraps" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      # Shift-Tab from nil → last (f3)
+      # Shift-Tab from auto-focused f1 → wraps to f3
       GenServer.call(ctx.server, {:test_event, {:key, {:shift, :tab}}})
 
+      {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
       {:ok, child3} = ComponentRegistry.lookup(FocusableChild, "f3")
+      :sys.get_state(child1)
       :sys.get_state(child3)
       :sys.get_state(ctx.server)
 
@@ -789,8 +930,7 @@ defmodule Courgette.LiveComponent.ServerTest do
     test "non-focusable children skipped in focus order" do
       ctx = start_server(ParentWithMixedChildren)
 
-      # Tab → a, Tab → b (skips nf which is not focusable)
-      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+      # Auto-focused a, Tab → b (skips nf which is not focusable)
       GenServer.call(ctx.server, {:test_event, {:key, :tab}})
 
       {:ok, child_a} = ComponentRegistry.lookup(FocusableChild, "a")
@@ -808,12 +948,10 @@ defmodule Courgette.LiveComponent.ServerTest do
       GenServer.stop(ctx.renderer)
     end
 
-    test "event routes to focused child's handle_event" do
+    test "event routes to auto-focused child's handle_event" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      # Focus f1
-      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
-      # Send a key event — should route to f1
+      # f1 is auto-focused — send a key event directly
       GenServer.call(ctx.server, {:test_event, {:key, {:char, "x"}}})
 
       {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
@@ -828,14 +966,23 @@ defmodule Courgette.LiveComponent.ServerTest do
       GenServer.stop(ctx.renderer)
     end
 
-    test "root event (no focus set) dispatches locally" do
+    test "auto-focused child receives events without Tab press" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      # No tab pressed yet — event goes to root
+      # No tab pressed — first child is auto-focused, event routes there
       GenServer.call(ctx.server, {:test_event, {:key, {:char, "x"}}})
 
+      {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
+      :sys.get_state(child1)
+      :sys.get_state(ctx.server)
+
+      tree = last_tree(ctx)
+      text = collect_all_text(tree) |> Enum.join(" ")
+      assert text =~ ~s(f1:focused=true:event={:key, {:char, "x"}})
+
+      # Root should NOT have received it
       state = :sys.get_state(ctx.server)
-      assert state.assigns[:root_event] == {:key, {:char, "x"}}
+      refute state.assigns[:root_event]
 
       GenServer.stop(ctx.server)
       GenServer.stop(ctx.renderer)
@@ -844,23 +991,97 @@ defmodule Courgette.LiveComponent.ServerTest do
     test "routed event triggers child re-render and parent re-assembly" do
       ctx = start_server(ParentWithFocusableChildren)
 
-      # Focus f1
-      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
-      # Verify initial state
+      # f1 is auto-focused — verify initial state
+      {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
+      :sys.get_state(child1)
+      :sys.get_state(ctx.server)
+
       tree1 = last_tree(ctx)
       text1 = collect_all_text(tree1) |> Enum.join(" ")
       assert text1 =~ "f1:focused=true:event=nil"
 
-      # Send event to focused child
+      # Send event to auto-focused child
       GenServer.call(ctx.server, {:test_event, {:key, {:char, "z"}}})
 
-      {:ok, child1} = ComponentRegistry.lookup(FocusableChild, "f1")
       :sys.get_state(child1)
       :sys.get_state(ctx.server)
 
       tree2 = last_tree(ctx)
       text2 = collect_all_text(tree2) |> Enum.join(" ")
       assert text2 =~ ~s(f1:focused=true:event={:key, {:char, "z"}})
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
+    # -- Event Bubbling --
+
+    test "unhandled event bubbles from focused child to root" do
+      ctx = start_server(BubblingParent)
+
+      # Tab to focus SelectiveChild
+      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+
+      # Send 'q' — SelectiveChild's catch-all returns unchanged assigns → bubbles to root
+      GenServer.call(ctx.server, {:test_event, {:key, {:char, "q"}}})
+
+      {:ok, child} = ComponentRegistry.lookup(SelectiveChild, "sc1")
+      :sys.get_state(child)
+      :sys.get_state(ctx.server)
+
+      state = :sys.get_state(ctx.server)
+      assert state.assigns.root_event == {:key, {:char, "q"}}
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
+    test "handled event does NOT bubble to root" do
+      ctx = start_server(BubblingParent)
+
+      # Tab to focus SelectiveChild
+      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+
+      # Send 'x' — SelectiveChild handles it (increments x_count) → does NOT bubble
+      GenServer.call(ctx.server, {:test_event, {:key, {:char, "x"}}})
+
+      {:ok, child} = ComponentRegistry.lookup(SelectiveChild, "sc1")
+      :sys.get_state(child)
+      :sys.get_state(ctx.server)
+
+      # Root should NOT have received the event
+      state = :sys.get_state(ctx.server)
+      assert state.assigns.root_event == nil
+
+      # But child should have handled it
+      tree = last_tree(ctx)
+      text = collect_all_text(tree) |> Enum.join(" ")
+      assert text =~ "selective:x=1"
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
+    test "side-effect-only handler bubbles event and delivers side effect" do
+      ctx = start_server(SideEffectParent)
+
+      # Tab to focus SideEffectChild
+      GenServer.call(ctx.server, {:test_event, {:key, :tab}})
+
+      # Send Enter — child sends message (side effect) but doesn't change assigns → bubbles
+      GenServer.call(ctx.server, {:test_event, {:key, :enter}})
+
+      {:ok, child} = ComponentRegistry.lookup(SideEffectChild, "se1")
+      :sys.get_state(child)
+      :sys.get_state(ctx.server)
+
+      state = :sys.get_state(ctx.server)
+
+      # Event bubbled to root
+      assert state.assigns.root_event == {:key, :enter}
+
+      # Side-effect message also arrived via handle_info
+      assert state.assigns.side_effect_msg == :enter_pressed
 
       GenServer.stop(ctx.server)
       GenServer.stop(ctx.renderer)

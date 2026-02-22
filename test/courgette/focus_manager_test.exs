@@ -29,10 +29,10 @@ defmodule Courgette.FocusManagerTest do
       assert fm.focused == {Input, "a"}
     end
 
-    test "clears focus when focused component is removed from order" do
+    test "auto-focuses first when focused component is removed from order" do
       fm = %FocusManager{focused: {Select, "b"}, order: [{Input, "a"}, {Select, "b"}]}
       fm = FocusManager.update_order(fm, [{Input, "a"}, {Button, "c"}])
-      assert fm.focused == nil
+      assert fm.focused == {Input, "a"}
     end
 
     test "handles empty order" do
@@ -42,11 +42,18 @@ defmodule Courgette.FocusManagerTest do
       assert fm.order == []
     end
 
-    test "handles nil focused with new order" do
+    test "auto-focuses first child when focused is nil and order is non-empty" do
       fm = FocusManager.new()
       fm = FocusManager.update_order(fm, [{Input, "a"}])
-      assert fm.focused == nil
+      assert fm.focused == {Input, "a"}
       assert fm.order == [{Input, "a"}]
+    end
+
+    test "returns nil when order is empty and focused is nil" do
+      fm = FocusManager.new()
+      fm = FocusManager.update_order(fm, [])
+      assert fm.focused == nil
+      assert fm.order == []
     end
   end
 

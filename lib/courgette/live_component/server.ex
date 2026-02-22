@@ -147,7 +147,8 @@ defmodule Courgette.LiveComponent.Server do
 
   def handle_call({:routed_event, event}, _from, state) do
     new_state = dispatch_event_local(event, state)
-    {:reply, :ok, new_state}
+    handled = new_state.assigns != state.assigns
+    {:reply, {:ok, handled}, new_state}
   end
 
   def handle_call(:get_rendered_tree, _from, state) do
@@ -292,8 +293,10 @@ defmodule Courgette.LiveComponent.Server do
       focused_key ->
         case Map.get(state.children, focused_key) do
           {pid, _props} ->
-            route_to_child(pid, event)
-            state
+            case route_to_child(pid, event) do
+              {:ok, true} -> state
+              _ -> dispatch_event_local(event, state)
+            end
 
           nil ->
             dispatch_event_local(event, state)
@@ -333,13 +336,14 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   # Route an event to a child, catching exits if the child crashes
-  # during the call. The {:EXIT, pid, reason} message will arrive
-  # separately and trigger error boundary cleanup.
+  # during the call. Returns {:ok, handled} on success, :error on crash.
+  # The {:EXIT, pid, reason} message will arrive separately and trigger
+  # error boundary cleanup.
   defp route_to_child(pid, event) do
     try do
       GenServer.call(pid, {:routed_event, event})
     catch
-      :exit, _ -> :ok
+      :exit, _ -> :error
     end
   end
 
@@ -426,7 +430,15 @@ defmodule Courgette.LiveComponent.Server do
     # Update focus order for root servers
     if state.parent == nil do
       focusable_order = Lifecycle.extract_focusable_order(state.raw_tree)
-      %{state | focus: FocusManager.update_order(state.focus, focusable_order)}
+      old_focused = state.focus.focused
+      new_focus = FocusManager.update_order(state.focus, focusable_order)
+      state = %{state | focus: new_focus}
+
+      if new_focus.focused != old_focused do
+        handle_focus_change(state, old_focused, new_focus.focused)
+      else
+        state
+      end
     else
       state
     end

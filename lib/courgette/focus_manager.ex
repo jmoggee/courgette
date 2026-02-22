@@ -24,15 +24,16 @@ defmodule Courgette.FocusManager do
 
   @doc """
   Update the focusable order. Preserves focus if the focused component
-  is still in the new order; clears focus otherwise.
+  is still in the new order; auto-focuses the first child if focus would
+  otherwise be nil and the order is non-empty.
   """
   @spec update_order(t(), [component_key()]) :: t()
   def update_order(%__MODULE__{} = fm, ids) when is_list(ids) do
     new_focused =
-      if fm.focused && fm.focused in ids do
-        fm.focused
-      else
-        nil
+      cond do
+        fm.focused && fm.focused in ids -> fm.focused
+        ids != [] -> List.first(ids)
+        true -> nil
       end
 
     %{fm | order: ids, focused: new_focused}

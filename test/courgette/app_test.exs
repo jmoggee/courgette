@@ -279,11 +279,10 @@ defmodule Courgette.AppTest do
       on_exit(fn -> ComponentRegistry.destroy_table() end)
     end
 
-    test "Tab in multi-child app focuses first child" do
+    test "auto-focuses first child on mount" do
       view = mount(FocusApp)
 
-      send_tab(view)
-      # Allow child tree updates to propagate
+      # Allow auto-focus child tree updates to propagate
       {:ok, pid} = ComponentRegistry.lookup(FocusableItem, "x")
       :sys.get_state(pid)
       :sys.get_state(view.server)
@@ -298,7 +297,7 @@ defmodule Courgette.AppTest do
     test "Tab cycles through all children" do
       view = mount(FocusApp)
 
-      send_tab(view)
+      # Auto-focused x, one Tab moves to y
       send_tab(view)
 
       for id <- ["x", "y", "z"] do
@@ -318,8 +317,7 @@ defmodule Courgette.AppTest do
     test "event routes to focused child" do
       view = mount(FocusApp)
 
-      # Focus x, then send an event
-      send_tab(view)
+      # x is auto-focused, send an event directly
       send_event(view, {:key, {:char, "a"}})
 
       {:ok, pid_x} = ComponentRegistry.lookup(FocusableItem, "x")
@@ -336,7 +334,7 @@ defmodule Courgette.AppTest do
     test "focus + event routing end-to-end with Shift-Tab" do
       view = mount(FocusApp)
 
-      # Shift-Tab focuses last child (z)
+      # Shift-Tab from auto-focused x wraps to last child (z)
       send_shift_tab(view)
 
       for id <- ["x", "y", "z"] do

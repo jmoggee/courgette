@@ -91,6 +91,10 @@ defmodule Courgette.ComponentTestHelpers do
   @spec send_event(view(), term()) :: :ok
   def send_event(%{server: server}, event) do
     GenServer.call(server, {:test_event, event})
+    # Synchronize: ensure the server processes any pending messages
+    # (e.g., {:child_tree, ...} from children that re-rendered during the event)
+    :sys.get_state(server)
+    :ok
   end
 
   @doc """
