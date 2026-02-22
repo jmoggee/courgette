@@ -57,8 +57,8 @@ defmodule Courgette.Components.Textarea do
             else
               content = if line_graphemes == [], do: " ", else: Enum.join(line_graphemes)
 
-              text do
-                content
+              box flex_direction: :row do
+                text(do: content)
               end
             end
           end
@@ -76,8 +76,8 @@ defmodule Courgette.Components.Textarea do
           for line_graphemes <- assigns.lines do
             content = if line_graphemes == [], do: " ", else: Enum.join(line_graphemes)
 
-            text do
-              content
+            box flex_direction: :row do
+              text(do: content)
             end
           end
         end
