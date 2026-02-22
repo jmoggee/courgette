@@ -45,6 +45,24 @@ defmodule Courgette.Component.DSL do
     end
   end
 
+  @doc """
+  Declares a live (stateful) child component.
+
+      live_component(Counter, id: "main", initial_count: 5)
+
+  Creates a `:live_component` element with the module and options as props.
+  The `:id` option is required and used for lifecycle reconciliation.
+  """
+  defmacro live_component(module, opts) do
+    quote do
+      Element.new(
+        :live_component,
+        [{:module, unquote(module)} | unquote(opts)],
+        []
+      )
+    end
+  end
+
   @doc false
   def __flatten_children__(children) do
     children

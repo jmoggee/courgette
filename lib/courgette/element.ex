@@ -24,7 +24,7 @@ defmodule Courgette.Element do
   content). A `:text` element's children are typically `["Hello"]`.
   """
 
-  @type element_type :: :box | :text | :grid | :col | :scrollable_area | :button | :input
+  @type element_type :: :box | :text | :grid | :col | :scrollable_area | :button | :input | :live_component
 
   @type t :: %__MODULE__{
           type: element_type(),
@@ -34,7 +34,7 @@ defmodule Courgette.Element do
 
   defstruct type: :box, props: %{}, children: []
 
-  @valid_types [:box, :text, :grid, :col, :scrollable_area, :button, :input]
+  @valid_types [:box, :text, :grid, :col, :scrollable_area, :button, :input, :live_component]
 
   @doc """
   Creates a new element with the given type and options.

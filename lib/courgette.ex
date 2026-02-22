@@ -31,6 +31,7 @@ defmodule Courgette do
   """
 
   alias Courgette.LiveComponent.Server
+  alias Courgette.ComponentRegistry
   alias Courgette.Renderer
   alias Courgette.Terminal
 
@@ -48,6 +49,9 @@ defmodule Courgette do
   def run(module, opts \\ []) do
     screen_mode = Keyword.get(opts, :mode, :fullscreen)
     initial_assigns = Keyword.get(opts, :initial_assigns, %{})
+
+    # 0. Ensure ComponentRegistry table exists
+    ComponentRegistry.create_table()
 
     # 1. Start Terminal (no input target yet)
     {:ok, terminal} =
@@ -90,6 +94,26 @@ defmodule Courgette do
     if Process.alive?(terminal), do: Terminal.stop()
 
     :ok
+  end
+
+  @doc """
+  Send new props to a running child component identified by `{module, id}`.
+
+  The component must be registered in the ComponentRegistry (i.e., it was
+  started as a child via `live_component/2`).
+
+      Courgette.send_update(Counter, id: "main", count: 42)
+
+  Returns `:ok` if the component was found, `:error` otherwise.
+  """
+  def send_update(module, opts) do
+    id = Keyword.fetch!(opts, :id)
+    props = opts |> Keyword.delete(:id) |> Map.new()
+
+    case ComponentRegistry.lookup(module, id) do
+      {:ok, pid} -> GenServer.call(pid, {:update_props, props})
+      :error -> :error
+    end
   end
 
   @doc """
