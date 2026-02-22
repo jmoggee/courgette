@@ -92,6 +92,18 @@ defmodule Courgette.Animation.Frames do
     new(~w(⠁ ⠂ ⠄ ⡀ ⡈ ⡐ ⡠ ⣀ ⣁ ⣂ ⣄ ⣌ ⣔ ⣤ ⣥ ⣦ ⣮ ⣶ ⣷ ⣿ ⡿ ⠿ ⢟ ⠟ ⡛ ⠛ ⠫ ⢋ ⠋ ⠍ ⡉ ⠉ ⠑ ⠡ ⢁))
   end
 
+  @doc "Two dots orbiting together (throbber-widgets-tui BRAILLE_DOUBLE)"
+  @spec braille_double() :: t()
+  def braille_double, do: new(~w(⠘ ⠰ ⠤ ⠆ ⠃ ⠉))
+
+  @doc "Inverse: one missing dot sweeps around (throbber-widgets-tui BRAILLE_SIX)"
+  @spec braille_six() :: t()
+  def braille_six, do: new(~w(⠷ ⠯ ⠟ ⠻ ⠽ ⠾))
+
+  @doc "Full 8-dot with two gaps sweeping (throbber-widgets-tui BRAILLE_EIGHT_DOUBLE)"
+  @spec braille_eight_double() :: t()
+  def braille_eight_double, do: new(~w(⣧ ⣏ ⡟ ⠿ ⢻ ⣹ ⣼ ⣶))
+
   # --- Built-in frame sets: Geometric family ---
 
   @doc "Half-circle rotation"
@@ -114,6 +126,18 @@ defmodule Courgette.Animation.Frames do
   @spec box_bounce() :: t()
   def box_bounce, do: new(~w(▖ ▘ ▝ ▗))
 
+  @doc "Box-drawing corner rotation"
+  @spec pipe() :: t()
+  def pipe, do: new(~w(┤ ┘ ┴ └ ├ ┌ ┬ ┐))
+
+  @doc "Inverse of box_bounce: three quadrants filled"
+  @spec box_invert() :: t()
+  def box_invert, do: new(~w(▙ ▛ ▜ ▟))
+
+  @doc "Quarter-filled squares rotating"
+  @spec square_corners() :: t()
+  def square_corners, do: new(~w(◰ ◳ ◲ ◱))
+
   # --- Built-in frame sets: Block family ---
 
   @doc "Vertical block elements pulse up and down"
@@ -131,6 +155,14 @@ defmodule Courgette.Animation.Frames do
   @doc "Horizontal block element grows and shrinks"
   @spec grow_horizontal() :: t()
   def grow_horizontal, do: new(~w(▏ ▎ ▍ ▌ ▋ ▊ ▉ ▊ ▋ ▌ ▍ ▎))
+
+  @doc "Static/interference flicker"
+  @spec noise() :: t()
+  def noise, do: new(~w(▓ ▒ ░))
+
+  @doc "Accumulating horizontal lines"
+  @spec layer() :: t()
+  def layer, do: new(~w(- = ≡))
 
   # --- Built-in frame sets: Classic ---
 
@@ -153,4 +185,12 @@ defmodule Courgette.Animation.Frames do
   @doc "Arrow rotating through 8 compass directions"
   @spec arrow() :: t()
   def arrow, do: new(~w(← ↖ ↑ ↗ → ↘ ↓ ↙))
+
+  @doc "The universal thinking indicator"
+  @spec ellipsis() :: t()
+  def ellipsis, do: new([".", "..", "...", " "])
+
+  @doc "Trigram lines"
+  @spec hamburger() :: t()
+  def hamburger, do: new(~w(☱ ☲ ☴))
 end
