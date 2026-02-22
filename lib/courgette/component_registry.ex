@@ -34,18 +34,26 @@ defmodule Courgette.ComponentRegistry do
     :ets.insert(@table, {{module, id}, pid})
   end
 
-  @doc "Remove the registration for `{module, id}`."
+  @doc "Remove the registration for `{module, id}`. No-op if the table doesn't exist."
   @spec unregister(module(), term()) :: true
   def unregister(module, id) do
-    :ets.delete(@table, {module, id})
+    if :ets.whereis(@table) != :undefined do
+      :ets.delete(@table, {module, id})
+    else
+      true
+    end
   end
 
   @doc "Look up the pid for `{module, id}`. Returns `{:ok, pid}` or `:error`."
   @spec lookup(module(), term()) :: {:ok, pid()} | :error
   def lookup(module, id) do
-    case :ets.lookup(@table, {module, id}) do
-      [{{^module, ^id}, pid}] -> {:ok, pid}
-      [] -> :error
+    if :ets.whereis(@table) == :undefined do
+      :error
+    else
+      case :ets.lookup(@table, {module, id}) do
+        [{{^module, ^id}, pid}] -> {:ok, pid}
+        [] -> :error
+      end
     end
   end
 

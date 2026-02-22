@@ -8,6 +8,7 @@ defmodule Courgette.Components.SpinnerTest do
   setup do
     ComponentRegistry.create_table()
     on_exit(fn -> ComponentRegistry.destroy_table() end)
+    :ok
   end
 
   # Wrapper that renders a Spinner as a child
@@ -48,7 +49,7 @@ defmodule Courgette.Components.SpinnerTest do
     assert render_text(view) =~ "⠋"
 
     # Manually send tick to the child
-    {:ok, child_pid} = ComponentRegistry.lookup(Spinner, "spin")
+    child_pid = await_child(Spinner, "spin")
     send(child_pid, :tick)
     :sys.get_state(child_pid)
     # Wait for child tree to propagate to parent
@@ -59,7 +60,7 @@ defmodule Courgette.Components.SpinnerTest do
 
   test "wraps around to first frame" do
     view = mount(Host)
-    {:ok, child_pid} = ComponentRegistry.lookup(Spinner, "spin")
+    child_pid = await_child(Spinner, "spin")
 
     # Dots has 10 frames — send 10 ticks to wrap around
     for _ <- 1..10 do
@@ -126,5 +127,22 @@ defmodule Courgette.Components.SpinnerTest do
 
   defp collect_texts(%Courgette.Element{children: children}) do
     Enum.flat_map(children, &collect_texts/1)
+  end
+
+  # Wait for a child component to register in the ComponentRegistry.
+  # Child processes start asynchronously so they may not be registered
+  # by the time the parent's mount returns.
+  defp await_child(module, id, attempts \\ 50) do
+    case ComponentRegistry.lookup(module, id) do
+      {:ok, pid} ->
+        pid
+
+      :error when attempts > 0 ->
+        Process.sleep(1)
+        await_child(module, id, attempts - 1)
+
+      :error ->
+        raise "Child #{inspect(module)} #{inspect(id)} did not register in time"
+    end
   end
 end
