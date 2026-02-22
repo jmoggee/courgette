@@ -36,6 +36,18 @@ defmodule Courgette do
   alias Courgette.Terminal
 
   @doc """
+  Whether animations are enabled.
+
+  Returns `Application.get_env(:courgette, :animations_enabled, true)`.
+  Components should check this in `mount/1` to skip timers when disabled.
+  Runtime-toggleable for tests.
+  """
+  @spec animations_enabled?() :: boolean()
+  def animations_enabled? do
+    Application.get_env(:courgette, :animations_enabled, true)
+  end
+
+  @doc """
   Run a Courgette app, blocking until it exits.
 
   Starts Terminal → Renderer → LiveComponent.Server, wires up input,
