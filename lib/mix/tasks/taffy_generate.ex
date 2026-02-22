@@ -3,16 +3,22 @@ defmodule Mix.Tasks.Taffy.Generate do
   Generate ExUnit tests from Taffy flex test fixtures.
 
   Parses the machine-generated Rust test files (border_box variant only)
-  and produces categorized Elixir test modules.
+  and produces categorized Elixir test modules. Taffy is fetched
+  automatically into `tmp/taffy/` on first run and updated on subsequent runs.
 
       mix taffy.generate
       mix taffy.generate --source /path/to/taffy/tests/generated/flex
+
+  Use `--source` to override the fixture path and skip automatic git operations.
   """
   use Mix.Task
 
   @shortdoc "Generate ExUnit tests from Taffy flex fixtures"
 
-  @default_source "/tmp/taffy/tests/generated/flex"
+  @taffy_repo "https://github.com/DioxusLabs/taffy.git"
+  @taffy_dir "tmp/taffy"
+  @fixture_subdir "tests/generated/flex"
+  @default_source Path.join(@taffy_dir, @fixture_subdir)
   @output_dir "test/courgette/layout/engine/taffy"
 
   # Unsupported features that cause a test to be tagged @tag :skip
@@ -38,7 +44,16 @@ defmodule Mix.Tasks.Taffy.Generate do
 
   def run(args) do
     {opts, _, _} = OptionParser.parse(args, strict: [source: :string])
-    source_dir = opts[:source] || @default_source
+
+    source_dir =
+      case opts[:source] do
+        nil ->
+          ensure_taffy_repo!()
+          @default_source
+
+        path ->
+          path
+      end
 
     unless File.dir?(source_dir) do
       Mix.raise("Source directory not found: #{source_dir}")
@@ -74,6 +89,34 @@ defmodule Mix.Tasks.Taffy.Generate do
     total_skip = Enum.count(results, fn {_, _, _, skip} -> skip != nil end)
     total_active = length(results) - total_skip
     Mix.shell().info("\nTotal: #{length(results)} tests (#{total_active} active, #{total_skip} skipped)")
+  end
+
+  defp ensure_taffy_repo! do
+    if File.dir?(@taffy_dir) do
+      Mix.shell().info("Updating Taffy repo...")
+
+      case System.cmd("git", ["-C", @taffy_dir, "pull", "--ff-only"],
+             stderr_to_stdout: true
+           ) do
+        {output, 0} ->
+          Mix.shell().info(String.trim(output))
+
+        {output, _} ->
+          Mix.raise("Failed to update Taffy repo:\n#{output}")
+      end
+    else
+      Mix.shell().info("Cloning Taffy repo (shallow)...")
+
+      case System.cmd("git", ["clone", "--depth", "1", @taffy_repo, @taffy_dir],
+             stderr_to_stdout: true
+           ) do
+        {_output, 0} ->
+          Mix.shell().info("Cloned Taffy into #{@taffy_dir}")
+
+        {output, _} ->
+          Mix.raise("Failed to clone Taffy repo:\n#{output}")
+      end
+    end
   end
 
   # --- File Parsing ---
