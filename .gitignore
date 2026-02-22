@@ -21,3 +21,6 @@ courgette-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# MacOs finder files.
+.DS_Store
