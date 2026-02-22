@@ -168,6 +168,239 @@ defmodule Courgette.AppTest do
     end
   end
 
+  # -- Focus + Error Integration Test Components --
+
+  defmodule FocusableItem do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :focused, fn -> false end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      name = assigns[:name] || "item"
+      text(do: "#{name}:f=#{assigns.focused}")
+    end
+
+    @impl true
+    def update(props, assigns) do
+      {:ok, Map.merge(assigns, props)}
+    end
+
+    @impl true
+    def handle_event(:focus, assigns) do
+      {:noreply, assign(assigns, :focused, true)}
+    end
+
+    def handle_event(:blur, assigns) do
+      {:noreply, assign(assigns, :focused, false)}
+    end
+
+    def handle_event(_event, assigns) do
+      {:noreply, assigns}
+    end
+  end
+
+  defmodule FocusApp do
+    use Courgette.App
+
+    @impl true
+    def mount(_assigns) do
+      {:ok, %{}}
+    end
+
+    @impl true
+    def render(_assigns) do
+      box do
+        live_component(FocusableItem, id: "x", focusable: true, name: "x")
+        live_component(FocusableItem, id: "y", focusable: true, name: "y")
+        live_component(FocusableItem, id: "z", focusable: true, name: "z")
+      end
+    end
+
+    @impl true
+    def handle_event(_event, assigns), do: {:noreply, assigns}
+  end
+
+  defmodule CrashableItem do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok, assign_new(assigns, :status, fn -> "ok" end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      text(do: "crash_item:#{assigns[:name]}:#{assigns.status}")
+    end
+
+    @impl true
+    def handle_info(:crash, _assigns) do
+      raise "boom"
+    end
+
+    def handle_info(_msg, assigns) do
+      {:noreply, assigns}
+    end
+  end
+
+  defmodule CrashApp do
+    use Courgette.App
+
+    @impl true
+    def mount(_assigns) do
+      {:ok, %{crash_count: 0}}
+    end
+
+    @impl true
+    def render(assigns) do
+      box do
+        text(do: "crashes:#{assigns.crash_count}")
+        live_component(CrashableItem, id: "ci1", name: "ci1")
+      end
+    end
+
+    @impl true
+    def handle_info({:child_crashed, _key, _reason}, assigns) do
+      {:noreply, update(assigns, :crash_count, &(&1 + 1))}
+    end
+
+    def handle_info(_msg, assigns) do
+      {:noreply, assigns}
+    end
+  end
+
+  describe "focus integration" do
+    setup do
+      ComponentRegistry.create_table()
+      on_exit(fn -> ComponentRegistry.destroy_table() end)
+    end
+
+    test "Tab in multi-child app focuses first child" do
+      view = mount(FocusApp)
+
+      send_tab(view)
+      # Allow child tree updates to propagate
+      {:ok, pid} = ComponentRegistry.lookup(FocusableItem, "x")
+      :sys.get_state(pid)
+      :sys.get_state(view.server)
+
+      assert render_text(view) =~ "x:f=true"
+      assert render_text(view) =~ "y:f=false"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+
+    test "Tab cycles through all children" do
+      view = mount(FocusApp)
+
+      send_tab(view)
+      send_tab(view)
+
+      for id <- ["x", "y", "z"] do
+        {:ok, pid} = ComponentRegistry.lookup(FocusableItem, id)
+        :sys.get_state(pid)
+      end
+      :sys.get_state(view.server)
+
+      assert render_text(view) =~ "x:f=false"
+      assert render_text(view) =~ "y:f=true"
+      assert render_text(view) =~ "z:f=false"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+
+    test "event routes to focused child" do
+      view = mount(FocusApp)
+
+      # Focus x, then send an event
+      send_tab(view)
+      send_event(view, {:key, {:char, "a"}})
+
+      {:ok, pid_x} = ComponentRegistry.lookup(FocusableItem, "x")
+      :sys.get_state(pid_x)
+      :sys.get_state(view.server)
+
+      # x should still be focused (event handled by catch-all)
+      assert render_text(view) =~ "x:f=true"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+
+    test "focus + event routing end-to-end with Shift-Tab" do
+      view = mount(FocusApp)
+
+      # Shift-Tab focuses last child (z)
+      send_shift_tab(view)
+
+      for id <- ["x", "y", "z"] do
+        {:ok, pid} = ComponentRegistry.lookup(FocusableItem, id)
+        :sys.get_state(pid)
+      end
+      :sys.get_state(view.server)
+
+      assert render_text(view) =~ "z:f=true"
+      assert render_text(view) =~ "x:f=false"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+  end
+
+  describe "error boundary integration" do
+    setup do
+      ComponentRegistry.create_table()
+      on_exit(fn -> ComponentRegistry.destroy_table() end)
+    end
+
+    test "child crash and auto-restart in app" do
+      view = mount(CrashApp)
+
+      assert render_text(view) =~ "crash_item:ci1:ok"
+
+      {:ok, old_pid} = ComponentRegistry.lookup(CrashableItem, "ci1")
+      ref = Process.monitor(old_pid)
+      send(old_pid, :crash)
+      assert_receive {:DOWN, ^ref, :process, _, _}, 200
+      Process.sleep(20)
+      :sys.get_state(view.server)
+
+      # Auto-restarted
+      {:ok, new_pid} = ComponentRegistry.lookup(CrashableItem, "ci1")
+      assert new_pid != old_pid
+
+      assert render_text(view) =~ "crash_item:ci1:ok"
+      assert render_text(view) =~ "crashes:1"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+
+    test "crash count tracks across multiple crashes" do
+      view = mount(CrashApp)
+
+      for _i <- 1..3 do
+        {:ok, pid} = ComponentRegistry.lookup(CrashableItem, "ci1")
+        ref = Process.monitor(pid)
+        send(pid, :crash)
+        assert_receive {:DOWN, ^ref, :process, _, _}, 200
+        Process.sleep(20)
+        :sys.get_state(view.server)
+      end
+
+      assert render_text(view) =~ "crashes:3"
+
+      GenServer.stop(view.server)
+      GenServer.stop(view.renderer)
+    end
+  end
+
   describe "child component integration" do
     setup do
       ComponentRegistry.create_table()

@@ -26,13 +26,37 @@ defmodule Courgette.LiveComponent.Lifecycle do
   def extract_components(%Element{type: :live_component, props: props}) do
     module = Map.fetch!(props, :module)
     id = Map.fetch!(props, :id)
-    extra_props = Map.drop(props, [:module, :id])
+    extra_props = Map.drop(props, [:module, :id, :focusable])
     [{module, id, extra_props}]
   end
 
   def extract_components(%Element{children: children}) do
     Enum.flat_map(children, fn
       %Element{} = child -> extract_components(child)
+      _string -> []
+    end)
+  end
+
+  @doc """
+  Walk the element tree depth-first, collecting `{module, id}` keys for
+  `:live_component` elements that have `focusable: true` in their props.
+
+  Returns keys in document order. Does NOT recurse into `:live_component` nodes.
+  """
+  @spec extract_focusable_order(Element.t() | nil) :: [{module(), term()}]
+  def extract_focusable_order(nil), do: []
+
+  def extract_focusable_order(%Element{type: :live_component, props: props}) do
+    if props[:focusable] do
+      [{Map.fetch!(props, :module), Map.fetch!(props, :id)}]
+    else
+      []
+    end
+  end
+
+  def extract_focusable_order(%Element{children: children}) do
+    Enum.flat_map(children, fn
+      %Element{} = child -> extract_focusable_order(child)
       _string -> []
     end)
   end

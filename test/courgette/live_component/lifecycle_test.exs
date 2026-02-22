@@ -84,6 +84,68 @@ defmodule Courgette.LiveComponent.LifecycleTest do
     end
   end
 
+  describe "extract_components strips :focusable" do
+    test "focusable prop is not included in returned props" do
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a", focusable: true, label: "hi"], [])
+      ])
+
+      [{Counter, "a", props}] = Lifecycle.extract_components(tree)
+      refute Map.has_key?(props, :focusable)
+      assert props == %{label: "hi"}
+    end
+  end
+
+  describe "extract_focusable_order/1" do
+    test "returns [] for nil" do
+      assert Lifecycle.extract_focusable_order(nil) == []
+    end
+
+    test "returns [] when no components are focusable" do
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a"], []),
+        Element.new(:live_component, [module: AgentCard, id: "b"], [])
+      ])
+
+      assert Lifecycle.extract_focusable_order(tree) == []
+    end
+
+    test "finds focusable components in document order" do
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
+        Element.new(:live_component, [module: AgentCard, id: "b", focusable: true], [])
+      ])
+
+      assert Lifecycle.extract_focusable_order(tree) == [{Counter, "a"}, {AgentCard, "b"}]
+    end
+
+    test "skips non-focusable components" do
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
+        Element.new(:live_component, [module: AgentCard, id: "b"], []),
+        Element.new(:live_component, [module: Counter, id: "c", focusable: true], [])
+      ])
+
+      assert Lifecycle.extract_focusable_order(tree) == [{Counter, "a"}, {Counter, "c"}]
+    end
+
+    test "finds focusable components nested inside boxes" do
+      tree = Element.new(:box, [], [
+        Element.new(:box, [border: :single], [
+          Element.new(:live_component, [module: Counter, id: "deep", focusable: true], [])
+        ]),
+        Element.new(:text, [], ["Label"])
+      ])
+
+      assert Lifecycle.extract_focusable_order(tree) == [{Counter, "deep"}]
+    end
+
+    test "tree with only non-element children returns []" do
+      tree = Element.new(:box, [], ["just text"])
+      assert Lifecycle.extract_focusable_order(tree) == []
+    end
+  end
+
   describe "reconcile/2" do
     test "all new specs → to_start" do
       old = %{}

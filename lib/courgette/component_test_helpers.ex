@@ -38,7 +38,16 @@ defmodule Courgette.ComponentTestHelpers do
   defmacro __using__(_opts) do
     quote do
       import Courgette.ComponentTestHelpers,
-        only: [mount: 1, mount: 2, send_event: 2, send_info: 2, render_tree: 1, render_text: 1]
+        only: [
+          mount: 1,
+          mount: 2,
+          send_event: 2,
+          send_tab: 1,
+          send_shift_tab: 1,
+          send_info: 2,
+          render_tree: 1,
+          render_text: 1
+        ]
     end
   end
 
@@ -83,6 +92,18 @@ defmodule Courgette.ComponentTestHelpers do
   def send_event(%{server: server}, event) do
     GenServer.call(server, {:test_event, event})
   end
+
+  @doc """
+  Send a Tab event to the component. Convenience for `send_event(view, {:key, :tab})`.
+  """
+  @spec send_tab(view()) :: :ok
+  def send_tab(view), do: send_event(view, {:key, :tab})
+
+  @doc """
+  Send a Shift-Tab event to the component. Convenience for `send_event(view, {:key, {:shift, :tab}})`.
+  """
+  @spec send_shift_tab(view()) :: :ok
+  def send_shift_tab(view), do: send_event(view, {:key, {:shift, :tab}})
 
   @doc """
   Send a raw message to the component's handle_info.

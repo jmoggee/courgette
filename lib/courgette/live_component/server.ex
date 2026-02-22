@@ -36,6 +36,7 @@ defmodule Courgette.LiveComponent.Server do
   alias Courgette.Renderer
   alias Courgette.LiveComponent.Lifecycle
   alias Courgette.ComponentRegistry
+  alias Courgette.FocusManager
 
   @type state :: %{
           module: module(),
@@ -46,7 +47,8 @@ defmodule Courgette.LiveComponent.Server do
           component_id: {module(), term()} | nil,
           children: %{{module(), term()} => {pid(), map()}},
           child_trees: %{{module(), term()} => Courgette.Element.t()},
-          raw_tree: Courgette.Element.t() | nil
+          raw_tree: Courgette.Element.t() | nil,
+          focus: FocusManager.t()
         }
 
   # -- Public API --
@@ -116,7 +118,8 @@ defmodule Courgette.LiveComponent.Server do
       component_id: component_id,
       children: %{},
       child_trees: %{},
-      raw_tree: raw_tree
+      raw_tree: raw_tree,
+      focus: FocusManager.new()
     }
 
     # Reconcile any initial children from the raw tree
@@ -139,6 +142,11 @@ defmodule Courgette.LiveComponent.Server do
   @impl true
   def handle_call({:test_event, event}, _from, state) do
     new_state = dispatch_event(event, state)
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:routed_event, event}, _from, state) do
+    new_state = dispatch_event_local(event, state)
     {:reply, :ok, new_state}
   end
 
@@ -182,8 +190,34 @@ defmodule Courgette.LiveComponent.Server do
     {:noreply, state}
   end
 
-  def handle_info({:EXIT, _pid, _reason}, state) do
-    {:noreply, state}
+  def handle_info({:EXIT, pid, reason}, state) do
+    case find_child_by_pid(state, pid) do
+      nil ->
+        # Not a child — ignore (e.g., input reader)
+        {:noreply, state}
+
+      {mod, id} ->
+        state = cleanup_crashed_child(state, {mod, id})
+
+        if reason in [:normal, :shutdown] or (is_tuple(reason) and elem(reason, 0) == :shutdown) do
+          # Normal/shutdown — quiet cleanup, no notification
+          {:noreply, state}
+        else
+          # Abnormal crash — notify parent module and force re-render
+          state =
+            if function_exported?(state.module, :handle_info, 2) do
+              {:noreply, new_assigns} =
+                state.module.handle_info({:child_crashed, {mod, id}, reason}, state.assigns)
+
+              %{state | assigns: new_assigns}
+            else
+              state
+            end
+
+          state = force_rerender(state)
+          {:noreply, state}
+        end
+    end
   end
 
   def handle_info(msg, state) do
@@ -218,12 +252,94 @@ defmodule Courgette.LiveComponent.Server do
   # -- Private helpers --
 
   defp dispatch_event(event, state) do
+    if state.parent == nil do
+      dispatch_event_root(event, state)
+    else
+      dispatch_event_local(event, state)
+    end
+  end
+
+  # Root server: intercepts Tab/Shift-Tab for focus cycling,
+  # routes other events to focused child or dispatches locally.
+  defp dispatch_event_root({:key, :tab}, state) do
+    {old_focused, new_focus} = FocusManager.focus_next(state.focus)
+    state = %{state | focus: new_focus}
+
+    if old_focused == new_focus.focused and old_focused == nil do
+      # No focusable children — dispatch tab to root module
+      dispatch_event_local({:key, :tab}, state)
+    else
+      handle_focus_change(state, old_focused, new_focus.focused)
+    end
+  end
+
+  defp dispatch_event_root({:key, {:shift, :tab}}, state) do
+    {old_focused, new_focus} = FocusManager.focus_prev(state.focus)
+    state = %{state | focus: new_focus}
+
+    if old_focused == new_focus.focused and old_focused == nil do
+      dispatch_event_local({:key, {:shift, :tab}}, state)
+    else
+      handle_focus_change(state, old_focused, new_focus.focused)
+    end
+  end
+
+  defp dispatch_event_root(event, state) do
+    case FocusManager.current(state.focus) do
+      nil ->
+        dispatch_event_local(event, state)
+
+      focused_key ->
+        case Map.get(state.children, focused_key) do
+          {pid, _props} ->
+            route_to_child(pid, event)
+            state
+
+          nil ->
+            dispatch_event_local(event, state)
+        end
+    end
+  end
+
+  # Local dispatch — calls module's handle_event directly.
+  defp dispatch_event_local(event, state) do
     if function_exported?(state.module, :handle_event, 2) do
       {:noreply, new_assigns} = state.module.handle_event(event, state.assigns)
       {_noreply, new_state} = maybe_rerender(state, new_assigns)
       new_state
     else
       state
+    end
+  end
+
+  defp handle_focus_change(state, old_focused, new_focused) do
+    # Send :blur to old focused child
+    if old_focused do
+      case Map.get(state.children, old_focused) do
+        {pid, _props} -> route_to_child(pid, :blur)
+        nil -> :ok
+      end
+    end
+
+    # Send :focus to new focused child
+    if new_focused do
+      case Map.get(state.children, new_focused) do
+        {pid, _props} -> route_to_child(pid, :focus)
+        nil -> :ok
+      end
+    end
+
+    state
+  end
+
+  # Route an event to a child, catching exits if the child crashes
+  # during the call. The {:EXIT, pid, reason} message will arrive
+  # separately and trigger error boundary cleanup.
+  defp route_to_child(pid, event) do
+    try do
+      GenServer.call(pid, {:routed_event, event})
+    catch
+      :exit, _ -> :ok
     end
   end
 
@@ -266,6 +382,37 @@ defmodule Courgette.LiveComponent.Server do
     new_state
   end
 
+  # -- Error boundary helpers --
+
+  defp find_child_by_pid(state, pid) do
+    Enum.find_value(state.children, fn
+      {{mod, id}, {^pid, _props}} -> {mod, id}
+      _ -> nil
+    end)
+  end
+
+  defp cleanup_crashed_child(state, {mod, id}) do
+    ComponentRegistry.unregister(mod, id)
+
+    %{
+      state
+      | children: Map.delete(state.children, {mod, id}),
+        child_trees: Map.delete(state.child_trees, {mod, id})
+    }
+  end
+
+  defp force_rerender(state) do
+    raw_tree = state.module.render(state.assigns)
+    state = %{state | raw_tree: raw_tree}
+
+    state = reconcile_children(state)
+
+    assembled = assemble_tree(state.raw_tree, state.child_trees)
+    deliver_tree(state, assembled)
+
+    state
+  end
+
   # -- Child reconciliation --
 
   defp reconcile_children(state) do
@@ -275,7 +422,14 @@ defmodule Courgette.LiveComponent.Server do
     state = start_children(state, actions.to_start)
     state = update_children(state, actions.to_update)
     state = stop_children(state, actions.to_stop)
-    state
+
+    # Update focus order for root servers
+    if state.parent == nil do
+      focusable_order = Lifecycle.extract_focusable_order(state.raw_tree)
+      %{state | focus: FocusManager.update_order(state.focus, focusable_order)}
+    else
+      state
+    end
   end
 
   defp start_children(state, to_start) do
