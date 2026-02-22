@@ -281,15 +281,20 @@ See the [Architecture Guide](guides/architecture.md) for a deep dive.
 
 ## Demos
 
-Two runnable demos are included:
+18 runnable examples are included in `examples/`:
 
 ```bash
-# Low-level terminal + input parsing demo
-mix run demo/01_terminal.exs
+# Terminal + key parser demo
+mix run examples/key_parser.exs
+
+# Interactive counter (minimal live app)
+mix run examples/counter.exs
 
 # Full task tracker app exercising all components
-mix run demo/task_tracker.exs
+mix run examples/task_tracker.exs
 ```
+
+See the full list with `ls examples/`.
 
 ## Specification
 

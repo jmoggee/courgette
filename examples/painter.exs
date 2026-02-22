@@ -1,13 +1,13 @@
-# sketches/06_painter.exs
+# examples/painter.exs
 #
 # Element → Painter → Buffer → Diff → Writer pipeline.
 # Builds a layout tree by hand (no layout engine yet), paints it into
 # a buffer, and renders to the terminal. Cycles through different
 # layouts to show text, borders, backgrounds, and nesting.
 #
-# Run with: mix run sketches/06_painter.exs
+# Run with: mix run examples/painter.exs
 
-defmodule Sketch.Painter do
+defmodule Example.Painter do
   alias Courgette.ANSI
   alias Courgette.Buffer
   alias Courgette.Buffer.Diff
@@ -70,7 +70,7 @@ defmodule Sketch.Painter do
       element: Element.new(:box),
       bounds: Bounds.new(0, 0, cols, rows),
       children: [
-        text_node("Courgette Painter — Phase 3a", [color: :bright_white, bold: true], 2, 1),
+        text_node("Courgette Painter Pipeline", [color: :bright_white, bold: true], 2, 1),
         text_node("Plain text", [], 4, 3),
         text_node("Green text", [color: :green], 4, 4),
         text_node("Red bold", [color: :red, bold: true], 4, 5),
@@ -255,4 +255,4 @@ defmodule Sketch.Painter do
   end
 end
 
-Sketch.Painter.run()
+Example.Painter.run()

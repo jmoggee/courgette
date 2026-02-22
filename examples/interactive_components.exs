@@ -1,4 +1,4 @@
-# Sketch 14: Interactive Components
+# examples/interactive_components.exs
 #
 # Demo of all four built-in interactive components:
 # - Spinner: animated loading indicator
@@ -10,7 +10,7 @@
 # Type in the TextInput. Press Enter to submit.
 # Press 'q' to quit.
 #
-# Run: mix run sketches/14_interactive_components.exs
+# Run: mix run examples/interactive_components.exs
 
 :logger.set_primary_config(:level, :none)
 

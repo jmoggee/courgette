@@ -1,12 +1,12 @@
-# demo/01_terminal.exs
+# examples/key_parser.exs
 #
-# End-to-end Phase 1 demo: Terminal + KeyParser working together.
+# Terminal + KeyParser working together.
 # Enters raw mode, shows detected color mode and terminal size,
 # displays every keypress as a parsed event tuple, updates on resize.
 #
-# Run with: mix run demo/01_terminal.exs
+# Run with: mix run examples/key_parser.exs
 
-defmodule Demo.Terminal do
+defmodule Example.KeyParser do
   alias Courgette.ANSI
   alias Courgette.Terminal
   alias Courgette.Terminal.KeyParser
@@ -31,7 +31,7 @@ defmodule Demo.Terminal do
       ANSI.bg(:bright_black),
       ANSI.fg(:bright_white),
       ANSI.bold(),
-      " Courgette Phase 1 ",
+      " Courgette Key Parser ",
       ANSI.reset(),
       ANSI.fg(:dark_gray),
       "  color=",
@@ -126,4 +126,4 @@ defmodule Demo.Terminal do
   end
 end
 
-Demo.Terminal.run()
+Example.KeyParser.run()

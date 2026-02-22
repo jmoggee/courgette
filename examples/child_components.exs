@@ -1,6 +1,6 @@
-# sketches/12_child_components.exs
+# examples/child_components.exs
 #
-# Phase 5c demo: dynamic child component lifecycle.
+# Dynamic child component lifecycle.
 #
 # A parent component manages a list of child Counter components.
 # Each child ticks independently every 500ms. Press:
@@ -14,9 +14,9 @@
 # - Independent child state (each counter ticks on its own)
 # - Parent tree assembly from child trees
 #
-# Run with: mix run sketches/12_child_components.exs
+# Run with: mix run examples/child_components.exs
 
-defmodule Sketch.ChildCounter do
+defmodule Example.ChildCounter do
   use Courgette.LiveComponent
 
   @tick_ms 500
@@ -56,7 +56,7 @@ defmodule Sketch.ChildCounter do
   end
 end
 
-defmodule Sketch.ChildComponentsApp do
+defmodule Example.ChildComponents do
   use Courgette.App
 
   @impl true
@@ -85,7 +85,7 @@ defmodule Sketch.ChildComponentsApp do
 
       box flex_direction: :column do
         for child <- assigns.children do
-          live_component(Sketch.ChildCounter, id: child.id, label: child.label)
+          live_component(Example.ChildCounter, id: child.id, label: child.label)
         end
       end
 
@@ -133,4 +133,4 @@ defmodule Sketch.ChildComponentsApp do
   end
 end
 
-Courgette.run(Sketch.ChildComponentsApp)
+Courgette.run(Example.ChildComponents)

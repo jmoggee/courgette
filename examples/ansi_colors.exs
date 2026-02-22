@@ -1,11 +1,11 @@
-# sketches/01_ansi.exs
+# examples/ansi_colors.exs
 #
 # Test drive ANSI output. Enters raw mode, shows detected color
 # capabilities with swatches, and echoes raw input bytes until Ctrl-C.
 #
-# Run with: mix run sketches/01_ansi.exs
+# Run with: mix run examples/ansi_colors.exs
 
-defmodule Sketch.Terminal do
+defmodule Example.AnsiColors do
   alias Courgette.ANSI
   alias Courgette.ANSI.ColorMode
 
@@ -223,4 +223,4 @@ defmodule Sketch.Terminal do
   end
 end
 
-Sketch.Terminal.run()
+Example.AnsiColors.run()

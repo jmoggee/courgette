@@ -1,4 +1,4 @@
-# Sketch 16: Animation System
+# examples/animation_tweens.exs
 #
 # Demonstrates the Animation module trio:
 # - Tween: smooth value interpolation with easing
@@ -10,7 +10,7 @@
 #
 # Press 'q' to quit, 'r' to restart animation.
 #
-# Run: mix run sketches/16_animation.exs
+# Run: mix run examples/animation_tweens.exs
 
 :logger.set_primary_config(:level, :none)
 

@@ -1,4 +1,4 @@
-# Sketch 15: Textarea
+# examples/textarea.exs
 #
 # Multi-line text editor component with readline shortcuts.
 #
@@ -7,7 +7,7 @@
 # Alt+F/B for word movement. Page Up/Down for scrolling.
 # Press 'q' when textarea is not focused to quit.
 #
-# Run: mix run sketches/15_textarea.exs
+# Run: mix run examples/textarea.exs
 
 :logger.set_primary_config(:level, :none)
 

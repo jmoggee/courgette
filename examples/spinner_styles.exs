@@ -1,11 +1,11 @@
-# Sketch 17: Spinner Styles
+# examples/spinner_styles.exs
 #
 # Displays all 30 spinner styles simultaneously, organized by family.
 # Each spinner runs independently in its own process.
 #
 # Press 'q' to quit.
 #
-# Run: mix run sketches/17_spinner_styles.exs
+# Run: mix run examples/spinner_styles.exs
 
 :logger.set_primary_config(:level, :none)
 

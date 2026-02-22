@@ -1,13 +1,13 @@
-# sketches/05_buffer_pipeline.exs
+# examples/buffer_pipeline.exs
 #
 # Full Buffer → Diff → Writer pipeline.
 # Renders a box with styled text into a buffer, flushes to the terminal,
 # then modifies one word and flushes again — only the changed cells update.
 # Displays dirty-cell count for each flush. Cycles continuously.
 #
-# Run with: mix run sketches/05_buffer_pipeline.exs
+# Run with: mix run examples/buffer_pipeline.exs
 
-defmodule Sketch.BufferPipeline do
+defmodule Example.BufferPipeline do
   alias Courgette.ANSI
   alias Courgette.Buffer
   alias Courgette.Buffer.Cell
@@ -176,4 +176,4 @@ defmodule Sketch.BufferPipeline do
   end
 end
 
-Sketch.BufferPipeline.run()
+Example.BufferPipeline.run()

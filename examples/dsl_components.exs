@@ -1,14 +1,14 @@
-# sketches/09_dsl_components.exs
+# examples/dsl_components.exs
 #
-# Phase 4 demo: DSL macros, function components, and theming.
+# DSL macros, function components, and theming.
 #
 # Frame 1: DSL-built element tree rendered through the full pipeline
 # Frame 2: Built-in components (badge, heading, key_value, divider, empty_state)
 # Frame 3: Same components with a custom theme applied
 #
-# Run with: mix run sketches/09_dsl_components.exs
+# Run with: mix run examples/dsl_components.exs
 
-defmodule Sketch.DSLComponents do
+defmodule Example.DslComponents do
   use Courgette.Component
   import Courgette.Components
 
@@ -147,7 +147,7 @@ defmodule Sketch.DSLComponents do
         divider(t)
 
         # Empty state
-        empty_state([{:message, "More components coming in Phase 4b..."} | t])
+        empty_state([{:message, "Nothing to show"} | t])
       end
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
@@ -208,4 +208,4 @@ defmodule Sketch.DSLComponents do
   end
 end
 
-Sketch.DSLComponents.run()
+Example.DslComponents.run()

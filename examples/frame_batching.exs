@@ -1,6 +1,6 @@
-# sketches/11_frame_batching.exs
+# examples/frame_batching.exs
 #
-# Phase 5b demo: frame batching with rapid self-ticking updates.
+# Frame batching with rapid self-ticking updates.
 #
 # A counter that increments every 50ms (20 updates/sec) via
 # Process.send_after. The Renderer batches these at ~60 FPS,
@@ -8,9 +8,9 @@
 #
 # Press q to quit.
 #
-# Run with: mix run sketches/11_frame_batching.exs
+# Run with: mix run examples/frame_batching.exs
 
-defmodule Sketch.FrameBatchingApp do
+defmodule Example.FrameBatching do
   use Courgette.App
 
   @tick_ms 50
@@ -94,4 +94,4 @@ defmodule Sketch.FrameBatchingApp do
   end
 end
 
-Courgette.run(Sketch.FrameBatchingApp)
+Courgette.run(Example.FrameBatching)

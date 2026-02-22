@@ -1,12 +1,12 @@
-# sketches/07_layout_engine.exs
+# examples/layout_flexbox.exs
 #
 # Element → Engine.compute → Painter → Buffer → Diff → Writer pipeline.
 # Builds element trees with flex properties, computes layout automatically,
 # and renders to the terminal. No hand-positioned bounds!
 #
-# Run with: mix run sketches/07_layout_engine.exs
+# Run with: mix run examples/layout_flexbox.exs
 
-defmodule Sketch.LayoutEngine do
+defmodule Example.LayoutFlexbox do
   alias Courgette.ANSI
   alias Courgette.Buffer
   alias Courgette.Buffer.Diff
@@ -143,7 +143,7 @@ defmodule Sketch.LayoutEngine do
     ])
 
     header = Element.new(:text, [color: :bright_white, bold: true, height: 1], [
-      "Courgette Dashboard — Phase 3b"
+      "Courgette Dashboard — Flexbox Layout"
     ])
 
     el = Element.new(:box, [width: cols, height: rows - 2, flex_direction: :column], [
@@ -286,4 +286,4 @@ defmodule Sketch.LayoutEngine do
   end
 end
 
-Sketch.LayoutEngine.run()
+Example.LayoutFlexbox.run()

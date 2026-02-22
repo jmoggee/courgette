@@ -53,8 +53,7 @@ lib/courgette/
   animation/tween.ex                # Value interpolation with wall clock
   component_test_helpers.ex         # Headless test helpers (mount, send_event, etc.)
 test/                               # 40+ test files mirroring lib/ structure
-demo/                               # Runnable example scripts
-sketches/                           # Experimental prototypes (not library code)
+examples/                           # Runnable examples (mix run examples/*.exs)
 ```
 
 ## Rendering Pipeline

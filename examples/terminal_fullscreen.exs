@@ -1,12 +1,12 @@
-# sketches/02_terminal_fullscreen.exs
+# examples/terminal_fullscreen.exs
 #
 # Test drive the Courgette.Terminal GenServer in fullscreen mode.
 # All I/O goes through the server API — write/1, color_mode/0, size/0.
 # Resize events arrive via SIGWINCH — no polling.
 #
-# Run with: mix run sketches/02_terminal_fullscreen.exs
+# Run with: mix run examples/terminal_fullscreen.exs
 
-defmodule Sketch.TerminalFullscreen do
+defmodule Example.TerminalFullscreen do
   alias Courgette.ANSI
   alias Courgette.Terminal
 
@@ -107,4 +107,4 @@ defmodule Sketch.TerminalFullscreen do
   end
 end
 
-Sketch.TerminalFullscreen.run()
+Example.TerminalFullscreen.run()

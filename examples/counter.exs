@@ -1,15 +1,15 @@
-# sketches/10_live_app.exs
+# examples/counter.exs
 #
-# Phase 5a demo: first interactive live app using the runtime.
+# Interactive counter app using Courgette.App.
 #
 # An interactive counter:
 # - Arrow up/down to increment/decrement
 # - r to reset
 # - q to quit
 #
-# Run with: mix run sketches/10_live_app.exs
+# Run with: mix run examples/counter.exs
 
-defmodule Sketch.CounterApp do
+defmodule Example.Counter do
   use Courgette.App
 
   @impl true
@@ -77,4 +77,4 @@ defmodule Sketch.CounterApp do
   end
 end
 
-Courgette.run(Sketch.CounterApp)
+Courgette.run(Example.Counter)

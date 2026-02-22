@@ -1,11 +1,11 @@
-# Sketch 13: Focus Management & Error Boundaries
+# examples/focus_and_errors.exs
 #
 # Three focusable child components in a column.
 # Tab/Shift-Tab cycles focus (visible border highlight).
 # Press 'x' on focused child to crash it — brief fallback, auto-restart.
 # Press 'q' to quit.
 #
-# Run: mix run sketches/13_focus_and_errors.exs
+# Run: mix run examples/focus_and_errors.exs
 
 # Suppress GenServer crash logs from polluting the TUI
 :logger.set_primary_config(:level, :none)

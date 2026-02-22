@@ -1,11 +1,11 @@
-# sketches/08_scrollable_area.exs
+# examples/scrollable_area.exs
 #
 # ScrollableArea viewport with scroll_offset shifting.
 # 5 frames: basic scrolling, middle view, bottom view, bordered+colored, dashboard.
 #
-# Run with: mix run sketches/08_scrollable_area.exs
+# Run with: mix run examples/scrollable_area.exs
 
-defmodule Sketch.ScrollableArea do
+defmodule Example.ScrollableArea do
   alias Courgette.ANSI
   alias Courgette.Buffer
   alias Courgette.Buffer.Diff
@@ -104,7 +104,7 @@ defmodule Sketch.ScrollableArea do
 
   defp build_dashboard(cols, viewport_h) do
     header = Element.new(:text, [color: :bright_white, bold: true, height: 1], [
-      " Courgette Dashboard — Phase 3c"
+      " Courgette Dashboard — Scrollable Areas"
     ])
 
     sidebar_items = [
@@ -192,4 +192,4 @@ defmodule Sketch.ScrollableArea do
   end
 end
 
-Sketch.ScrollableArea.run()
+Example.ScrollableArea.run()

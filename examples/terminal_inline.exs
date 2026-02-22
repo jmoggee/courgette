@@ -1,11 +1,11 @@
-# sketches/03_terminal_inline.exs
+# examples/terminal_inline.exs
 #
 # Test drive the Terminal GenServer in inline mode. Output renders at
 # the cursor position and stays in terminal scrollback after exit.
 #
-# Run with: mix run sketches/03_terminal_inline.exs
+# Run with: mix run examples/terminal_inline.exs
 
-defmodule Sketch.TerminalInline do
+defmodule Example.TerminalInline do
   alias Courgette.ANSI
   alias Courgette.Terminal
 
@@ -147,4 +147,4 @@ defmodule Sketch.TerminalInline do
   end
 end
 
-Sketch.TerminalInline.run()
+Example.TerminalInline.run()

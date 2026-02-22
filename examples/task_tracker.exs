@@ -1,4 +1,4 @@
-# demo/task_tracker.exs
+# examples/task_tracker.exs
 #
 # Task Tracker — a demo app exercising every Courgette component.
 #
@@ -9,7 +9,7 @@
 # badge, divider, heading, key_value, empty_state, scrollable_area,
 # Tween + Easing, Focus management, Theme tokens.
 #
-# Run: mix run demo/task_tracker.exs
+# Run: mix run examples/task_tracker.exs
 
 :logger.set_primary_config(:level, :none)
 
