@@ -21,7 +21,8 @@ defmodule Mix.Tasks.Taffy.Generate do
   @default_source Path.join(@taffy_dir, @fixture_subdir)
   @output_dir "test/courgette/layout/engine/taffy"
 
-  # Unsupported features that cause a test to be tagged @tag :skip
+  # Unsupported features — tests matching these patterns are omitted from output.
+  # Remove an entry here and re-run `mix taffy.generate` to include those tests.
   @unsupported_patterns [
     {~r/Position::Absolute/, "absolute positioning"},
     {~r/from_percent\((?!0f32)/, "percentage dimensions"},
@@ -62,15 +63,16 @@ defmodule Mix.Tasks.Taffy.Generate do
     files = Path.wildcard(Path.join(source_dir, "*.rs")) |> Enum.sort()
     Mix.shell().info("Found #{length(files)} Taffy fixture files")
 
-    results =
+    all =
       files
       |> Enum.map(&parse_file/1)
       |> Enum.reject(&is_nil/1)
 
-    Mix.shell().info("Successfully parsed #{length(results)} tests")
+    {active, skipped} = Enum.split_with(all, fn {_, _, _, skip} -> skip == nil end)
+    Mix.shell().info("Parsed #{length(all)} tests (#{length(active)} active, #{length(skipped)} skipped)")
 
-    # Group by category
-    grouped = Enum.group_by(results, fn {_name, _test, category, _skip} -> category end)
+    # Group active tests by category (skipped tests are omitted entirely)
+    grouped = Enum.group_by(active, fn {_name, _test, category, _skip} -> category end)
 
     # Ensure output directory exists
     File.mkdir_p!(@output_dir)
@@ -80,15 +82,10 @@ defmodule Mix.Tasks.Taffy.Generate do
       content = generate_test_file(category, tests)
       path = Path.join(@output_dir, "#{category}_test.exs")
       File.write!(path, content)
-
-      skip_count = Enum.count(tests, fn {_, _, _, skip} -> skip != nil end)
-      active = length(tests) - skip_count
-      Mix.shell().info("  #{path}: #{length(tests)} tests (#{active} active, #{skip_count} skipped)")
+      Mix.shell().info("  #{path}: #{length(tests)} tests")
     end)
 
-    total_skip = Enum.count(results, fn {_, _, _, skip} -> skip != nil end)
-    total_active = length(results) - total_skip
-    Mix.shell().info("\nTotal: #{length(results)} tests (#{total_active} active, #{total_skip} skipped)")
+    Mix.shell().info("\nTotal: #{length(active)} tests generated")
   end
 
   defp ensure_taffy_repo! do
@@ -829,17 +826,7 @@ defmodule Mix.Tasks.Taffy.Generate do
     test_bodies =
       tests
       |> Enum.sort_by(fn {name, _, _, _} -> name end)
-      |> Enum.map(fn {_name, code, _, skip} ->
-        if skip do
-          # Put @tag :skip inside the describe block, before the test
-          code_with_tag =
-            String.replace(code, "    test \"border_box\" do", "    # Unsupported: #{skip}\n    @tag :skip\n    test \"border_box\" do")
-
-          code_with_tag
-        else
-          code
-        end
-      end)
+      |> Enum.map(fn {_name, code, _, _skip} -> code end)
       |> Enum.join("\n")
 
     """

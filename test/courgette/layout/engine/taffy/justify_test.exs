@@ -35,48 +35,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
     end
   end
 
-  describe "justify_content_column_center_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :center], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: -25})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: -5})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 15})
-    end
-  end
-
-  describe "justify_content_column_center_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :center, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: -35})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: -5})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 25})
-    end
-  end
-
   describe "justify_content_column_end" do
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, justify_content: :flex_end], [
@@ -89,48 +47,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 70})
       assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 80})
       assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 90})
-    end
-  end
-
-  describe "justify_content_column_end_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :flex_end], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: -50})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: -30})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: -10})
-    end
-  end
-
-  describe "justify_content_column_end_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :flex_end, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: -70})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: -40})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: -10})
     end
   end
 
@@ -164,23 +80,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
     end
   end
 
-  describe "justify_content_column_flex_end_reverse" do
-    # Unsupported: column_reverse
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100, justify_content: :flex_end], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 20})
-      assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 10})
-      assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 0})
-    end
-  end
-
   describe "justify_content_column_flex_start" do
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, justify_content: :flex_start], [
@@ -193,23 +92,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
       assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 10})
       assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 20})
-    end
-  end
-
-  describe "justify_content_column_flex_start_reverse" do
-    # Unsupported: column_reverse
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100, justify_content: :flex_start], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 90})
-      assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 80})
-      assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 70})
     end
   end
 
@@ -280,48 +162,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
     end
   end
 
-  describe "justify_content_column_space_around_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_around], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 20})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 40})
-    end
-  end
-
-  describe "justify_content_column_space_around_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_around, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 30})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 60})
-    end
-  end
-
   describe "justify_content_column_space_between" do
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, justify_content: :space_between], [
@@ -334,48 +174,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
       assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 45})
       assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 90})
-    end
-  end
-
-  describe "justify_content_column_space_between_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_between], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 20})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 40})
-    end
-  end
-
-  describe "justify_content_column_space_between_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_between, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 30})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 60})
     end
   end
 
@@ -394,48 +192,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
     end
   end
 
-  describe "justify_content_column_space_evenly_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_evenly], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 20})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 40})
-    end
-  end
-
-  describe "justify_content_column_space_evenly_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :space_evenly, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 30})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 60})
-    end
-  end
-
   describe "justify_content_column_start" do
     test "border_box" do
       el = box([width: 100, height: 100, flex_direction: :column, justify_content: :flex_start], [
@@ -448,65 +204,6 @@ defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
       assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 10})
       assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 20})
-    end
-  end
-
-  describe "justify_content_column_start_negative_space" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :flex_start], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 20})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 40})
-    end
-  end
-
-  describe "justify_content_column_start_negative_space_gap" do
-    # Unsupported: percentage dimensions, percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 320, height: 320, flex_direction: :column, padding_left: 60, padding_right: 60, padding_top: 60, padding_bottom: 60], [
-        box([height: 10, flex_direction: :column, align_items: :center, justify_content: :flex_start, gap: 10], [
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0]),
-          box([height: 20, flex_shrink: 0])
-        ])
-      ])
-      r = Flex.layout(el, %{width: 320.0, height: 320.0})
-      assert_layout(r, %{w: 320, h: 320, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 200, h: 10, x: 60, y: 60})
-      c0 = child(r, 0)
-      assert_layout(child(c0, 0), %{w: 160, h: 20, x: 20, y: 0})
-      assert_layout(child(c0, 1), %{w: 160, h: 20, x: 20, y: 30})
-      assert_layout(child(c0, 2), %{w: 160, h: 20, x: 20, y: 60})
-    end
-  end
-
-  describe "justify_content_column_start_reverse" do
-    # Unsupported: column_reverse
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100, justify_content: :flex_start], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 20})
-      assert_layout(child(r, 1), %{w: 100, h: 10, x: 0, y: 10})
-      assert_layout(child(r, 2), %{w: 100, h: 10, x: 0, y: 0})
     end
   end
 

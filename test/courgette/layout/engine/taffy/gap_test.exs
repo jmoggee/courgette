@@ -215,108 +215,6 @@ defmodule Courgette.Layout.Engine.Taffy.GapTest do
     end
   end
 
-  describe "gap_column_gap_percentage_cyclic_partially_shrinkable" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([], [
-        box([width: 20, height: 40, flex_shrink: 0]),
-        box([width: 20, height: 40]),
-        box([width: 20, height: 40, flex_shrink: 0])
-      ])
-      r = Flex.layout(el, %{width: nil, height: nil})
-      assert_layout(r, %{w: 60, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 20, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 0, h: 40, x: 50, y: 0})
-      assert_layout(child(r, 2), %{w: 20, h: 40, x: 80, y: 0})
-    end
-  end
-
-  describe "gap_column_gap_percentage_cyclic_shrinkable" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([], [
-        box([width: 20, height: 40]),
-        box([width: 20, height: 40]),
-        box([width: 20, height: 40])
-      ])
-      r = Flex.layout(el, %{width: nil, height: nil})
-      assert_layout(r, %{w: 60, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 12, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 12, h: 40, x: 24, y: 0})
-      assert_layout(child(r, 2), %{w: 12, h: 40, x: 48, y: 0})
-    end
-  end
-
-  describe "gap_column_gap_percentage_cyclic_unshrinkable" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([], [
-        box([width: 20, height: 40, flex_shrink: 0]),
-        box([width: 20, height: 40, flex_shrink: 0]),
-        box([width: 20, height: 40, flex_shrink: 0])
-      ])
-      r = Flex.layout(el, %{width: nil, height: nil})
-      assert_layout(r, %{w: 60, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 20, h: 40, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 20, h: 40, x: 32, y: 0})
-      assert_layout(child(r, 2), %{w: 20, h: 40, x: 64, y: 0})
-    end
-  end
-
-  describe "gap_column_gap_percentage_flexible" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100, gap_cross: 20], [
-        box([flex_grow: 1, flex_basis: 0]),
-        box([flex_grow: 1, flex_basis: 0]),
-        box([flex_grow: 1, flex_basis: 0])
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 27, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 26, h: 100, x: 37, y: 0})
-      assert_layout(child(r, 2), %{w: 27, h: 100, x: 73, y: 0})
-    end
-  end
-
-  describe "gap_column_gap_percentage_flexible_with_padding" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100, gap_cross: 20, padding: 10], [
-        box([flex_grow: 1, flex_basis: 0]),
-        box([flex_grow: 1, flex_basis: 0]),
-        box([flex_grow: 1, flex_basis: 0])
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 21, h: 80, x: 10, y: 10})
-      assert_layout(child(r, 1), %{w: 22, h: 80, x: 39, y: 10})
-      assert_layout(child(r, 2), %{w: 21, h: 80, x: 69, y: 10})
-    end
-  end
-
-  describe "gap_column_gap_percentage_inflexible" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 100, height: 100], [
-        box(width: 20),
-        box(width: 20),
-        box(width: 20)
-      ])
-      r = Flex.layout(el, %{width: 100.0, height: 100.0})
-      assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 20, h: 100, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 20, h: 100, x: 40, y: 0})
-      assert_layout(child(r, 2), %{w: 20, h: 100, x: 80, y: 0})
-    end
-  end
-
   describe "gap_column_gap_row_gap_wrapping" do
     test "border_box" do
       el = box([width: 80, flex_wrap: :wrap, gap_main: 10, gap_cross: 20], [
@@ -341,25 +239,6 @@ defmodule Courgette.Layout.Engine.Taffy.GapTest do
       assert_layout(child(r, 6), %{w: 20, h: 20, x: 0, y: 80})
       assert_layout(child(r, 7), %{w: 20, h: 20, x: 30, y: 80})
       assert_layout(child(r, 8), %{w: 20, h: 20, x: 60, y: 80})
-    end
-  end
-
-  describe "gap_column_gap_start_index" do
-    # Unsupported: absolute positioning
-    @tag :skip
-    test "border_box" do
-      el = box([width: 80, flex_wrap: :wrap, gap_main: 10, gap_cross: 20], [
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20])
-      ])
-      r = Flex.layout(el, %{width: 80.0, height: nil})
-      assert_layout(r, %{w: 80, h: 20, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 20, h: 20, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 20, h: 20, x: 0, y: 0})
-      assert_layout(child(r, 2), %{w: 20, h: 20, x: 30, y: 0})
-      assert_layout(child(r, 3), %{w: 20, h: 20, x: 60, y: 0})
     end
   end
 
@@ -583,35 +462,6 @@ defmodule Courgette.Layout.Engine.Taffy.GapTest do
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
       assert_layout(child(r, 1), %{w: 100, h: 20, x: 0, y: 20})
       assert_layout(child(r, 2), %{w: 100, h: 30, x: 0, y: 50})
-    end
-  end
-
-  describe "gap_row_gap_percentage_wrapping" do
-    # Unsupported: percentage values
-    @tag :skip
-    test "border_box" do
-      el = box([width: 80, flex_wrap: :wrap, gap_main: 10], [
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20]),
-        box([width: 20, height: 20])
-      ])
-      r = Flex.layout(el, %{width: 80.0, height: nil})
-      assert_layout(r, %{w: 80, h: 60, x: 0, y: 0})
-      assert_layout(child(r, 0), %{w: 20, h: 20, x: 0, y: 0})
-      assert_layout(child(r, 1), %{w: 20, h: 20, x: 30, y: 0})
-      assert_layout(child(r, 2), %{w: 20, h: 20, x: 60, y: 0})
-      assert_layout(child(r, 3), %{w: 20, h: 20, x: 0, y: 20})
-      assert_layout(child(r, 4), %{w: 20, h: 20, x: 30, y: 20})
-      assert_layout(child(r, 5), %{w: 20, h: 20, x: 60, y: 20})
-      assert_layout(child(r, 6), %{w: 20, h: 20, x: 0, y: 40})
-      assert_layout(child(r, 7), %{w: 20, h: 20, x: 30, y: 40})
-      assert_layout(child(r, 8), %{w: 20, h: 20, x: 60, y: 40})
     end
   end
 
