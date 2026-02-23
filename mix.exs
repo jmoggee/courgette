@@ -27,7 +27,10 @@ defmodule Courgette.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.35", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.35", only: :dev, runtime: false},
+      {:benchee, "~> 1.3", only: :dev, runtime: false},
+      {:benchee_html, "~> 1.0", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -63,6 +66,7 @@ defmodule Courgette.MixProject do
           Courgette.Components.TextInput,
           Courgette.Components.Textarea,
           Courgette.Components.Select,
+          Courgette.Components.ScrollArea,
           Courgette.Components.Spinner,
           Courgette.Components.ProgressBar
         ],

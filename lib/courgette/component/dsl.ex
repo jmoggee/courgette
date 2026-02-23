@@ -50,15 +50,48 @@ defmodule Courgette.Component.DSL do
 
       live_component(Counter, id: "main", initial_count: 5)
 
+      live_component(ScrollArea, id: "scroll", height: 10) do
+        text do: "child content"
+      end
+
   Creates a `:live_component` element with the module and options as props.
   The `:id` option is required and used for lifecycle reconciliation.
+
+  When a `do` block is provided, its children are stored on the element's
+  `children` field and passed to the component as `:inner_block` in props.
   """
-  defmacro live_component(module, opts) do
+  defmacro live_component(module, opts_or_body) do
+    case extract_do(opts_or_body) do
+      {props, body} ->
+        children = wrap_children(body)
+
+        quote do
+          Element.new(
+            :live_component,
+            [{:module, unquote(module)} | unquote(props)],
+            Courgette.Component.DSL.__flatten_children__(unquote(children))
+          )
+        end
+
+      :no_do ->
+        quote do
+          Element.new(
+            :live_component,
+            [{:module, unquote(module)} | unquote(opts_or_body)],
+            []
+          )
+        end
+    end
+  end
+
+  defmacro live_component(module, opts, do_block) do
+    children = wrap_children(do_block[:do])
+
     quote do
       Element.new(
         :live_component,
         [{:module, unquote(module)} | unquote(opts)],
-        []
+        Courgette.Component.DSL.__flatten_children__(unquote(children))
       )
     end
   end

@@ -198,6 +198,71 @@ defmodule Courgette.Component.DSLTest do
     end
   end
 
+  describe "live_component macro" do
+    defmodule FakeComponent, do: :ok
+
+    test "props only, no do block" do
+      el = live_component(FakeComponent, id: "a", count: 5)
+      assert el.type == :live_component
+      assert el.props.module == FakeComponent
+      assert el.props.id == "a"
+      assert el.props.count == 5
+      assert el.children == []
+    end
+
+    test "with do block stores children" do
+      el =
+        live_component(FakeComponent, id: "b") do
+          text(do: "child1")
+          text(do: "child2")
+        end
+
+      assert el.type == :live_component
+      assert el.props.module == FakeComponent
+      assert el.props.id == "b"
+      assert length(el.children) == 2
+      assert Enum.all?(el.children, &(&1.type == :text))
+    end
+
+    test "with inline do: shorthand" do
+      el = live_component(FakeComponent, id: "c", do: text(do: "inline"))
+      assert el.type == :live_component
+      assert el.props.module == FakeComponent
+      assert el.props.id == "c"
+      assert [%Element{type: :text}] = el.children
+    end
+
+    test "do block with conditional children" do
+      show = false
+
+      el =
+        live_component(FakeComponent, id: "d") do
+          if show do
+            text(do: "hidden")
+          end
+
+          text(do: "visible")
+        end
+
+      assert length(el.children) == 1
+      assert [%Element{children: ["visible"]}] = el.children
+    end
+
+    test "do block with comprehension" do
+      items = ["x", "y"]
+
+      el =
+        live_component(FakeComponent, id: "e") do
+          for item <- items do
+            text(do: item)
+          end
+        end
+
+      assert length(el.children) == 2
+      assert Enum.map(el.children, & &1.children) == [["x"], ["y"]]
+    end
+  end
+
   describe "__flatten_children__/1" do
     test "flattens nested lists" do
       assert Courgette.Component.DSL.__flatten_children__([["a", "b"], "c"]) == ["a", "b", "c"]

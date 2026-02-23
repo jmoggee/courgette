@@ -48,7 +48,8 @@ defmodule Courgette.LiveComponent.LifecycleTest do
       specs = Lifecycle.extract_components(tree)
 
       # Should only find the outer one — stops recursion at :live_component
-      assert specs == [{Counter, "outer", %{}}]
+      assert [{Counter, "outer", props}] = specs
+      assert props.inner_block == [inner]
     end
 
     test "finds live_components nested inside boxes" do
@@ -81,6 +82,31 @@ defmodule Courgette.LiveComponent.LifecycleTest do
                {Counter, "2", %{}},
                {AgentCard, "3", %{}}
              ]
+    end
+  end
+
+  describe "extract_components passes children as :inner_block" do
+    test "element with children includes :inner_block in props" do
+      child1 = Element.new(:text, [], ["Hello"])
+      child2 = Element.new(:text, [], ["World"])
+
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a", label: "test"], [child1, child2])
+      ])
+
+      [{Counter, "a", props}] = Lifecycle.extract_components(tree)
+      assert props.label == "test"
+      assert props.inner_block == [child1, child2]
+    end
+
+    test "element with no children omits :inner_block" do
+      tree = Element.new(:box, [], [
+        Element.new(:live_component, [module: Counter, id: "a", label: "test"], [])
+      ])
+
+      [{Counter, "a", props}] = Lifecycle.extract_components(tree)
+      assert props == %{label: "test"}
+      refute Map.has_key?(props, :inner_block)
     end
   end
 

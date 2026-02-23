@@ -23,10 +23,14 @@ defmodule Courgette.LiveComponent.Lifecycle do
   @spec extract_components(Element.t() | nil) :: [component_spec()]
   def extract_components(nil), do: []
 
-  def extract_components(%Element{type: :live_component, props: props}) do
+  def extract_components(%Element{type: :live_component, props: props, children: children}) do
     module = Map.fetch!(props, :module)
     id = Map.fetch!(props, :id)
     extra_props = Map.drop(props, [:module, :id, :focusable])
+
+    extra_props =
+      if children != [], do: Map.put(extra_props, :inner_block, children), else: extra_props
+
     [{module, id, extra_props}]
   end
 

@@ -16,6 +16,7 @@ alias Courgette.Components.{
   List,
   ProgressBar,
   RadioGroup,
+  ScrollArea,
   Select,
   Spinner,
   Switch,
@@ -49,6 +50,7 @@ defmodule Storybook.Nav do
     {"spinner", "  Spinner"},
     {"progress_bar", "  ProgressBar"},
     {"scrollbar", "  Scrollbar"},
+    {"scroll_area", "  ScrollArea"},
     # Typography
     {"link", "  Link"},
     {"badge", "  Badge"},
@@ -70,8 +72,8 @@ defmodule Storybook.Nav do
     {6, "Data Display"},
     {9, "Navigation"},
     {10, "Feedback"},
-    {13, "Typography"},
-    {18, "Lists & Layout"}
+    {14, "Typography"},
+    {19, "Lists & Layout"}
   ]
 
   def categories, do: @categories
@@ -300,6 +302,7 @@ defmodule Storybook do
       "spinner" -> render_spinner_page(assigns)
       "progress_bar" -> render_progress_bar_page(assigns)
       "scrollbar" -> render_scrollbar_page(assigns)
+      "scroll_area" -> render_scroll_area_page(assigns)
       "link" -> render_link_page(assigns)
       "badge" -> render_badge_page(assigns)
       "heading" -> render_heading_page(assigns)
@@ -575,7 +578,7 @@ defmodule Storybook do
       heading(text: "Tree", color: :cyan)
 
       text dim: true do
-        "Expandable hierarchy. Right arrow expands, left collapses, Enter selects."
+        "Expandable hierarchy. Tab to focus, ← collapses, → expands, Enter selects."
       end
 
       box padding_v: 1 do
@@ -605,6 +608,7 @@ defmodule Storybook do
             "mix.exs",
             "README.md"
           ],
+          expanded: MapSet.new([[0], [0, 0]]),
           on_select: :tree_node_selected
         )
       end
@@ -833,6 +837,40 @@ defmodule Storybook do
             orientation: :vertical
           )
         end
+      end
+    end
+  end
+
+  defp render_scroll_area_page(_assigns) do
+    lines = for i <- 1..30, do: "Line #{i}: Lorem ipsum dolor sit amet"
+
+    box flex_direction: :column do
+      heading(text: "ScrollArea", color: :cyan)
+
+      text dim: true do
+        "Scrollable viewport with automatic scrollbar. Focus and use ↑↓ / PgUp/PgDn / Home/End."
+      end
+
+      box flex_direction: :column, padding_v: 1 do
+        live_component(ScrollArea,
+          id: "scroll_demo",
+          height: 10,
+          focusable: true,
+          border: :single,
+          inner_block: build_scroll_lines(lines)
+        )
+      end
+    end
+  end
+
+  defp build_scroll_lines(lines) do
+    import Courgette.Component.DSL
+
+    for {line, idx} <- Enum.with_index(lines) do
+      color = if rem(idx, 2) == 0, do: :white, else: :bright_black
+
+      text fg: color do
+        line
       end
     end
   end
