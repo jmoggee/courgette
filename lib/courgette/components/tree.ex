@@ -70,7 +70,7 @@ defmodule Courgette.Components.Tree do
   def render(assigns) do
     border_color = if assigns.focused, do: :cyan, else: :white
 
-    box border: :single, border_color: border_color do
+    box border: :single, border_color: border_color, flex_direction: :column do
       for {entry, idx} <- Enum.with_index(assigns.flat_list) do
         {label, depth, has_children?, expanded?, _path} = entry
         indent = String.duplicate(" ", depth * 2)

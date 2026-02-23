@@ -58,7 +58,17 @@ defmodule Courgette.Painter do
   def paint(nil, buffer), do: buffer
 
   def paint(%{element: %Element{}, bounds: %Bounds{}} = node, %Buffer{} = buffer) do
-    paint_node(node, buffer, nil)
+    {cleaned_tree, absolute_nodes} = extract_absolute_nodes(node)
+
+    # Phase 1: paint normal content with hierarchical clipping
+    buffer = paint_node(cleaned_tree, buffer, nil)
+
+    # Phase 2: paint absolute nodes on top, clipped only to screen
+    screen_clip = Bounds.new(0, 0, buffer.width, buffer.height)
+
+    Enum.reduce(absolute_nodes, buffer, fn abs_node, buf ->
+      paint_node(abs_node, buf, screen_clip)
+    end)
   end
 
   # ── Internal ──────────────────────────────────────────────────────
@@ -280,6 +290,22 @@ defmodule Courgette.Painter do
       shifted_children = shift_tree(node.children, dx, dy)
       %{node | bounds: shifted_bounds, children: shifted_children}
     end)
+  end
+
+  # ── Absolute node extraction ────────────────────────────────────
+
+  defp extract_absolute_nodes(%{children: children} = node) do
+    {normal, absolutes} =
+      Enum.reduce(children, {[], []}, fn child, {normals, abs_acc} ->
+        if child.element.props[:position] == :absolute do
+          {normals, [child | abs_acc]}
+        else
+          {cleaned_child, nested_abs} = extract_absolute_nodes(child)
+          {[cleaned_child | normals], nested_abs ++ abs_acc}
+        end
+      end)
+
+    {%{node | children: Enum.reverse(normal)}, Enum.reverse(absolutes)}
   end
 
   # ── Children ─────────────────────────────────────────────────────

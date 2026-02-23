@@ -218,6 +218,43 @@ defmodule Courgette.Layout.Engine.StyleTest do
     end
   end
 
+  # ── Position ─────────────────────────────────────────────────────
+
+  describe "position" do
+    test "default position is :static with nil offsets" do
+      s = style_for([])
+      assert s.position == :static
+      assert s.top == nil
+      assert s.left == nil
+      assert s.right == nil
+      assert s.bottom == nil
+    end
+
+    test "position: :absolute with top/left" do
+      s = style_for(position: :absolute, top: 2, left: 3)
+      assert s.position == :absolute
+      assert s.top == 2.0
+      assert s.left == 3.0
+      assert s.right == nil
+      assert s.bottom == nil
+    end
+
+    test "right/bottom offsets" do
+      s = style_for(position: :absolute, right: 5, bottom: 10)
+      assert s.position == :absolute
+      assert s.right == 5.0
+      assert s.bottom == 10.0
+      assert s.top == nil
+      assert s.left == nil
+    end
+
+    test "float offsets preserved" do
+      s = style_for(position: :absolute, top: 1.5, left: 2.5)
+      assert s.top == 1.5
+      assert s.left == 2.5
+    end
+  end
+
   # ── Overflow ──────────────────────────────────────────────────────
 
   describe "overflow" do

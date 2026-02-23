@@ -304,6 +304,30 @@ defmodule Courgette.Components.SelectTest do
     assert text =~ "▸ Blue"
   end
 
+  # -- Absolute positioned dropdown --
+
+  test "expanded dropdown has position: :absolute box" do
+    view = mount(Host)
+    send_tab(view)
+    send_event(view, {:key, :enter})
+    tree = render_tree(view)
+
+    # Find a box with position: :absolute in the tree
+    assert find_absolute_box(tree) != nil
+  end
+
+  # Helper to find position: :absolute box in tree
+  defp find_absolute_box(nil), do: nil
+
+  defp find_absolute_box(%Courgette.Element{type: :box, props: %{position: :absolute}} = el), do: el
+
+  defp find_absolute_box(%Courgette.Element{children: children}) do
+    Enum.find_value(children, fn
+      %Courgette.Element{} = child -> find_absolute_box(child)
+      _ -> nil
+    end)
+  end
+
   # Helper to find border_color in tree
   defp find_border_color(nil), do: nil
 

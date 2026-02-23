@@ -774,6 +774,75 @@ defmodule Courgette.PainterTest do
     end
   end
 
+  # ── Absolute positioning ────────────────────────────────────────
+
+  describe "absolute positioning" do
+    test "absolute child paints on top of normal content" do
+      buffer = Buffer.new(20, 5)
+
+      normal_text = text_node("AAAA", [], Bounds.new(0, 0, 4, 1))
+      abs_text = text_node("BB", [], Bounds.new(0, 0, 2, 1))
+      abs_box = layout_node(:box, [position: :absolute], Bounds.new(0, 0, 2, 1), [abs_text])
+
+      parent = layout_node(:box, [], Bounds.new(0, 0, 20, 5), [normal_text, abs_box])
+      result = Painter.paint(parent, buffer)
+
+      # Phase 2 (absolute) overwrites phase 1 (normal)
+      assert grapheme_at(result, 0, 0) == "B"
+      assert grapheme_at(result, 1, 0) == "B"
+      assert grapheme_at(result, 2, 0) == "A"
+      assert grapheme_at(result, 3, 0) == "A"
+    end
+
+    test "absolute child escapes parent clip bounds" do
+      buffer = Buffer.new(30, 5)
+
+      # Absolute child placed outside parent's 10-wide bounds
+      abs_text = text_node("HI", [], Bounds.new(15, 0, 2, 1))
+      abs_box = layout_node(:box, [position: :absolute], Bounds.new(15, 0, 5, 1), [abs_text])
+
+      # Parent is only 10 wide — normal clipping would prevent painting at x=15
+      parent = layout_node(:box, [], Bounds.new(0, 0, 10, 5), [abs_box])
+      result = Painter.paint(parent, buffer)
+
+      # Absolute child escapes parent clip, uses screen clip instead
+      assert grapheme_at(result, 15, 0) == "H"
+      assert grapheme_at(result, 16, 0) == "I"
+    end
+
+    test "deeply nested absolute child extracted and painted at screen level" do
+      buffer = Buffer.new(40, 10)
+
+      abs_text = text_node("OVERLAY", [], Bounds.new(25, 0, 7, 1))
+      abs_box = layout_node(:box, [position: :absolute], Bounds.new(25, 0, 10, 1), [abs_text])
+
+      # Nest the absolute child deeply: root > mid > inner > abs
+      inner = layout_node(:box, [], Bounds.new(2, 2, 8, 6), [abs_box])
+      mid = layout_node(:box, [], Bounds.new(1, 1, 15, 8), [inner])
+      root = layout_node(:box, [], Bounds.new(0, 0, 20, 10), [mid])
+
+      result = Painter.paint(root, buffer)
+
+      # Despite being nested in a 20-wide root, absolute child at x=25 paints on screen
+      assert grapheme_at(result, 25, 0) == "O"
+      assert grapheme_at(result, 26, 0) == "V"
+    end
+
+    test "absolute child with background covers normal content" do
+      buffer = Buffer.new(20, 3)
+
+      normal_text = text_node("XXXXX", [], Bounds.new(0, 0, 5, 1))
+      abs_box = layout_node(:box, [position: :absolute, bg: :red], Bounds.new(0, 0, 5, 1))
+
+      parent = layout_node(:box, [], Bounds.new(0, 0, 20, 3), [normal_text, abs_box])
+      result = Painter.paint(parent, buffer)
+
+      # Background from absolute box covers the normal text
+      assert bg_at(result, 0, 0) == :red
+      assert bg_at(result, 4, 0) == :red
+    end
+  end
+
   # ── Integration scenarios ───────────────────────────────────────
 
   describe "integration" do

@@ -11,6 +11,11 @@ defmodule Courgette.Layout.Engine.Style do
 
   @typedoc "Resolved layout style for one element."
   @type t :: %__MODULE__{
+          position: :static | :absolute,
+          top: float() | nil,
+          left: float() | nil,
+          right: float() | nil,
+          bottom: float() | nil,
           flex_direction: :row | :column,
           flex_wrap: :no_wrap | :wrap,
           flex_grow: float(),
@@ -37,7 +42,12 @@ defmodule Courgette.Layout.Engine.Style do
           text_overflow: :clip | :ellipsis
         }
 
-  defstruct flex_direction: :row,
+  defstruct position: :static,
+            top: nil,
+            left: nil,
+            right: nil,
+            bottom: nil,
+            flex_direction: :row,
             flex_wrap: :no_wrap,
             flex_grow: 0.0,
             flex_shrink: 1.0,
@@ -75,6 +85,7 @@ defmodule Courgette.Layout.Engine.Style do
   @spec from_element(Courgette.Element.t()) :: t()
   def from_element(%{props: props}) do
     %__MODULE__{}
+    |> resolve_position(props)
     |> resolve_border(props)
     |> resolve_padding(props)
     |> resolve_margin(props)
@@ -83,6 +94,18 @@ defmodule Courgette.Layout.Engine.Style do
     |> resolve_alignment(props)
     |> resolve_gap(props)
     |> resolve_text_props(props)
+  end
+
+  # ── Position ─────────────────────────────────────────────────────
+
+  defp resolve_position(style, props) do
+    %{style |
+      position: Map.get(props, :position, :static),
+      top: to_maybe_float(Map.get(props, :top)),
+      left: to_maybe_float(Map.get(props, :left)),
+      right: to_maybe_float(Map.get(props, :right)),
+      bottom: to_maybe_float(Map.get(props, :bottom))
+    }
   end
 
   # ── Border ────────────────────────────────────────────────────────

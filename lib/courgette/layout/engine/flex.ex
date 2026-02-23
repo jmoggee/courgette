@@ -161,8 +161,11 @@ defmodule Courgette.Layout.Engine.Flex do
 
     inner_available = Geometry.from_main_cross(axis, inner_main, inner_cross)
 
+    # Partition children into flow (normal) and absolute-positioned
+    {flow_children, absolute_children} = partition_children(element.children)
+
     # Step 1: Generate flex items
-    items = generate_flex_items(element.children, axis, inner_available)
+    items = generate_flex_items(flow_children, axis, inner_available)
 
     # Step 2-3: Determine flex base sizes
     items = determine_flex_base_sizes(items, axis, inner_available)
@@ -220,6 +223,16 @@ defmodule Courgette.Layout.Engine.Flex do
     # Step 15: Final layout — compute x/y from main/cross offsets
     children = final_layout_pass(lines, axis, style)
 
+    # Layout absolute-positioned children (out of flow)
+    {content_w, content_h} =
+      case axis do
+        :row -> {container_main_inner, container_cross_inner}
+        :column -> {container_cross_inner, container_main_inner}
+      end
+
+    absolute_laid_out = layout_absolute_children(absolute_children, style, content_w, content_h)
+    children = children ++ absolute_laid_out
+
     # Compute final container outer size
     # Ensure padding/border can't be squeezed below their minimum
     final_main = max(container_main_inner + inset_main, inset_main)
@@ -244,6 +257,65 @@ defmodule Courgette.Layout.Engine.Flex do
       height: final_h,
       children: children
     }
+  end
+
+  # ── Absolute positioning ─────────────────────────────────────────
+
+  defp partition_children(children) do
+    {flow, abs} =
+      Enum.reduce(children, {[], []}, fn child, {flow_acc, abs_acc} ->
+        cond do
+          is_binary(child) -> {[child | flow_acc], abs_acc}
+          Style.from_element(child).position == :absolute -> {flow_acc, [child | abs_acc]}
+          true -> {[child | flow_acc], abs_acc}
+        end
+      end)
+
+    {Enum.reverse(flow), Enum.reverse(abs)}
+  end
+
+  defp layout_absolute_children([], _style, _content_w, _content_h), do: []
+
+  defp layout_absolute_children(abs_children, style, content_w, content_h) do
+    origin_x = style.border.left + style.padding.left
+    origin_y = style.border.top + style.padding.top
+
+    Enum.map(abs_children, fn child ->
+      child_style = Style.from_element(child)
+
+      # Absolute children with no explicit size shrink-to-fit (available = nil).
+      # With explicit size, they use the parent content area as available space.
+      avail_w = if child_style.width != nil, do: content_w, else: nil
+      avail_h = if child_style.height != nil, do: content_h, else: nil
+      child_available = %{width: avail_w, height: avail_h}
+      result = compute_node(child, child_style, child_available)
+
+      x =
+        cond do
+          child_style.left != nil ->
+            origin_x + child_style.left
+
+          child_style.right != nil and content_w != nil ->
+            origin_x + content_w - child_style.right - result.width
+
+          true ->
+            origin_x
+        end
+
+      y =
+        cond do
+          child_style.top != nil ->
+            origin_y + child_style.top
+
+          child_style.bottom != nil and content_h != nil ->
+            origin_y + content_h - child_style.bottom - result.height
+
+          true ->
+            origin_y
+        end
+
+      %{result | x: x, y: y}
+    end)
   end
 
   # ── Step 1: Generate flex items ───────────────────────────────────
@@ -516,7 +588,7 @@ defmodule Courgette.Layout.Engine.Flex do
           element.children
           |> Enum.filter(fn
             child when is_binary(child) -> false
-            _ -> true
+            child -> Style.from_element(child).position != :absolute
           end)
 
         if children == [] do

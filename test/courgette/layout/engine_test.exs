@@ -316,6 +316,201 @@ defmodule Courgette.Layout.EngineTest do
     end
   end
 
+  # ── Absolute positioning ────────────────────────────────────────
+
+  describe "absolute positioning" do
+    test "absolute child does not push siblings" do
+      el = Element.new(:box, [width: 40, height: 10, flex_direction: :column, align_items: :flex_start], [
+        Element.new(:text, [], ["Line 1"]),
+        Element.new(:box, [position: :absolute, top: 5, left: 0, width: 20, height: 3]),
+        Element.new(:text, [], ["Line 2"])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
+
+      # Flow children: Line 1 and Line 2 should be adjacent (no gap from absolute child)
+      flow_children = Enum.filter(result.children, fn child ->
+        child.element.type == :text
+      end)
+
+      [line1, line2] = flow_children
+      assert line1.bounds.y == 0
+      assert line2.bounds.y == 1
+    end
+
+    test "absolute child positioned at content origin + top/left" do
+      el = Element.new(:box, [width: 40, height: 20, border: :single], [
+        Element.new(:box, [position: :absolute, top: 2, left: 3, width: 10, height: 5])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
+      [abs_child] = result.children
+
+      # border inset is 1, so content origin is (1,1), offset by top:2, left:3
+      assert abs_child.bounds.x == 4
+      assert abs_child.bounds.y == 3
+      assert abs_child.bounds.width == 10
+      assert abs_child.bounds.height == 5
+    end
+
+    test "absolute child with right/bottom positioning" do
+      el = Element.new(:box, [width: 40, height: 20], [
+        Element.new(:box, [position: :absolute, right: 0, bottom: 0, width: 10, height: 5])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
+      [abs_child] = result.children
+
+      # Positioned at right edge: x = 40 - 0 - 10 = 30, y = 20 - 0 - 5 = 15
+      assert abs_child.bounds.x == 30
+      assert abs_child.bounds.y == 15
+    end
+
+    test "absolute child does not affect parent sizing" do
+      # A parent with explicit size shouldn't grow due to absolute children
+      el = Element.new(:box, [width: 20, height: 10, flex_direction: :column, align_items: :flex_start], [
+        Element.new(:text, [], ["Hello"]),
+        Element.new(:box, [position: :absolute, top: 0, left: 0, width: 100, height: 50])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 80, 24))
+
+      # Parent keeps its explicit size, not expanded by the absolute child
+      assert result.bounds.width == 20
+      assert result.bounds.height == 10
+
+      # Only 2 children: 1 flow text + 1 absolute box
+      assert length(result.children) == 2
+    end
+
+    test "absolute child with intrinsic sizing" do
+      el = Element.new(:box, [width: 40, height: 20, align_items: :flex_start], [
+        Element.new(:box, [position: :absolute, top: 0, left: 0,
+                           flex_direction: :column, align_items: :flex_start], [
+          Element.new(:text, [], ["Line A"]),
+          Element.new(:text, [], ["Line B"])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
+      [abs_child] = result.children
+
+      # Absolute child has no explicit size — it computes from content
+      # Column with 2 text children: 6 chars wide, 2 lines tall
+      assert abs_child.bounds.width == 6
+      assert abs_child.bounds.height == 2
+    end
+
+    test "mixed flow and absolute children" do
+      el = Element.new(:box, [width: 40, height: 10, align_items: :flex_start], [
+        Element.new(:text, [], ["A"]),
+        Element.new(:box, [position: :absolute, top: 5, left: 5, width: 10, height: 3]),
+        Element.new(:text, [], ["B"])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
+
+      # Should have 3 children total (2 flow + 1 absolute)
+      assert length(result.children) == 3
+
+      # Flow children at x=0 and x=1 (row layout)
+      [a, b | _] = Enum.filter(result.children, &(&1.element.type == :text))
+      assert a.bounds.x == 0
+      assert b.bounds.x == 1
+
+      # Absolute child at offset position
+      [abs] = Enum.filter(result.children, &(&1.element.props[:position] == :absolute))
+      assert abs.bounds.x == 5
+      assert abs.bounds.y == 5
+    end
+  end
+
+  # ── Absolute + Painter ─────────────────────────────────────────
+
+  describe "absolute positioning with Painter" do
+    test "absolute child paints on top of normal content" do
+      el = Element.new(:box, [width: 20, height: 5, flex_direction: :column, align_items: :flex_start], [
+        Element.new(:text, [], ["AAAAAAAAAA"]),
+        Element.new(:box, [position: :absolute, top: 0, left: 0, width: 2, height: 1], [
+          Element.new(:text, [], ["BB"])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 20, 5))
+      buffer = Buffer.new(20, 5)
+      painted = Painter.paint(result, buffer)
+
+      # Absolute box paints on top — "BB" overwrites first two chars of "AAAA..."
+      cell = Buffer.get_cell(painted, 0, 0)
+      assert cell.grapheme == "B"
+      cell = Buffer.get_cell(painted, 1, 0)
+      assert cell.grapheme == "B"
+      # The rest of the flow text is still there
+      cell = Buffer.get_cell(painted, 2, 0)
+      assert cell.grapheme == "A"
+    end
+
+    test "absolute child escapes parent clip bounds" do
+      el = Element.new(:box, [width: 20, height: 3], [
+        Element.new(:box, [width: 10, height: 3], [
+          Element.new(:box, [position: :absolute, top: 0, left: 12, width: 5, height: 1], [
+            Element.new(:text, [], ["HI"])
+          ])
+        ])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 20, 3))
+      buffer = Buffer.new(20, 3)
+      painted = Painter.paint(result, buffer)
+
+      # The absolute child at left:12 escapes the width:10 parent
+      cell = Buffer.get_cell(painted, 12, 0)
+      assert cell.grapheme == "H"
+      cell = Buffer.get_cell(painted, 13, 0)
+      assert cell.grapheme == "I"
+    end
+
+    test "select-like dropdown overlay" do
+      # Simulate a select: outer box with a trigger text and absolute dropdown
+      el = Element.new(:box, [width: 30, height: 10, flex_direction: :column], [
+        Element.new(:box, [border: :single, flex_direction: :column], [
+          Element.new(:text, [], ["Red ▾"]),
+          Element.new(:box, [position: :absolute, top: 1, left: 0,
+                             flex_direction: :column, border: :single, bg: :black,
+                             align_items: :flex_start], [
+            Element.new(:text, [bold: true, fg: :cyan], ["▸ Red"]),
+            Element.new(:text, [], ["  Green"]),
+            Element.new(:text, [], ["  Blue"])
+          ])
+        ]),
+        Element.new(:text, [], ["Other content"])
+      ])
+
+      result = Engine.compute(el, Bounds.new(0, 0, 30, 10))
+      buffer = Buffer.new(30, 10)
+      painted = Painter.paint(result, buffer)
+
+      # "Other content" should be right below the select box (not pushed down by dropdown)
+      # The select border box is 1 border + 1 line text + 1 border = 3 tall
+      cell = Buffer.get_cell(painted, 0, 3)
+      assert cell.grapheme == "O"
+
+      # The dropdown overlay should paint on top — its border starts inside the select
+      # at y offset = border(1) + top(1) = row 2 from parent origin
+      # The dropdown text should be visible
+      painted_text =
+        for x <- 0..29 do
+          c = Buffer.get_cell(painted, x, 3)
+          c.grapheme
+        end
+        |> Enum.join()
+        |> String.trim()
+
+      # The absolute dropdown paints on top of "Other content"
+      assert painted_text =~ "Red" or painted_text =~ "Green" or painted_text =~ "Other"
+    end
+  end
+
   # ── Edge cases ───────────────────────────────────────────────────
 
   describe "edge cases" do

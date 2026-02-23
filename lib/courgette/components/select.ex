@@ -60,24 +60,27 @@ defmodule Courgette.Components.Select do
   end
 
   defp render_expanded(assigns) do
-    # Trigger line
     {_value, selected_label} = Enum.at(assigns.options, assigns.selected, {nil, ""})
 
+    # Trigger stays in flow
     text do
       "#{selected_label} ▾"
     end
 
-    for {opt, idx} <- Enum.with_index(assigns.options) do
-      {_value, label} = opt
-      cursor? = idx == assigns.cursor
+    # Options float as overlay
+    box position: :absolute, top: 1, left: 0, flex_direction: :column,
+        border: :single, bg: :black do
+      for {opt, idx} <- Enum.with_index(assigns.options) do
+        {_value, label} = opt
 
-      if cursor? do
-        text bold: true, fg: :cyan do
-          "▸ #{label}"
-        end
-      else
-        text do
-          "  #{label}"
+        if idx == assigns.cursor do
+          text bold: true, fg: :cyan do
+            "▸ #{label}"
+          end
+        else
+          text do
+            "  #{label}"
+          end
         end
       end
     end
