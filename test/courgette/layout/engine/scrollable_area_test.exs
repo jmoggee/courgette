@@ -6,8 +6,8 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
   alias Courgette.Layout.Engine
   alias Courgette.Layout.Engine.Flex
 
-  defp scrollable(props, children \\ []) do
-    Element.new(:scrollable_area, props, children)
+  defp scroll_box(props, children \\ []) do
+    Element.new(:box, [{:overflow, :scroll}, {:flex_direction, :column} | props], children)
   end
 
   defp box(props, children \\ []) do
@@ -22,10 +22,10 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
   # ── Flex.layout level ──────────────────────────────────────────────
 
-  describe "Flex.layout with scrollable_area" do
-    test "empty scrollable area has no children" do
+  describe "Flex.layout with overflow: :scroll" do
+    test "empty scroll box has no children" do
       el = box([width: 40, height: 10], [
-        scrollable([flex: 1])
+        scroll_box([flex: 1])
       ])
 
       result = Flex.layout(el, %{width: 40.0, height: 10.0})
@@ -37,7 +37,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     test "children can exceed viewport height" do
       # Viewport is 5 rows, but children total 10 rows
       el = box([width: 20, height: 5], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 4]),
           box([height: 3]),
           box([height: 3])
@@ -56,9 +56,9 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "children laid out in column regardless of parent direction" do
-      # Parent is row, scrollable_area should still use column internally
+      # Parent is row, scroll box should still use column internally
       el = box([width: 40, height: 10, flex_direction: :row], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           text("Line 1"),
           text("Line 2"),
           text("Line 3")
@@ -82,7 +82,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "children have correct sequential y positions" do
       el = box([width: 20, height: 10], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 3]),
           box([height: 2]),
           box([height: 4])
@@ -104,9 +104,9 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
       assert c2.height == 4.0
     end
 
-    test "scrollable area own bounds equal viewport dimensions" do
+    test "scroll box own bounds equal viewport dimensions" do
       el = box([width: 40, height: 10], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 30])
         ])
       ])
@@ -114,14 +114,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
       result = Flex.layout(el, %{width: 40.0, height: 10.0})
       sa = child(result, 0)
 
-      # The scrollable area itself keeps its viewport size
+      # The scroll box itself keeps its viewport size
       assert sa.width == 40.0
       assert sa.height == 10.0
     end
 
     test "works with borders — children get inner width" do
       el = box([width: 22, height: 10], [
-        scrollable([flex: 1, border: :single], [
+        scroll_box([flex: 1, border: :single], [
           box([height: 3]),
           box([height: 3])
         ])
@@ -130,7 +130,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
       result = Flex.layout(el, %{width: 22.0, height: 10.0})
       sa = child(result, 0)
 
-      # Scrollable area is 22 wide, 10 tall
+      # Scroll box is 22 wide, 10 tall
       assert sa.width == 22.0
       assert sa.height == 10.0
 
@@ -141,7 +141,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "mixed children: text and box" do
       el = box([width: 30, height: 8], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           text("Header line"),
           box([height: 5, bg: :blue]),
           text("Footer line")
@@ -164,7 +164,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "single child taller than viewport" do
       el = box([width: 20, height: 5], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 50])
         ])
       ])
@@ -174,17 +174,17 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
       c0 = Enum.at(sa.children, 0)
       assert c0.height == 50.0
-      # Scrollable area itself is viewport-sized
+      # Scroll box itself is viewport-sized
       assert sa.height == 5.0
     end
   end
 
   # ── Engine.compute level ───────────────────────────────────────────
 
-  describe "Engine.compute with scrollable_area" do
-    test "produces integer Bounds for scrollable area and children" do
+  describe "Engine.compute with overflow: :scroll" do
+    test "produces integer Bounds for scroll box and children" do
       el = box([width: 40, height: 10], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 3]),
           box([height: 4]),
           box([height: 5])
@@ -210,7 +210,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "children y-positions are absolute coordinates" do
       el = box([width: 40, height: 10], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 3]),
           box([height: 4])
         ])
@@ -230,7 +230,7 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "children overflow viewport height (not clamped)" do
       el = box([width: 20, height: 5], [
-        scrollable([flex: 1], [
+        scroll_box([flex: 1], [
           box([height: 10]),
           box([height: 10])
         ])

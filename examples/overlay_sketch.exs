@@ -15,7 +15,6 @@ defmodule Example.OverlaySketch do
   import Courgette.Components.Overlay
 
   alias Courgette.Components.TextInput
-
   @items [
     "Checkbox",
     "Switch",
@@ -31,6 +30,8 @@ defmodule Example.OverlaySketch do
     "ProgressBar"
   ]
 
+  @visible_height 12
+
   @impl true
   def mount(_assigns) do
     {:ok, %{filter: "", selected: 0, open: false}}
@@ -41,6 +42,7 @@ defmodule Example.OverlaySketch do
     filtered = filter_items(assigns.filter)
     count = length(filtered)
     selected = min(assigns.selected, max(count - 1, 0))
+    scroll_offset = scroll_offset_for(selected, count, @visible_height)
 
     box flex_direction: :column, flex: 1 do
       # Background wall of text
@@ -67,7 +69,7 @@ defmodule Example.OverlaySketch do
         box position: :absolute, top: 0, left: 0, right: 0, bottom: 0,
             justify_content: :center, align_items: :center do
           box border: :rounded, bg: :black, width: 50, height: 20,
-              flex_direction: :column, padding: 1 do
+              flex_direction: :column, padding: 1, overflow: :hidden do
             text bold: true do
               "Command Palette"
             end
@@ -80,17 +82,24 @@ defmodule Example.OverlaySketch do
               on_change: :filter_changed
             )
 
-            for {label, idx} <- Enum.with_index(filtered) do
-              if idx == selected do
-                text(bold: true, fg: :cyan, do: "▸ #{label}")
-              else
-                text(do: "  #{label}")
+            box height: @visible_height, overflow: :scroll, scroll_offset: scroll_offset,
+                flex_direction: :column do
+              for {label, idx} <- Enum.with_index(filtered) do
+                if idx == selected do
+                  text(bold: true, fg: :cyan, do: "▸ #{label}")
+                else
+                  text(do: "  #{label}")
+                end
               end
             end
           end
         end
       end
     end
+  end
+
+  defp scroll_offset_for(idx, count, visible_height) do
+    min(max(0, idx - visible_height + 1), max(0, count - visible_height))
   end
 
   defp filter_items(""), do: @items

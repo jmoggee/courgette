@@ -6,7 +6,7 @@
 # All data is stubbed in-memory. Fully keyboard-driven.
 #
 # Components used: Select, TextInput, Textarea, Spinner, ProgressBar,
-# badge, divider, heading, key_value, empty_state, scrollable_area,
+# badge, divider, heading, key_value, empty_state, ScrollArea,
 # Tween + Easing, Focus management, Theme tokens.
 #
 # Run: mix run examples/task_tracker.exs

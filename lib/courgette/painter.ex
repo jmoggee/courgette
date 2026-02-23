@@ -73,7 +73,7 @@ defmodule Courgette.Painter do
 
   # ── Internal ──────────────────────────────────────────────────────
 
-  defp paint_node(%{element: %Element{type: :scrollable_area} = element, bounds: bounds, children: children}, buffer, clip) do
+  defp paint_node(%{element: element, bounds: bounds, children: children}, buffer, clip) do
     effective_clip = compute_clip(bounds, clip)
 
     case effective_clip do
@@ -81,37 +81,27 @@ defmodule Courgette.Painter do
         buffer
 
       clip_rect ->
-        # Paint background + borders at viewport bounds (unshifted)
         buffer = paint_element(buffer, element, bounds, clip_rect)
 
-        # Inner clip: inside borders, so scrolled content doesn't overwrite them
-        inner_clip = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
+        case Map.get(element.props, :overflow, :visible) do
+          :visible ->
+            paint_children(buffer, children, clip_rect)
 
-        case inner_clip do
-          nil ->
-            buffer
+          :hidden ->
+            inner = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
+            if inner, do: paint_children(buffer, children, inner), else: buffer
 
-          inner ->
-            scroll_offset = Map.get(element.props, :scroll_offset, 0)
-            shifted_children = shift_tree(children, 0, -scroll_offset)
-            paint_children(buffer, shifted_children, inner)
+          :scroll ->
+            inner = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
+
+            if inner do
+              offset = Map.get(element.props, :scroll_offset, 0)
+              shifted = shift_tree(children, 0, -offset)
+              paint_children(buffer, shifted, inner)
+            else
+              buffer
+            end
         end
-    end
-  end
-
-  defp paint_node(%{element: element, bounds: bounds, children: children}, buffer, clip) do
-    # The effective clip is the intersection of the parent's clip and this node's bounds
-    effective_clip = compute_clip(bounds, clip)
-
-    case effective_clip do
-      nil ->
-        # Entirely outside clip — skip this node and all children
-        buffer
-
-      clip_rect ->
-        buffer
-        |> paint_element(element, bounds, clip_rect)
-        |> paint_children(children, clip_rect)
     end
   end
 
@@ -124,12 +114,6 @@ defmodule Courgette.Painter do
   # ── Element painting ──────────────────────────────────────────────
 
   defp paint_element(buffer, %Element{type: :box} = element, bounds, clip) do
-    buffer
-    |> paint_background(element.props, bounds, clip)
-    |> paint_border(element.props, bounds, clip)
-  end
-
-  defp paint_element(buffer, %Element{type: :scrollable_area} = element, bounds, clip) do
     buffer
     |> paint_background(element.props, bounds, clip)
     |> paint_border(element.props, bounds, clip)
@@ -270,7 +254,7 @@ defmodule Courgette.Painter do
     end)
   end
 
-  # ── Scrollable area helpers ──────────────────────────────────────
+  # ── Overflow helpers ────────────────────────────────────────────
 
   defp inner_content_bounds(bounds, props) do
     has_border = Map.get(props, :border) in [:single, :double, :rounded]

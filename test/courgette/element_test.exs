@@ -48,7 +48,7 @@ defmodule Courgette.ElementTest do
     end
 
     test "all valid types are accepted" do
-      for type <- [:box, :text, :grid, :col, :scrollable_area, :button, :input] do
+      for type <- [:box, :text, :grid, :col, :button, :input] do
         el = Element.new(type)
         assert el.type == type
       end

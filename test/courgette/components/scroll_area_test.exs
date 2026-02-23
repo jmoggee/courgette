@@ -71,10 +71,10 @@ defmodule Courgette.Components.ScrollAreaTest do
     assert text =~ "Line 1"
   end
 
-  test "renders scrollable_area element in tree" do
+  test "renders overflow: :scroll box in tree" do
     view = mount(Host)
     tree = render_tree(view)
-    assert find_scrollable_area(tree) != nil
+    assert find_scroll_box(tree) != nil
   end
 
   # -- Arrow key scrolling --
@@ -85,7 +85,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :arrow_down})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 1
   end
 
@@ -98,7 +98,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :arrow_up})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 1
   end
 
@@ -108,7 +108,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :arrow_up})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 0
   end
 
@@ -122,7 +122,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     end
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 15
   end
 
@@ -134,7 +134,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :page_down})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 5
   end
 
@@ -146,7 +146,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :page_up})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     # max=15, page_up by 5 => 10
     assert sa.props.scroll_offset == 10
   end
@@ -161,7 +161,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :home})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 0
   end
 
@@ -171,7 +171,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :end})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     # 20 items, height 5 => max offset 15
     assert sa.props.scroll_offset == 15
   end
@@ -184,7 +184,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:mouse, :scroll_down, 5, 5})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 1
   end
 
@@ -196,7 +196,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:mouse, :scroll_up, 5, 5})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 1
   end
 
@@ -206,7 +206,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:mouse, :scroll_down, 5, 5, []})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 1
   end
 
@@ -237,12 +237,12 @@ defmodule Courgette.Components.ScrollAreaTest do
   test "border color changes on focus" do
     view = mount(Host)
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.border_color == :white
 
     send_tab(view)
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.border_color == :cyan
   end
 
@@ -251,7 +251,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_tab(view)
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.border_color == :cyan
 
     # Directly send blur to the scroll area child
@@ -261,7 +261,7 @@ defmodule Courgette.Components.ScrollAreaTest do
     :sys.get_state(child_pid)
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.border_color == :white
   end
 
@@ -295,40 +295,40 @@ defmodule Courgette.Components.ScrollAreaTest do
     send_event(view, {:key, :end})
 
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 5
   end
 
   # -- Border pass-through --
 
-  test "border prop passed to scrollable_area" do
+  test "border prop passed to scroll box" do
     view = mount(Host, initial_assigns: %{border: :rounded})
     tree = render_tree(view)
-    sa = find_scrollable_area(tree)
+    sa = find_scroll_box(tree)
     assert sa.props.border == :rounded
   end
 
   # -- Helpers --
 
-  defp find_scrollable_area(nil), do: nil
+  # Find the box with overflow: :scroll (the scroll container)
+  defp find_scroll_box(nil), do: nil
 
-  defp find_scrollable_area(%Element{type: :scrollable_area} = el), do: el
+  defp find_scroll_box(%Element{type: :box, props: %{overflow: :scroll}} = el), do: el
 
-  defp find_scrollable_area(%Element{children: children}) do
+  defp find_scroll_box(%Element{children: children}) do
     Enum.find_value(children, fn
-      %Element{} = child -> find_scrollable_area(child)
+      %Element{} = child -> find_scroll_box(child)
       _ -> nil
     end)
   end
 
   # Find the scrollbar box (column of text cells with track/thumb chars)
-  # The scrollbar is the second child of the outer row box, a :box with flex_direction: :column
+  # The scrollbar is the second child of the outer row box, after the scroll box
   defp find_scrollbar_box(nil), do: nil
 
   defp find_scrollbar_box(%Element{type: :box, props: %{flex_direction: :row}, children: children}) do
-    # The scrollbar is the second child (after the scrollable_area)
     case children do
-      [%Element{type: :scrollable_area}, %Element{type: :box} = scrollbar | _] -> scrollbar
+      [%Element{type: :box, props: %{overflow: :scroll}}, %Element{type: :box} = scrollbar | _] -> scrollbar
       _ -> Enum.find_value(children, fn
         %Element{} = child -> find_scrollbar_box(child)
         _ -> nil

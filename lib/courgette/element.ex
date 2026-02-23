@@ -14,7 +14,6 @@ defmodule Courgette.Element do
     Children are plain strings.
   - `:grid` — CSS grid container.
   - `:col` — grid column child.
-  - `:scrollable_area` — clipping viewport.
   - `:button` — clickable action element.
   - `:input` — raw input field.
 
@@ -24,7 +23,7 @@ defmodule Courgette.Element do
   content). A `:text` element's children are typically `["Hello"]`.
   """
 
-  @type element_type :: :box | :text | :grid | :col | :scrollable_area | :button | :input | :live_component
+  @type element_type :: :box | :text | :grid | :col | :button | :input | :live_component
 
   @type t :: %__MODULE__{
           type: element_type(),
@@ -34,7 +33,7 @@ defmodule Courgette.Element do
 
   defstruct type: :box, props: %{}, children: []
 
-  @valid_types [:box, :text, :grid, :col, :scrollable_area, :button, :input, :live_component]
+  @valid_types [:box, :text, :grid, :col, :button, :input, :live_component]
 
   @doc """
   Creates a new element with the given type and options.

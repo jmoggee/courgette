@@ -11,22 +11,6 @@
 
 Courgette.ComponentRegistry.create_table()
 
-alias Courgette.Components.{
-  Checkbox,
-  List,
-  ProgressBar,
-  RadioGroup,
-  ScrollArea,
-  Select,
-  Spinner,
-  Switch,
-  Table,
-  Tabs,
-  Textarea,
-  TextInput,
-  Tree
-}
-
 # ────────────────────────────────────────────────────────────────
 # Navigation items grouped by category
 # ────────────────────────────────────────────────────────────────
@@ -181,146 +165,24 @@ defmodule Storybook.Sidebar do
 end
 
 # ────────────────────────────────────────────────────────────────
-# Root App
+# Page LiveComponents — Stateful Pages
 # ────────────────────────────────────────────────────────────────
 
-defmodule Storybook do
-  use Courgette.App
+defmodule Storybook.Pages.Checkbox do
+  use Courgette.LiveComponent
   import Courgette.Components
-  import Courgette.Components.Link
-  import Courgette.Components.Scrollbar
-  import Courgette.Components.Overlay
-  import Courgette.Components.OrderedList
-  import Courgette.Components.UnorderedList
-
-  # ── Mount ────────────────────────────────────────────────────
+  alias Courgette.Components.Checkbox
 
   @impl true
-  def mount(_assigns) do
-    if Courgette.animations_enabled?() do
-      Process.send_after(self(), :progress_tick, 50)
-    end
-
+  def mount(assigns) do
     {:ok,
-     %{
-       current_page: "checkbox",
-
-       # Form controls
-       cb_terms: false,
-       cb_subscribe: false,
-       sw_dark: false,
-       sw_notifications: true,
-       radio_color: nil,
-       select_value: nil,
-       input_value: "",
-       input_submitted: nil,
-       textarea_value: "",
-       autocomplete_suggestions: [],
-
-       # Data display
-       table_selected: nil,
-       list_selected: nil,
-       tree_selected: nil,
-
-       # Navigation
-       tabs_active: nil,
-
-       # Feedback
-       progress: 0.0,
-
-       # Overlay / Command Palette
-       palette_filter: "",
-       palette_selected: nil
-     }}
+     assigns
+     |> assign_new(:cb_terms, fn -> false end)
+     |> assign_new(:cb_subscribe, fn -> false end)}
   end
-
-  # ── Render ───────────────────────────────────────────────────
 
   @impl true
   def render(assigns) do
-    box flex_direction: :column do
-      # Header
-      box flex_direction: :column, padding_h: 1 do
-        text bold: true, fg: :cyan do
-          "Courgette Storybook"
-        end
-
-        text dim: true do
-          "Interactive component showcase"
-        end
-      end
-
-      divider(color: :bright_black)
-
-      # Body: sidebar + preview
-      box flex_direction: :row, flex: 1 do
-        # Sidebar
-        box width: 26, flex_direction: :column do
-          live_component(Storybook.Sidebar,
-            id: "nav",
-            focusable: true,
-            on_select: :nav_select
-          )
-        end
-
-        # Vertical separator
-        box width: 1, flex_direction: :column do
-          text dim: true, white_space: :nowrap do
-            String.duplicate("│", 500)
-          end
-        end
-
-        # Preview pane
-        box flex_direction: :column, flex: 1, padding_h: 2 do
-          render_page(assigns)
-        end
-      end
-
-      # Footer
-      divider(color: :bright_black)
-
-      box padding_h: 1 do
-        text dim: true do
-          "Tab: switch focus  |  ↑↓: navigate  |  Enter: select  |  q: quit"
-        end
-      end
-    end
-  end
-
-  # ── Page dispatch ────────────────────────────────────────────
-
-  defp render_page(assigns) do
-    case assigns.current_page do
-      "checkbox" -> render_checkbox_page(assigns)
-      "switch" -> render_switch_page(assigns)
-      "radio_group" -> render_radio_group_page(assigns)
-      "select" -> render_select_page(assigns)
-      "text_input" -> render_text_input_page(assigns)
-      "textarea" -> render_textarea_page(assigns)
-      "table" -> render_table_page(assigns)
-      "list" -> render_list_page(assigns)
-      "tree" -> render_tree_page(assigns)
-      "tabs" -> render_tabs_page(assigns)
-      "spinner" -> render_spinner_page(assigns)
-      "progress_bar" -> render_progress_bar_page(assigns)
-      "scrollbar" -> render_scrollbar_page(assigns)
-      "scroll_area" -> render_scroll_area_page(assigns)
-      "link" -> render_link_page(assigns)
-      "badge" -> render_badge_page(assigns)
-      "heading" -> render_heading_page(assigns)
-      "divider" -> render_divider_page(assigns)
-      "key_value" -> render_key_value_page(assigns)
-      "ordered_list" -> render_ordered_list_page(assigns)
-      "unordered_list" -> render_unordered_list_page(assigns)
-      "overlay" -> render_overlay_page(assigns)
-      "empty_state" -> render_empty_state_page(assigns)
-      _ -> render_checkbox_page(assigns)
-    end
-  end
-
-  # ── Form Controls ───────────────────────────────────────────
-
-  defp render_checkbox_page(assigns) do
     box flex_direction: :column do
       heading(text: "Checkbox", color: :cyan)
 
@@ -352,7 +214,36 @@ defmodule Storybook do
     end
   end
 
-  defp render_switch_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:cb_terms_changed, value}, assigns) do
+    {:noreply, assign(assigns, :cb_terms, value)}
+  end
+
+  def handle_info({:cb_subscribe_changed, value}, assigns) do
+    {:noreply, assign(assigns, :cb_subscribe, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Switch do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Switch
+
+  @impl true
+  def mount(assigns) do
+    {:ok,
+     assigns
+     |> assign_new(:sw_dark, fn -> false end)
+     |> assign_new(:sw_notifications, fn -> true end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Switch", color: :cyan)
 
@@ -384,7 +275,33 @@ defmodule Storybook do
     end
   end
 
-  defp render_radio_group_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:sw_dark_changed, value}, assigns) do
+    {:noreply, assign(assigns, :sw_dark, value)}
+  end
+
+  def handle_info({:sw_notifications_changed, value}, assigns) do
+    {:noreply, assign(assigns, :sw_notifications, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.RadioGroup do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.RadioGroup
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :radio_color, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "RadioGroup", color: :cyan)
 
@@ -413,7 +330,29 @@ defmodule Storybook do
     end
   end
 
-  defp render_select_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:radio_color_changed, value}, assigns) do
+    {:noreply, assign(assigns, :radio_color, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Select do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Select
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :select_value, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Select", color: :cyan)
 
@@ -442,7 +381,32 @@ defmodule Storybook do
     end
   end
 
-  defp render_text_input_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:select_changed, value}, assigns) do
+    {:noreply, assign(assigns, :select_value, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.TextInput do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.TextInput
+
+  @impl true
+  def mount(assigns) do
+    {:ok,
+     assigns
+     |> assign_new(:input_value, fn -> "" end)
+     |> assign_new(:input_submitted, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "TextInput", color: :cyan)
 
@@ -467,6 +431,26 @@ defmodule Storybook do
     end
   end
 
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:input_changed, value}, assigns) do
+    {:noreply, assign(assigns, :input_value, value)}
+  end
+
+  def handle_info({:input_submitted, value}, assigns) do
+    {:noreply, assign(assigns, :input_submitted, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Textarea do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Textarea
+
   @demo_files [
     "lib/courgette.ex",
     "lib/courgette/app.ex",
@@ -484,7 +468,16 @@ defmodule Storybook do
     "README.md"
   ]
 
-  defp render_textarea_page(assigns) do
+  @impl true
+  def mount(assigns) do
+    {:ok,
+     assigns
+     |> assign_new(:textarea_value, fn -> "" end)
+     |> assign_new(:autocomplete_suggestions, fn -> [] end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Textarea", color: :cyan)
 
@@ -535,9 +528,43 @@ defmodule Storybook do
     end
   end
 
-  # ── Data Display ────────────────────────────────────────────
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
 
-  defp render_table_page(assigns) do
+  @impl true
+  def handle_info({:textarea_changed, value}, assigns) do
+    {:noreply, assign(assigns, :textarea_value, value)}
+  end
+
+  def handle_info({:ta_autocomplete, %{accepted: true}}, assigns) do
+    {:noreply, assign(assigns, :autocomplete_suggestions, [])}
+  end
+
+  def handle_info({:ta_autocomplete, %{tag: :file_ref, query: q}}, assigns) do
+    matches =
+      @demo_files
+      |> Enum.filter(&String.contains?(&1, q))
+      |> Enum.take(8)
+
+    Courgette.send_update(Textarea, id: "textarea_ac", trigger_suggestions: matches)
+    {:noreply, assigns}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Table do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Table
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :table_selected, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Table", color: :cyan)
 
@@ -578,7 +605,29 @@ defmodule Storybook do
     end
   end
 
-  defp render_list_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:table_row_selected, row}, assigns) do
+    {:noreply, assign(assigns, :table_selected, row)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.List do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.List
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :list_selected, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "List", color: :cyan)
 
@@ -610,7 +659,29 @@ defmodule Storybook do
     end
   end
 
-  defp render_tree_page(assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:list_item_selected, id}, assigns) do
+    {:noreply, assign(assigns, :list_selected, id)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Tree do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Tree
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :tree_selected, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Tree", color: :cyan)
 
@@ -655,9 +726,29 @@ defmodule Storybook do
     end
   end
 
-  # ── Navigation ──────────────────────────────────────────────
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
 
-  defp render_tabs_page(assigns) do
+  @impl true
+  def handle_info({:tree_node_selected, label}, assigns) do
+    {:noreply, assign(assigns, :tree_selected, label)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Tabs do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Tabs
+
+  @impl true
+  def mount(assigns) do
+    {:ok, assign_new(assigns, :tabs_active, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
     box flex_direction: :column do
       heading(text: "Tabs", color: :cyan)
 
@@ -684,7 +775,235 @@ defmodule Storybook do
     end
   end
 
-  # ── Feedback ────────────────────────────────────────────────
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info({:tabs_changed, value}, assigns) do
+    {:noreply, assign(assigns, :tabs_active, value)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.ProgressBar do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.ProgressBar
+
+  @impl true
+  def mount(assigns) do
+    if Courgette.animations_enabled?() do
+      Process.send_after(self(), :progress_tick, 50)
+    end
+
+    {:ok, assign_new(assigns, :progress, fn -> 0.0 end)}
+  end
+
+  @impl true
+  def render(assigns) do
+    pct = round(assigns.progress * 100)
+
+    box flex_direction: :column do
+      heading(text: "ProgressBar", color: :cyan)
+
+      text dim: true do
+        "Determinate progress indicator. Value driven by parent."
+      end
+
+      box flex_direction: :column, padding_v: 1 do
+        live_component(ProgressBar,
+          id: "pb_green",
+          value: assigns.progress,
+          width: 30,
+          color: :green,
+          label: :percent
+        )
+
+        live_component(ProgressBar,
+          id: "pb_cyan",
+          value: min(assigns.progress + 0.2, 1.0),
+          width: 30,
+          color: :cyan,
+          label: :percent
+        )
+
+        live_component(ProgressBar,
+          id: "pb_yellow",
+          value: min(assigns.progress + 0.4, 1.0),
+          width: 30,
+          color: :yellow,
+          label: :percent
+        )
+      end
+
+      heading(text: "State", color: :yellow, divider: false)
+      key_value(label: "progress", value: "#{pct}%")
+    end
+  end
+
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
+  @impl true
+  def handle_info(:progress_tick, assigns) do
+    new_progress = assigns.progress + 0.005
+
+    new_progress =
+      if new_progress > 1.0, do: 0.0, else: new_progress
+
+    if Courgette.animations_enabled?() do
+      Process.send_after(self(), :progress_tick, 50)
+    end
+
+    {:noreply, assign(assigns, :progress, new_progress)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Overlay do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.TextInput
+  @palette_items Enum.map(Storybook.Nav.items(), fn {_id, label} ->
+                   String.trim(label)
+                 end)
+
+  @palette_visible_height 12
+
+  @impl true
+  def mount(assigns) do
+    {:ok,
+     assigns
+     |> assign_new(:palette_open, fn -> false end)
+     |> assign_new(:palette_filter, fn -> "" end)
+     |> assign_new(:palette_idx, fn -> 0 end)
+     |> assign_new(:palette_selected, fn -> nil end)}
+  end
+
+  @impl true
+  def render(assigns) do
+    filtered = filter_palette(assigns.palette_filter)
+    count = length(filtered)
+    idx = min(assigns.palette_idx, max(count - 1, 0))
+    scroll_offset = scroll_offset_for(idx, count, @palette_visible_height)
+
+    box flex_direction: :column, flex: 1 do
+      heading(text: "Overlay", color: :cyan)
+
+      text dim: true do
+        "Modal overlay with command palette. Ctrl+P to open, Escape to close."
+      end
+
+      # Background content
+      box flex: 1, flex_direction: :column, padding_v: 1 do
+        for i <- 1..20 do
+          text dim: true do
+            "#{String.pad_leading("#{i}", 2, "0")}  Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+          end
+        end
+      end
+
+      heading(text: "State", color: :yellow, divider: false)
+      key_value(label: "open", value: "#{assigns.palette_open}")
+      key_value(label: "selected", value: inspect(assigns.palette_selected))
+
+      # Command palette overlay
+      if assigns.palette_open do
+        box position: :absolute, top: 0, left: 0, right: 0, bottom: 0,
+            justify_content: :center, align_items: :center do
+          box border: :rounded, bg: :black, width: 50, height: 20,
+              flex_direction: :column, padding: 1, overflow: :hidden do
+            text bold: true do
+              "Command Palette"
+            end
+
+            live_component(TextInput,
+              id: "palette_input",
+              focusable: true,
+              value: assigns.palette_filter,
+              placeholder: "Type to filter...",
+              on_change: :palette_filter_changed
+            )
+
+            box height: @palette_visible_height, overflow: :scroll, scroll_offset: scroll_offset,
+                flex_direction: :column do
+              for {label, i} <- Enum.with_index(filtered) do
+                if i == idx do
+                  text(bold: true, fg: :cyan, do: "▸ #{label}")
+                else
+                  text(do: "  #{label}")
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp scroll_offset_for(idx, count, visible_height) do
+    min(max(0, idx - visible_height + 1), max(0, count - visible_height))
+  end
+
+  @impl true
+  def handle_event({:key, {:ctrl, "p"}}, assigns) do
+    {:noreply, assign(assigns, palette_open: true, palette_filter: "", palette_idx: 0)}
+  end
+
+  def handle_event({:key, :escape}, %{palette_open: true} = assigns) do
+    {:noreply, assign(assigns, :palette_open, false)}
+  end
+
+  def handle_event({:key, :arrow_down}, %{palette_open: true} = assigns) do
+    count = length(filter_palette(assigns.palette_filter))
+    {:noreply, assign(assigns, :palette_idx, min(assigns.palette_idx + 1, count - 1))}
+  end
+
+  def handle_event({:key, :arrow_up}, %{palette_open: true} = assigns) do
+    {:noreply, assign(assigns, :palette_idx, max(assigns.palette_idx - 1, 0))}
+  end
+
+  def handle_event({:key, :enter}, %{palette_open: true} = assigns) do
+    items = filter_palette(assigns.palette_filter)
+    idx = min(assigns.palette_idx, length(items) - 1)
+
+    if idx >= 0 do
+      label = Enum.at(items, idx)
+      {:noreply, assign(assigns, palette_selected: label, palette_open: false)}
+    else
+      {:noreply, assigns}
+    end
+  end
+
+  def handle_event(_event, assigns) do
+    {:noreply, assigns}
+  end
+
+  @impl true
+  def handle_info({:palette_filter_changed, value}, assigns) do
+    {:noreply, assign(assigns, palette_filter: value, palette_idx: 0)}
+  end
+
+  def handle_info(_msg, assigns), do: {:noreply, assigns}
+
+  defp filter_palette(""), do: @palette_items
+
+  defp filter_palette(filter) do
+    q = String.downcase(filter)
+    Enum.filter(@palette_items, fn label -> String.downcase(label) |> String.contains?(q) end)
+  end
+end
+
+# ────────────────────────────────────────────────────────────────
+# Page LiveComponents — Static Pages
+# ────────────────────────────────────────────────────────────────
+
+defmodule Storybook.Pages.Spinner do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.Spinner
 
   @spinner_styles [
     # Braille family
@@ -723,7 +1042,11 @@ defmodule Storybook do
     {:hamburger, "hamburger", :magenta}
   ]
 
-  defp render_spinner_page(_assigns) do
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Spinner", color: :cyan)
 
@@ -787,48 +1110,20 @@ defmodule Storybook do
     end
   end
 
-  defp render_progress_bar_page(assigns) do
-    pct = round(assigns.progress * 100)
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
 
-    box flex_direction: :column do
-      heading(text: "ProgressBar", color: :cyan)
+defmodule Storybook.Pages.Scrollbar do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  import Courgette.Components.Scrollbar
 
-      text dim: true do
-        "Determinate progress indicator. Value driven by parent."
-      end
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
 
-      box flex_direction: :column, padding_v: 1 do
-        live_component(ProgressBar,
-          id: "pb_green",
-          value: assigns.progress,
-          width: 30,
-          color: :green,
-          label: :percent
-        )
-
-        live_component(ProgressBar,
-          id: "pb_cyan",
-          value: min(assigns.progress + 0.2, 1.0),
-          width: 30,
-          color: :cyan,
-          label: :percent
-        )
-
-        live_component(ProgressBar,
-          id: "pb_yellow",
-          value: min(assigns.progress + 0.4, 1.0),
-          width: 30,
-          color: :yellow,
-          label: :percent
-        )
-      end
-
-      heading(text: "State", color: :yellow, divider: false)
-      key_value(label: "progress", value: "#{pct}%")
-    end
-  end
-
-  defp render_scrollbar_page(_assigns) do
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Scrollbar", color: :cyan)
 
@@ -878,7 +1173,20 @@ defmodule Storybook do
     end
   end
 
-  defp render_scroll_area_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.ScrollArea do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  alias Courgette.Components.ScrollArea
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     lines = for i <- 1..30, do: "Line #{i}: Lorem ipsum dolor sit amet"
 
     box flex_direction: :column do
@@ -900,6 +1208,9 @@ defmodule Storybook do
     end
   end
 
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+
   defp build_scroll_lines(lines) do
     import Courgette.Component.DSL
 
@@ -911,10 +1222,18 @@ defmodule Storybook do
       end
     end
   end
+end
 
-  # ── Typography ──────────────────────────────────────────────
+defmodule Storybook.Pages.Link do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  import Courgette.Components.Link
 
-  defp render_link_page(_assigns) do
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Link", color: :cyan)
 
@@ -930,7 +1249,19 @@ defmodule Storybook do
     end
   end
 
-  defp render_badge_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Badge do
+  use Courgette.LiveComponent
+  import Courgette.Components
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Badge", color: :cyan)
 
@@ -956,7 +1287,19 @@ defmodule Storybook do
     end
   end
 
-  defp render_heading_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Heading do
+  use Courgette.LiveComponent
+  import Courgette.Components
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Heading", color: :cyan)
 
@@ -973,7 +1316,19 @@ defmodule Storybook do
     end
   end
 
-  defp render_divider_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.Divider do
+  use Courgette.LiveComponent
+  import Courgette.Components
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "Divider", color: :cyan)
 
@@ -1007,7 +1362,19 @@ defmodule Storybook do
     end
   end
 
-  defp render_key_value_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.KeyValue do
+  use Courgette.LiveComponent
+  import Courgette.Components
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "KeyValue", color: :cyan)
 
@@ -1025,9 +1392,20 @@ defmodule Storybook do
     end
   end
 
-  # ── Lists & Layout ──────────────────────────────────────────
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
 
-  defp render_ordered_list_page(_assigns) do
+defmodule Storybook.Pages.OrderedList do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  import Courgette.Components.OrderedList
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "OrderedList", color: :cyan)
 
@@ -1063,7 +1441,20 @@ defmodule Storybook do
     end
   end
 
-  defp render_unordered_list_page(_assigns) do
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+defmodule Storybook.Pages.UnorderedList do
+  use Courgette.LiveComponent
+  import Courgette.Components
+  import Courgette.Components.UnorderedList
+
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
+
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "UnorderedList", color: :cyan)
 
@@ -1104,33 +1495,19 @@ defmodule Storybook do
     end
   end
 
-  @palette_items Enum.map(Storybook.Nav.items(), fn {id, label} ->
-                   {id, String.trim(label)}
-                 end)
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
 
-  defp render_overlay_page(_assigns) do
-    box flex_direction: :column do
-      heading(text: "Overlay", color: :cyan)
+defmodule Storybook.Pages.EmptyState do
+  use Courgette.LiveComponent
+  import Courgette.Components
 
-      text dim: true do
-        "Testing the overlay component with static content."
-      end
+  @impl true
+  def mount(assigns), do: {:ok, assigns}
 
-      box padding_v: 1, flex: 1 do
-        overlay(
-          title: "Simple Overlay",
-          width: 40,
-          do: [
-            text(do: "Line one"),
-            text(do: "Line two"),
-            text(fg: :cyan, do: "Line three (cyan)")
-          ]
-        )
-      end
-    end
-  end
-
-  defp render_empty_state_page(_assigns) do
+  @impl true
+  def render(_assigns) do
     box flex_direction: :column do
       heading(text: "EmptyState", color: :cyan)
 
@@ -1154,6 +1531,109 @@ defmodule Storybook do
     end
   end
 
+  @impl true
+  def handle_event(_event, assigns), do: {:noreply, assigns}
+end
+
+# ────────────────────────────────────────────────────────────────
+# Root App
+# ────────────────────────────────────────────────────────────────
+
+defmodule Storybook do
+  use Courgette.App
+  import Courgette.Components
+
+  @page_modules %{
+    "checkbox" => Storybook.Pages.Checkbox,
+    "switch" => Storybook.Pages.Switch,
+    "radio_group" => Storybook.Pages.RadioGroup,
+    "select" => Storybook.Pages.Select,
+    "text_input" => Storybook.Pages.TextInput,
+    "textarea" => Storybook.Pages.Textarea,
+    "table" => Storybook.Pages.Table,
+    "list" => Storybook.Pages.List,
+    "tree" => Storybook.Pages.Tree,
+    "tabs" => Storybook.Pages.Tabs,
+    "spinner" => Storybook.Pages.Spinner,
+    "progress_bar" => Storybook.Pages.ProgressBar,
+    "scrollbar" => Storybook.Pages.Scrollbar,
+    "scroll_area" => Storybook.Pages.ScrollArea,
+    "link" => Storybook.Pages.Link,
+    "badge" => Storybook.Pages.Badge,
+    "heading" => Storybook.Pages.Heading,
+    "divider" => Storybook.Pages.Divider,
+    "key_value" => Storybook.Pages.KeyValue,
+    "ordered_list" => Storybook.Pages.OrderedList,
+    "unordered_list" => Storybook.Pages.UnorderedList,
+    "overlay" => Storybook.Pages.Overlay,
+    "empty_state" => Storybook.Pages.EmptyState
+  }
+
+  # ── Mount ────────────────────────────────────────────────────
+
+  @impl true
+  def mount(_assigns) do
+    {:ok, %{current_page: "checkbox"}}
+  end
+
+  # ── Render ───────────────────────────────────────────────────
+
+  @impl true
+  def render(assigns) do
+    box flex_direction: :column do
+      # Header
+      box flex_direction: :column, padding_h: 1 do
+        text bold: true, fg: :cyan do
+          "Courgette Storybook"
+        end
+
+        text dim: true do
+          "Interactive component showcase"
+        end
+      end
+
+      divider(color: :bright_black)
+
+      # Body: sidebar + preview
+      box flex_direction: :row, flex: 1 do
+        # Sidebar
+        box width: 26, flex_direction: :column do
+          live_component(Storybook.Sidebar,
+            id: "nav",
+            focusable: true,
+            on_select: :nav_select
+          )
+        end
+
+        # Vertical separator
+        box width: 1, flex_direction: :column do
+          text dim: true, white_space: :nowrap do
+            String.duplicate("│", 500)
+          end
+        end
+
+        # Preview pane
+        box flex_direction: :column, flex: 1, padding_h: 2 do
+          live_component(page_module(assigns.current_page),
+            id: "page",
+            focusable: true
+          )
+        end
+      end
+
+      # Footer
+      divider(color: :bright_black)
+
+      box padding_h: 1 do
+        text dim: true do
+          "Tab: switch focus  |  ↑↓: navigate  |  Enter: select  |  q: quit"
+        end
+      end
+    end
+  end
+
+  defp page_module(name), do: Map.fetch!(@page_modules, name)
+
   # ── Event Handlers ──────────────────────────────────────────
 
   @impl true
@@ -1170,99 +1650,9 @@ defmodule Storybook do
 
   @impl true
   def handle_info({:nav_select, page}, assigns) do
+    # Advance focus from sidebar to the page after navigation
+    send(self(), {:terminal_input, <<9>>})
     {:noreply, assign(assigns, :current_page, page)}
-  end
-
-  # Form controls
-  def handle_info({:cb_terms_changed, value}, assigns) do
-    {:noreply, assign(assigns, :cb_terms, value)}
-  end
-
-  def handle_info({:cb_subscribe_changed, value}, assigns) do
-    {:noreply, assign(assigns, :cb_subscribe, value)}
-  end
-
-  def handle_info({:sw_dark_changed, value}, assigns) do
-    {:noreply, assign(assigns, :sw_dark, value)}
-  end
-
-  def handle_info({:sw_notifications_changed, value}, assigns) do
-    {:noreply, assign(assigns, :sw_notifications, value)}
-  end
-
-  def handle_info({:radio_color_changed, value}, assigns) do
-    {:noreply, assign(assigns, :radio_color, value)}
-  end
-
-  def handle_info({:select_changed, value}, assigns) do
-    {:noreply, assign(assigns, :select_value, value)}
-  end
-
-  def handle_info({:input_changed, value}, assigns) do
-    {:noreply, assign(assigns, :input_value, value)}
-  end
-
-  def handle_info({:input_submitted, value}, assigns) do
-    {:noreply, assign(assigns, :input_submitted, value)}
-  end
-
-  def handle_info({:textarea_changed, value}, assigns) do
-    {:noreply, assign(assigns, :textarea_value, value)}
-  end
-
-  def handle_info({:ta_autocomplete, %{accepted: true}}, assigns) do
-    {:noreply, assign(assigns, :autocomplete_suggestions, [])}
-  end
-
-  def handle_info({:ta_autocomplete, %{tag: :file_ref, query: q}}, assigns) do
-    matches =
-      @demo_files
-      |> Enum.filter(&String.contains?(&1, q))
-      |> Enum.take(8)
-
-    Courgette.send_update(Textarea, id: "textarea_ac", trigger_suggestions: matches)
-    {:noreply, assigns}
-  end
-
-  # Command palette
-  def handle_info({:palette_filter_changed, value}, assigns) do
-    {:noreply, assign(assigns, :palette_filter, value)}
-  end
-
-  def handle_info({:palette_selected, id}, assigns) do
-    {:noreply, assign(assigns, :palette_selected, id)}
-  end
-
-  # Data display
-  def handle_info({:table_row_selected, row}, assigns) do
-    {:noreply, assign(assigns, :table_selected, row)}
-  end
-
-  def handle_info({:list_item_selected, id}, assigns) do
-    {:noreply, assign(assigns, :list_selected, id)}
-  end
-
-  def handle_info({:tree_node_selected, label}, assigns) do
-    {:noreply, assign(assigns, :tree_selected, label)}
-  end
-
-  # Navigation
-  def handle_info({:tabs_changed, value}, assigns) do
-    {:noreply, assign(assigns, :tabs_active, value)}
-  end
-
-  # Progress animation tick
-  def handle_info(:progress_tick, assigns) do
-    new_progress = assigns.progress + 0.005
-
-    new_progress =
-      if new_progress > 1.0, do: 0.0, else: new_progress
-
-    if Courgette.animations_enabled?() do
-      Process.send_after(self(), :progress_tick, 50)
-    end
-
-    {:noreply, assign(assigns, :progress, new_progress)}
   end
 
   def handle_info(_msg, assigns) do

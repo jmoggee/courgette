@@ -36,7 +36,7 @@ defmodule Courgette.Layout.Engine.Style do
           border: Geometry.rect(),
           gap_main: float(),
           gap_cross: float(),
-          overflow: :visible | :hidden,
+          overflow: :visible | :hidden | :scroll,
           white_space: :normal | :nowrap,
           overflow_wrap: :normal | :break_word,
           text_overflow: :clip | :ellipsis

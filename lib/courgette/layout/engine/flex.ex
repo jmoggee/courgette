@@ -593,8 +593,9 @@ defmodule Courgette.Layout.Engine.Flex do
     padding_main = Geometry.main_inset(axis, style.padding)
     content_box_inset = border_main + padding_main
 
-    # overflow:hidden → automatic minimum is just padding+border (content is clipped)
-    if style.overflow == :hidden do
+    # overflow:hidden or overflow:scroll → automatic minimum is just padding+border
+    # (content is clipped, so it doesn't contribute to minimum sizing)
+    if style.overflow in [:hidden, :scroll] do
       content_box_inset
     else
     case element.type do
@@ -613,10 +614,6 @@ defmodule Courgette.Layout.Engine.Flex do
         end
 
       _ ->
-        # Scrollable areas can overflow — their auto minimum is just insets
-        if element.type == :scrollable_area do
-          content_box_inset
-        else
         children =
           element.children
           |> Enum.filter(fn
@@ -677,7 +674,6 @@ defmodule Courgette.Layout.Engine.Flex do
             end
 
           children_contribution + content_box_inset
-        end
         end
     end
     end
@@ -1207,8 +1203,8 @@ defmodule Courgette.Layout.Engine.Flex do
           :column -> text_w
         end
 
-      :scrollable_area ->
-        # Scrollable areas overflow — their cross size is 0 (content doesn't
+      _ when style.overflow == :scroll ->
+        # Scrollable containers overflow — their cross size is 0 (content doesn't
         # determine the container's cross dimension). Stretch will size them.
         0.0
 
@@ -1583,27 +1579,21 @@ defmodule Courgette.Layout.Engine.Flex do
     []
   end
 
-  defp layout_children(element, style, available) when element.type == :scrollable_area do
-    if element.children == [] do
-      []
-    else
-      # Children flow in a column with unlimited height
-      scroll_style = %{style | flex_direction: :column, height: nil, min_height: nil, max_height: nil}
-      content_available = %{width: available.width, height: nil}
-      result = compute_flex_container(element, scroll_style, content_available)
-      result.children
-    end
-  end
-
   defp layout_children(element, style, available) do
     if element.children == [] do
       []
     else
-      # Lay out children as a nested flex container
-      _child_axis = style.flex_direction
-
-      result = compute_flex_container(element, style, available)
-      result.children
+      if style.overflow == :scroll do
+        # Scrollable containers: children flow in a column with unlimited height
+        scroll_style = %{style | flex_direction: :column, height: nil, min_height: nil, max_height: nil}
+        content_available = %{width: available.width, height: nil}
+        result = compute_flex_container(element, scroll_style, content_available)
+        result.children
+      else
+        # Lay out children as a nested flex container
+        result = compute_flex_container(element, style, available)
+        result.children
+      end
     end
   end
 end

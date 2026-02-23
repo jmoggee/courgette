@@ -493,9 +493,9 @@ defmodule Courgette.PainterTest do
     end
   end
 
-  # ── Scrollable area ─────────────────────────────────────────────
+  # ── Overflow: scroll ────────────────────────────────────────────
 
-  describe "scrollable_area" do
+  describe "overflow: :scroll on box" do
     test "scroll_offset=0 shows top content" do
       buffer = Buffer.new(20, 5)
 
@@ -509,7 +509,7 @@ defmodule Courgette.PainterTest do
         text_node("Line 6", [], Bounds.new(0, 6, 6, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 0], Bounds.new(0, 0, 20, 5), children)
+      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll], Bounds.new(0, 0, 20, 5), children)
       result = Painter.paint(sa, buffer)
 
       assert grapheme_at(result, 0, 0) == "L"
@@ -531,7 +531,7 @@ defmodule Courgette.PainterTest do
         text_node("GGG", [], Bounds.new(0, 6, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 5), children)
+      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 5), children)
       result = Painter.paint(sa, buffer)
 
       # With offset=2, row 0 shows "CCC" (originally at y=2)
@@ -551,7 +551,7 @@ defmodule Courgette.PainterTest do
         text_node("BOT", [], Bounds.new(0, 2, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 3), children)
+      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
       result = Painter.paint(sa, buffer)
 
       # Only "BOT" is visible at row 0; TOP and MID shifted above viewport
@@ -573,7 +573,7 @@ defmodule Courgette.PainterTest do
         text_node("EEE", [], Bounds.new(0, 4, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 0], Bounds.new(0, 0, 20, 3), children)
+      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
       result = Painter.paint(sa, buffer)
 
       # Only first 3 lines visible
@@ -593,7 +593,7 @@ defmodule Courgette.PainterTest do
         text_node("EEE", [], Bounds.new(0, 4, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 2], Bounds.new(0, 0, 20, 3), children)
+      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
       result = Painter.paint(sa, buffer)
 
       assert grapheme_at(result, 0, 0) == "C"
@@ -609,7 +609,7 @@ defmodule Courgette.PainterTest do
         text_node("BBB", [], Bounds.new(0, 1, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 10], Bounds.new(0, 0, 20, 3), children)
+      sa = layout_node(:box, [scroll_offset: 10, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
       result = Painter.paint(sa, buffer)
 
       # All content shifted above viewport
@@ -627,7 +627,7 @@ defmodule Courgette.PainterTest do
         text_node("Foo!!", [], Bounds.new(1, 3, 5, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [border: :single, scroll_offset: 1],
+      sa = layout_node(:box, [border: :single, scroll_offset: 1, overflow: :scroll],
              Bounds.new(0, 0, 12, 5), children)
       result = Painter.paint(sa, buffer)
 
@@ -652,7 +652,7 @@ defmodule Courgette.PainterTest do
         text_node("ZZZZZZZZ", [], Bounds.new(1, 2, 8, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [border: :single, scroll_offset: 0],
+      sa = layout_node(:box, [border: :single, scroll_offset: 0, overflow: :scroll],
              Bounds.new(0, 0, 12, 4), children)
       result = Painter.paint(sa, buffer)
 
@@ -673,7 +673,7 @@ defmodule Courgette.PainterTest do
         text_node("Hi", [], Bounds.new(0, 0, 2, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [bg: :blue, scroll_offset: 2],
+      sa = layout_node(:box, [bg: :blue, scroll_offset: 2, overflow: :scroll],
              Bounds.new(0, 0, 10, 4), children)
       result = Painter.paint(sa, buffer)
 
@@ -686,7 +686,7 @@ defmodule Courgette.PainterTest do
     test "background and border both render" do
       buffer = Buffer.new(10, 4)
 
-      sa = layout_node(:scrollable_area, [bg: :red, border: :single],
+      sa = layout_node(:box, [bg: :red, border: :single, overflow: :scroll],
              Bounds.new(0, 0, 10, 4), [])
       result = Painter.paint(sa, buffer)
 
@@ -705,7 +705,7 @@ defmodule Courgette.PainterTest do
         text_node("BBB", [], Bounds.new(0, 1, 3, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [], Bounds.new(0, 0, 20, 3), children)
+      sa = layout_node(:box, [overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
       result = Painter.paint(sa, buffer)
 
       # Default offset=0, top content visible
@@ -713,7 +713,7 @@ defmodule Courgette.PainterTest do
       assert grapheme_at(result, 0, 1) == "B"
     end
 
-    test "nested scrollable areas clip independently" do
+    test "nested scroll boxes clip independently" do
       buffer = Buffer.new(20, 6)
 
       inner_children = [
@@ -723,11 +723,11 @@ defmodule Courgette.PainterTest do
         text_node("DD", [], Bounds.new(2, 5, 2, 1))
       ]
 
-      inner_sa = layout_node(:scrollable_area, [scroll_offset: 1],
+      inner_sa = layout_node(:box, [scroll_offset: 1, overflow: :scroll],
                    Bounds.new(2, 2, 16, 3), inner_children)
 
       outer_children = [inner_sa]
-      outer_sa = layout_node(:scrollable_area, [scroll_offset: 0],
+      outer_sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll],
                    Bounds.new(0, 0, 20, 6), outer_children)
 
       result = Painter.paint(outer_sa, buffer)
@@ -740,7 +740,7 @@ defmodule Courgette.PainterTest do
       assert grapheme_at(result, 2, 4) == "D"
     end
 
-    test "scrollable area respects parent clip rect" do
+    test "scroll box respects parent clip rect" do
       buffer = Buffer.new(20, 10)
 
       children = [
@@ -748,7 +748,7 @@ defmodule Courgette.PainterTest do
         text_node("World", [], Bounds.new(2, 3, 5, 1))
       ]
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 0],
+      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll],
              Bounds.new(2, 2, 16, 6), children)
 
       # Parent is smaller — clips the scrollable area
@@ -762,15 +762,57 @@ defmodule Courgette.PainterTest do
       assert grapheme_at(result, 2, 3) == "W"
     end
 
-    test "empty scrollable area does not crash" do
+    test "empty scroll box does not crash" do
       buffer = Buffer.new(20, 5)
 
-      sa = layout_node(:scrollable_area, [scroll_offset: 5, bg: :green],
+      sa = layout_node(:box, [scroll_offset: 5, bg: :green, overflow: :scroll],
              Bounds.new(0, 0, 20, 5), [])
       result = Painter.paint(sa, buffer)
 
       # Background still painted
       assert bg_at(result, 0, 0) == :green
+    end
+  end
+
+  # ── Overflow: hidden ───────────────────────────────────────────
+
+  describe "overflow: :hidden on box" do
+    test "clips children to inner bounds" do
+      buffer = Buffer.new(20, 5)
+
+      children = [
+        text_node("Hello World 12345", [], Bounds.new(0, 0, 17, 1))
+      ]
+
+      # Box is 10 wide — children should be clipped at width 10
+      node = layout_node(:box, [overflow: :hidden], Bounds.new(0, 0, 10, 5), children)
+      result = Painter.paint(node, buffer)
+
+      assert grapheme_at(result, 0, 0) == "H"
+      assert grapheme_at(result, 9, 0) == "l"
+      # Beyond the box width — not painted
+      assert grapheme_at(result, 10, 0) == " "
+    end
+
+    test "clips children inside borders" do
+      buffer = Buffer.new(20, 5)
+
+      children = [
+        text_node("ABCDEFGHIJ", [], Bounds.new(1, 1, 10, 1))
+      ]
+
+      # Bordered box: inner area is (1,1) to (8,3), so text clips at x=9
+      node = layout_node(:box, [overflow: :hidden, border: :single],
+               Bounds.new(0, 0, 10, 5), children)
+      result = Painter.paint(node, buffer)
+
+      # Border intact
+      assert grapheme_at(result, 0, 0) == "┌"
+      # Inner content
+      assert grapheme_at(result, 1, 1) == "A"
+      assert grapheme_at(result, 8, 1) == "H"
+      # Border column — not overwritten
+      assert grapheme_at(result, 9, 1) == "│"
     end
   end
 

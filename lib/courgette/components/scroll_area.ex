@@ -64,13 +64,13 @@ defmodule Courgette.Components.ScrollArea do
     border_color =
       assigns.border_color || if(assigns.focused, do: :cyan, else: :white)
 
-    scrollable_opts =
-      [flex: 1, height: height, scroll_offset: offset, overflow: :scroll]
+    scroll_opts =
+      [flex: 1, height: height, scroll_offset: offset, overflow: :scroll, flex_direction: :column]
       |> maybe_add(:border, assigns.border)
       |> Keyword.put(:border_color, border_color)
 
     box flex_direction: :row do
-      scrollable_area scrollable_opts do
+      box scroll_opts do
         for child <- children do
           child
         end

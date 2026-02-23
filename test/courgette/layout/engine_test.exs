@@ -195,12 +195,12 @@ defmodule Courgette.Layout.EngineTest do
     end
   end
 
-  # ── Scrollable area (end-to-end) ─────────────────────────────────
+  # ── Overflow: scroll (end-to-end) ────────────────────────────────
 
-  describe "scrollable_area end-to-end" do
+  describe "overflow: :scroll end-to-end" do
     test "text children with offset=0 paint correctly" do
       el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
-        Element.new(:scrollable_area, [flex: 1, scroll_offset: 0], [
+        Element.new(:box, [flex: 1, scroll_offset: 0, overflow: :scroll, flex_direction: :column], [
           Element.new(:text, [], ["Line A"]),
           Element.new(:text, [], ["Line B"]),
           Element.new(:text, [], ["Line C"]),
@@ -229,7 +229,7 @@ defmodule Courgette.Layout.EngineTest do
 
     test "text children with scroll_offset shift content" do
       el = Element.new(:box, [width: 30, height: 4, flex_direction: :column], [
-        Element.new(:scrollable_area, [flex: 1, scroll_offset: 3], [
+        Element.new(:box, [flex: 1, scroll_offset: 3, overflow: :scroll, flex_direction: :column], [
           Element.new(:text, [], ["Line A"]),
           Element.new(:text, [], ["Line B"]),
           Element.new(:text, [], ["Line C"]),
@@ -257,7 +257,7 @@ defmodule Courgette.Layout.EngineTest do
 
     test "with border and scroll_offset" do
       el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
-        Element.new(:scrollable_area, [flex: 1, border: :single, scroll_offset: 2], [
+        Element.new(:box, [flex: 1, border: :single, scroll_offset: 2, overflow: :scroll, flex_direction: :column], [
           Element.new(:text, [], ["Line A"]),
           Element.new(:text, [], ["Line B"]),
           Element.new(:text, [], ["Line C"]),
@@ -289,7 +289,8 @@ defmodule Courgette.Layout.EngineTest do
         Element.new(:text, [], ["Log entry #{i}"])
       end
 
-      scroll_panel = Element.new(:scrollable_area, [flex: 1, border: :single, scroll_offset: 5], log_lines)
+      scroll_panel = Element.new(:box, [flex: 1, border: :single, scroll_offset: 5,
+                                         overflow: :scroll, flex_direction: :column], log_lines)
 
       el = Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
         header,

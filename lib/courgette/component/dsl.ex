@@ -25,7 +25,7 @@ defmodule Courgette.Component.DSL do
 
   alias Courgette.Element
 
-  @element_types [:box, :text, :grid, :col, :scrollable_area, :button, :input]
+  @element_types [:box, :text, :grid, :col, :button, :input]
 
   for type <- @element_types do
     @doc "Creates a `#{inspect(type)}` element."

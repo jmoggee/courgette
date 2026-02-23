@@ -1,6 +1,6 @@
 # examples/scrollable_area.exs
 #
-# ScrollableArea viewport with scroll_offset shifting.
+# Overflow: scroll viewport with scroll_offset shifting.
 # 5 frames: basic scrolling, middle view, bottom view, bordered+colored, dashboard.
 #
 # Run with: mix run examples/scrollable_area.exs
@@ -78,7 +78,7 @@ defmodule Example.ScrollableArea do
     end
 
     el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
-      Element.new(:scrollable_area, [flex: 1, scroll_offset: offset], lines)
+      Element.new(:box, [flex: 1, scroll_offset: offset, overflow: :scroll, flex_direction: :column], lines)
     ])
 
     Engine.compute(el, Bounds.new(0, 0, cols, viewport_h))
@@ -94,7 +94,7 @@ defmodule Example.ScrollableArea do
     end
 
     el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column, bg: {20, 20, 35}], [
-      Element.new(:scrollable_area, [flex: 1, border: :rounded, border_color: :cyan, scroll_offset: 6], lines)
+      Element.new(:box, [flex: 1, border: :rounded, border_color: :cyan, scroll_offset: 6, overflow: :scroll, flex_direction: :column], lines)
     ])
 
     Engine.compute(el, Bounds.new(0, 0, cols, viewport_h))
@@ -126,8 +126,9 @@ defmodule Example.ScrollableArea do
       Element.new(:text, [color: color], ["  [#{ts}] #{level}: Process #{i} completed task #{i * 3}"])
     end
 
-    scroll_panel = Element.new(:scrollable_area, [flex: 1, border: :rounded,
-                                                   border_color: :yellow, scroll_offset: 8], log_lines)
+    scroll_panel = Element.new(:box, [flex: 1, border: :rounded,
+                                       border_color: :yellow, scroll_offset: 8,
+                                       overflow: :scroll, flex_direction: :column], log_lines)
 
     el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
       header,

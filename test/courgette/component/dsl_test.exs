@@ -84,13 +84,6 @@ defmodule Courgette.Component.DSLTest do
       assert el.props == %{span: 2}
     end
 
-    test "scrollable_area macro" do
-      el = scrollable_area(scroll_offset: 5, do: text(do: "content"))
-      assert el.type == :scrollable_area
-      assert el.props == %{scroll_offset: 5}
-      assert length(el.children) == 1
-    end
-
     test "button macro" do
       el = button(label: "OK")
       assert el.type == :button
