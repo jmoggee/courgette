@@ -38,7 +38,7 @@ defmodule Courgette.Components.Select do
   def render(assigns) do
     border_color = if assigns.focused, do: :cyan, else: :white
 
-    box border: :single, border_color: border_color do
+    box border: :single, border_color: border_color, flex_direction: :column do
       if assigns.prompt do
         text(do: assigns.prompt)
       end
