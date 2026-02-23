@@ -17,7 +17,9 @@ defmodule Courgette.Components.TableTest do
     def mount(assigns) do
       {:ok,
        assigns
-       |> assign_new(:columns, fn -> ["name", "age"] end)
+       |> assign_new(:columns, fn ->
+         [[key: :name, header: "name"], [key: :age, header: "age"]]
+       end)
        |> assign_new(:rows, fn ->
          [%{name: "Alice", age: 30}, %{name: "Bob", age: 25}]
        end)
@@ -73,7 +75,7 @@ defmodule Courgette.Components.TableTest do
     send_tab(view)
     send_event(view, {:key, :arrow_down})
     text = render_text(view)
-    assert text =~ "▸ Bob"
+    assert text =~ ~r/▸.*Bob/
   end
 
   test "arrow up moves selection" do
@@ -81,7 +83,7 @@ defmodule Courgette.Components.TableTest do
     send_tab(view)
     send_event(view, {:key, :arrow_up})
     text = render_text(view)
-    assert text =~ "▸ Alice"
+    assert text =~ ~r/▸.*Alice/
   end
 
   test "clamps at top and bottom" do
@@ -89,13 +91,13 @@ defmodule Courgette.Components.TableTest do
     send_tab(view)
     send_event(view, {:key, :arrow_up})
     text = render_text(view)
-    assert text =~ "▸ Alice"
+    assert text =~ ~r/▸.*Alice/
 
     view2 = mount(Host, initial_assigns: %{selected: 1})
     send_tab(view2)
     send_event(view2, {:key, :arrow_down})
     text2 = render_text(view2)
-    assert text2 =~ "▸ Bob"
+    assert text2 =~ ~r/▸.*Bob/
   end
 
   test "enter sends on_select with full row map" do
@@ -131,25 +133,17 @@ defmodule Courgette.Components.TableTest do
   test "selected row has visual indicator" do
     view = mount(Host)
     text = render_text(view)
-    assert text =~ "▸ Alice"
-    # Bob should not have the indicator
-    refute text =~ "▸ Bob"
-  end
-
-  test "string columns work (used as both key and header)" do
-    view = mount(Host, initial_assigns: %{columns: ["name", "age"]})
-    text = render_text(view)
-    assert text =~ "name"
-    assert text =~ "age"
+    assert text =~ "▸"
     assert text =~ "Alice"
-    assert text =~ "Bob"
+    # Only one row should have the selection indicator
+    assert length(Regex.scan(~r/▸/, text)) == 1
   end
 
-  test "tuple columns use key for data lookup and header for display" do
+  test "keyword list columns with key and header" do
     view =
       mount(Host,
         initial_assigns: %{
-          columns: [{:name, "Full Name"}, {:age, "Years"}]
+          columns: [[key: :name, header: "Full Name"], [key: :age, header: "Years"]]
         }
       )
 
@@ -158,15 +152,13 @@ defmodule Courgette.Components.TableTest do
     assert text =~ "Years"
     assert text =~ "Alice"
     assert text =~ "30"
-    # The atom key should not appear as display text
-    refute text =~ "name" or text =~ "age"
   end
 
   test "column widths adjust to content" do
     view =
       mount(Host,
         initial_assigns: %{
-          columns: ["x"],
+          columns: [[key: :x, header: "x"]],
           rows: [%{x: "short"}, %{x: "much longer value"}]
         }
       )
@@ -197,6 +189,58 @@ defmodule Courgette.Components.TableTest do
     refute text =~ "Alice"
   end
 
+  test "right-aligned column" do
+    view =
+      mount(Host,
+        initial_assigns: %{
+          columns: [
+            [key: :id, header: "ID", align: :right],
+            [key: :name, header: "Name"]
+          ],
+          rows: [%{id: 1, name: "Alice"}, %{id: 2, name: "Bob"}]
+        }
+      )
+
+    tree = render_tree(view)
+    # Find a cell box with justify_content: :flex_end
+    assert find_justify_content(tree, :flex_end),
+           "Expected a cell with justify_content: :flex_end for right alignment"
+  end
+
+  test "center-aligned column" do
+    view =
+      mount(Host,
+        initial_assigns: %{
+          columns: [
+            [key: :name, header: "Name"],
+            [key: :role, header: "Role", align: :center]
+          ],
+          rows: [%{name: "Alice", role: "Engineer"}]
+        }
+      )
+
+    tree = render_tree(view)
+    assert find_justify_content(tree, :center),
+           "Expected a cell with justify_content: :center for center alignment"
+  end
+
+  test "explicit column width" do
+    view =
+      mount(Host,
+        initial_assigns: %{
+          columns: [
+            [key: :name, header: "Name", width: 20]
+          ],
+          rows: [%{name: "Al"}]
+        }
+      )
+
+    tree = render_tree(view)
+    # Find a box with width: 20
+    assert find_box_width(tree, 20),
+           "Expected a cell box with explicit width: 20"
+  end
+
   # Helper to find border_color in tree
   defp find_border_color(nil), do: nil
 
@@ -206,6 +250,48 @@ defmodule Courgette.Components.TableTest do
     Enum.find_value(children, fn
       %Courgette.Element{} = child -> find_border_color(child)
       _ -> nil
+    end)
+  end
+
+  # Helper to find justify_content value in tree
+  defp find_justify_content(nil, _target), do: false
+
+  defp find_justify_content(%Courgette.Element{type: :box, props: props, children: children}, target) do
+    if Map.get(props, :justify_content) == target do
+      true
+    else
+      Enum.any?(children, fn
+        %Courgette.Element{} = child -> find_justify_content(child, target)
+        _ -> false
+      end)
+    end
+  end
+
+  defp find_justify_content(%Courgette.Element{children: children}, target) do
+    Enum.any?(children, fn
+      %Courgette.Element{} = child -> find_justify_content(child, target)
+      _ -> false
+    end)
+  end
+
+  # Helper to find a box with specific width
+  defp find_box_width(nil, _target), do: false
+
+  defp find_box_width(%Courgette.Element{type: :box, props: props, children: children}, target) do
+    if Map.get(props, :width) == target do
+      true
+    else
+      Enum.any?(children, fn
+        %Courgette.Element{} = child -> find_box_width(child, target)
+        _ -> false
+      end)
+    end
+  end
+
+  defp find_box_width(%Courgette.Element{children: children}, target) do
+    Enum.any?(children, fn
+      %Courgette.Element{} = child -> find_box_width(child, target)
+      _ -> false
     end)
   end
 end

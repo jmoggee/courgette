@@ -215,6 +215,7 @@ defmodule Storybook do
        input_value: "",
        input_submitted: nil,
        textarea_value: "",
+       autocomplete_suggestions: [],
 
        # Data display
        table_selected: nil,
@@ -465,6 +466,23 @@ defmodule Storybook do
     end
   end
 
+  @demo_files [
+    "lib/courgette.ex",
+    "lib/courgette/app.ex",
+    "lib/courgette/autocomplete.ex",
+    "lib/courgette/component.ex",
+    "lib/courgette/components/textarea.ex",
+    "lib/courgette/components/select.ex",
+    "lib/courgette/components/text_input.ex",
+    "lib/courgette/renderer.ex",
+    "lib/courgette/painter.ex",
+    "lib/courgette/buffer.ex",
+    "lib/courgette/layout/engine.ex",
+    "lib/courgette/layout/engine/flex.ex",
+    "mix.exs",
+    "README.md"
+  ]
+
   defp render_textarea_page(assigns) do
     box flex_direction: :column do
       heading(text: "Textarea", color: :cyan)
@@ -495,6 +513,24 @@ defmodule Storybook do
         label: "chars",
         value: "#{String.length(assigns.textarea_value)}"
       )
+
+      heading(text: "Autocomplete", color: :cyan)
+
+      text dim: true do
+        "Type @ to trigger file autocomplete. ↑↓ to navigate, Enter to accept, Esc to dismiss."
+      end
+
+      box padding_v: 1, min_height: 8, width: 50 do
+        live_component(Textarea,
+          id: "textarea_ac",
+          focusable: true,
+          placeholder: "Type @ to mention a file...",
+          triggers: [%{char: "@", tag: :file_ref}],
+          on_trigger: :ta_autocomplete,
+          trigger_suggestions: assigns.autocomplete_suggestions,
+          height: 6
+        )
+      end
     end
   end
 
@@ -513,10 +549,10 @@ defmodule Storybook do
           id: "table",
           focusable: true,
           columns: [
-            {:id, "ID"},
-            {:name, "Name"},
-            {:role, "Role"},
-            {:status, "Status"}
+            [key: :id, header: "ID", align: :right],
+            [key: :name, header: "Name"],
+            [key: :role, header: "Role", align: :center],
+            [key: :status, header: "Status"]
           ],
           rows: [
             %{id: 1, name: "Alice", role: "Engineer", status: "Active"},
@@ -1190,6 +1226,20 @@ defmodule Storybook do
 
   def handle_info({:textarea_changed, value}, assigns) do
     {:noreply, assign(assigns, :textarea_value, value)}
+  end
+
+  def handle_info({:ta_autocomplete, %{accepted: true}}, assigns) do
+    {:noreply, assign(assigns, :autocomplete_suggestions, [])}
+  end
+
+  def handle_info({:ta_autocomplete, %{tag: :file_ref, query: q}}, assigns) do
+    matches =
+      @demo_files
+      |> Enum.filter(&String.contains?(&1, q))
+      |> Enum.take(8)
+
+    Courgette.send_update(Textarea, id: "textarea_ac", trigger_suggestions: matches)
+    {:noreply, assigns}
   end
 
   # Data display

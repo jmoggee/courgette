@@ -68,7 +68,8 @@ defmodule Courgette.MixProject do
           Courgette.Components.Select,
           Courgette.Components.ScrollArea,
           Courgette.Components.Spinner,
-          Courgette.Components.ProgressBar
+          Courgette.Components.ProgressBar,
+          Courgette.Autocomplete
         ],
         "Layout": [
           Courgette.Layout.Engine,

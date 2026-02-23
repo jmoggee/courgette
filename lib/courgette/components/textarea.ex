@@ -12,9 +12,23 @@ defmodule Courgette.Components.Textarea do
   - `placeholder` — shown when empty and unfocused (default "")
   - `on_change` — message tag sent on every edit (optional)
   - `height` — total height in rows including border (default 10)
+  - `triggers` — list of trigger maps for autocomplete (default `[]`)
+  - `on_trigger` — message tag sent to parent for trigger events (optional)
+  - `trigger_suggestions` — list of suggestions from parent (default `[]`)
+
+  ## Autocomplete
+
+  When `triggers` is configured, typing a trigger character (e.g. `@`) at a
+  word boundary activates autocomplete. The parent is notified via `on_trigger`
+  with the current query, and provides suggestions back via `trigger_suggestions`.
+  Enter accepts the selected suggestion, Escape dismisses the popup.
   """
 
   use Courgette.LiveComponent
+
+  alias Courgette.Autocomplete
+
+  @max_visible_suggestions 8
 
   @impl true
   def mount(assigns) do
@@ -22,6 +36,8 @@ defmodule Courgette.Components.Textarea do
     lines = string_to_lines(value)
     last_line = length(lines) - 1
     last_col = length(Enum.at(lines, last_line))
+
+    triggers = assigns[:triggers] || []
 
     {:ok,
      assigns
@@ -33,8 +49,11 @@ defmodule Courgette.Components.Textarea do
      |> assign(:scroll_offset, 0)
      |> assign_new(:placeholder, fn -> "" end)
      |> assign_new(:on_change, fn -> nil end)
+     |> assign_new(:on_trigger, fn -> nil end)
      |> assign_new(:height, fn -> 10 end)
      |> assign_new(:focused, fn -> false end)
+     |> assign_new(:trigger_suggestions, fn -> [] end)
+     |> assign(:autocomplete, Autocomplete.new(triggers))
      |> ensure_cursor_visible()}
   end
 
@@ -57,6 +76,10 @@ defmodule Courgette.Components.Textarea do
     box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
       for {line_graphemes, idx} <- Enum.with_index(visible_lines) do
         render_visible_line(line_graphemes, idx + offset, assigns.cursor_line, assigns.cursor_col)
+      end
+
+      if autocomplete_showing?(assigns) do
+        render_autocomplete_popup(assigns, offset)
       end
     end
   end
@@ -119,6 +142,55 @@ defmodule Courgette.Components.Textarea do
     end
   end
 
+  defp autocomplete_showing?(assigns) do
+    Autocomplete.active?(assigns.autocomplete) and assigns.autocomplete.suggestions != []
+  end
+
+  defp render_autocomplete_popup(assigns, scroll_offset) do
+    ac = assigns.autocomplete
+    cursor_visual_row = assigns.cursor_line - scroll_offset
+    trigger_col = ac.active.start_col
+
+    suggestions = ac.suggestions
+    total = length(suggestions)
+    visible_count = min(total, @max_visible_suggestions)
+
+    # Calculate scroll window around the selected cursor
+    {window_start, window_end} = suggestion_window(ac.cursor, total, visible_count)
+    visible_suggestions = Enum.slice(suggestions, window_start, window_end - window_start)
+
+    box position: :absolute,
+        top: cursor_visual_row + 1,
+        left: trigger_col,
+        flex_direction: :column,
+        border: :single,
+        bg: :black do
+      for {suggestion, idx} <- Enum.with_index(visible_suggestions, window_start) do
+        if idx == ac.cursor do
+          text bg: :blue, fg: :white do
+            suggestion.label
+          end
+        else
+          text do
+            suggestion.label
+          end
+        end
+      end
+    end
+  end
+
+  defp suggestion_window(_cursor, total, visible_count) when total <= visible_count do
+    {0, total}
+  end
+
+  defp suggestion_window(cursor, total, visible_count) do
+    # Keep cursor roughly centered in the visible window
+    half = div(visible_count, 2)
+    start = max(cursor - half, 0)
+    start = min(start, total - visible_count)
+    {start, start + visible_count}
+  end
+
   @impl true
   def update(props, assigns) do
     new_assigns = Map.merge(assigns, props)
@@ -139,6 +211,15 @@ defmodule Courgette.Components.Textarea do
         new_assigns
       end
 
+    # Handle incoming trigger_suggestions from parent
+    new_assigns =
+      if Map.has_key?(props, :trigger_suggestions) do
+        ac = Autocomplete.set_suggestions(new_assigns.autocomplete, props.trigger_suggestions)
+        assign(new_assigns, :autocomplete, ac)
+      else
+        new_assigns
+      end
+
     {:ok, new_assigns}
   end
 
@@ -150,7 +231,54 @@ defmodule Courgette.Components.Textarea do
   end
 
   def handle_event(:blur, assigns) do
+    assigns =
+      if autocomplete_showing?(assigns) do
+        assign(assigns, :autocomplete, Autocomplete.dismiss(assigns.autocomplete))
+      else
+        assigns
+      end
+
     {:noreply, assign(assigns, :focused, false)}
+  end
+
+  # --- Escape ---
+
+  def handle_event({:key, :escape}, assigns) do
+    if autocomplete_showing?(assigns) do
+      {:noreply, assign(assigns, :autocomplete, Autocomplete.dismiss(assigns.autocomplete))}
+    else
+      {:noreply, assigns}
+    end
+  end
+
+  # --- Enter ---
+
+  def handle_event({:key, :enter}, assigns) do
+    if autocomplete_showing?(assigns) do
+      handle_autocomplete_accept(assigns)
+    else
+      handle_enter(assigns)
+    end
+  end
+
+  # --- Arrow up/down (autocomplete navigation or normal movement) ---
+
+  def handle_event({:key, :arrow_up}, assigns) do
+    if autocomplete_showing?(assigns) do
+      ac = Autocomplete.navigate(assigns.autocomplete, :up)
+      {:noreply, assign(assigns, :autocomplete, ac)}
+    else
+      move_vertical(assigns, -1) |> noreply()
+    end
+  end
+
+  def handle_event({:key, :arrow_down}, assigns) do
+    if autocomplete_showing?(assigns) do
+      ac = Autocomplete.navigate(assigns.autocomplete, :down)
+      {:noreply, assign(assigns, :autocomplete, ac)}
+    else
+      move_vertical(assigns, 1) |> noreply()
+    end
   end
 
   # --- Character insertion ---
@@ -161,33 +289,16 @@ defmodule Courgette.Components.Textarea do
     new_lines = List.replace_at(assigns.lines, assigns.cursor_line, new_line)
     new_col = assigns.cursor_col + 1
 
-    assigns
-    |> assign(:lines, new_lines)
-    |> set_cursor(assigns.cursor_line, new_col)
-    |> sync_value()
-    |> notify_change()
-    |> noreply()
-  end
+    assigns =
+      assigns
+      |> assign(:lines, new_lines)
+      |> set_cursor(assigns.cursor_line, new_col)
+      |> sync_value()
+      |> notify_change()
 
-  # --- Enter (line split) ---
+    assigns = handle_char_autocomplete(assigns, ch)
 
-  def handle_event({:key, :enter}, assigns) do
-    line = Enum.at(assigns.lines, assigns.cursor_line)
-    before = Enum.slice(line, 0, assigns.cursor_col)
-    after_cursor = Enum.slice(line, assigns.cursor_col..-1//1)
-
-    new_lines =
-      assigns.lines
-      |> List.replace_at(assigns.cursor_line, before)
-      |> List.insert_at(assigns.cursor_line + 1, after_cursor)
-
-    assigns
-    |> assign(:lines, new_lines)
-    |> set_cursor(assigns.cursor_line + 1, 0)
-    |> ensure_cursor_visible()
-    |> sync_value()
-    |> notify_change()
-    |> noreply()
+    noreply(assigns)
   end
 
   # --- Backspace ---
@@ -199,12 +310,15 @@ defmodule Courgette.Components.Textarea do
         new_line = List.delete_at(line, assigns.cursor_col - 1)
         new_lines = List.replace_at(assigns.lines, assigns.cursor_line, new_line)
 
-        assigns
-        |> assign(:lines, new_lines)
-        |> set_cursor(assigns.cursor_line, assigns.cursor_col - 1)
-        |> sync_value()
-        |> notify_change()
-        |> noreply()
+        assigns =
+          assigns
+          |> assign(:lines, new_lines)
+          |> set_cursor(assigns.cursor_line, assigns.cursor_col - 1)
+          |> sync_value()
+          |> notify_change()
+          |> maybe_dismiss_autocomplete()
+
+        noreply(assigns)
 
       assigns.cursor_line > 0 ->
         prev_line = Enum.at(assigns.lines, assigns.cursor_line - 1)
@@ -217,13 +331,16 @@ defmodule Courgette.Components.Textarea do
           |> List.replace_at(assigns.cursor_line - 1, joined)
           |> List.delete_at(assigns.cursor_line)
 
-        assigns
-        |> assign(:lines, new_lines)
-        |> set_cursor(assigns.cursor_line - 1, new_col)
-        |> ensure_cursor_visible()
-        |> sync_value()
-        |> notify_change()
-        |> noreply()
+        assigns =
+          assigns
+          |> assign(:lines, new_lines)
+          |> set_cursor(assigns.cursor_line - 1, new_col)
+          |> ensure_cursor_visible()
+          |> sync_value()
+          |> notify_change()
+          |> maybe_dismiss_autocomplete()
+
+        noreply(assigns)
 
       true ->
         {:noreply, assigns}
@@ -236,13 +353,14 @@ defmodule Courgette.Components.Textarea do
     handle_delete(assigns)
   end
 
-  # --- Arrow navigation ---
+  # --- Arrow left/right (always normal, then check dismissal) ---
 
   def handle_event({:key, :arrow_left}, assigns) do
     cond do
       assigns.cursor_col > 0 ->
         assigns
         |> set_cursor(assigns.cursor_line, assigns.cursor_col - 1)
+        |> maybe_dismiss_autocomplete()
         |> noreply()
 
       assigns.cursor_line > 0 ->
@@ -251,6 +369,7 @@ defmodule Courgette.Components.Textarea do
         assigns
         |> set_cursor(assigns.cursor_line - 1, prev_len)
         |> ensure_cursor_visible()
+        |> maybe_dismiss_autocomplete()
         |> noreply()
 
       true ->
@@ -266,12 +385,14 @@ defmodule Courgette.Components.Textarea do
       assigns.cursor_col < line_len ->
         assigns
         |> set_cursor(assigns.cursor_line, assigns.cursor_col + 1)
+        |> maybe_dismiss_autocomplete()
         |> noreply()
 
       assigns.cursor_line < last_line ->
         assigns
         |> set_cursor(assigns.cursor_line + 1, 0)
         |> ensure_cursor_visible()
+        |> maybe_dismiss_autocomplete()
         |> noreply()
 
       true ->
@@ -279,23 +400,22 @@ defmodule Courgette.Components.Textarea do
     end
   end
 
-  def handle_event({:key, :arrow_up}, assigns) do
-    move_vertical(assigns, -1) |> noreply()
-  end
-
-  def handle_event({:key, :arrow_down}, assigns) do
-    move_vertical(assigns, 1) |> noreply()
-  end
-
   # --- Home / End ---
 
   def handle_event({:key, :home}, assigns) do
-    assigns |> set_cursor(assigns.cursor_line, 0) |> noreply()
+    assigns
+    |> set_cursor(assigns.cursor_line, 0)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   def handle_event({:key, :end}, assigns) do
     line_len = length(Enum.at(assigns.lines, assigns.cursor_line))
-    assigns |> set_cursor(assigns.cursor_line, line_len) |> noreply()
+
+    assigns
+    |> set_cursor(assigns.cursor_line, line_len)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   # --- Page Up / Page Down ---
@@ -303,33 +423,58 @@ defmodule Courgette.Components.Textarea do
   def handle_event({:key, :page_up}, assigns) do
     visible = visible_height(assigns)
     new_line = max(assigns.cursor_line - (visible - 1), 0)
-    move_to_line(assigns, new_line) |> noreply()
+
+    assigns
+    |> move_to_line(new_line)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   def handle_event({:key, :page_down}, assigns) do
     visible = visible_height(assigns)
     last = length(assigns.lines) - 1
     new_line = min(assigns.cursor_line + (visible - 1), last)
-    move_to_line(assigns, new_line) |> noreply()
+
+    assigns
+    |> move_to_line(new_line)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   # --- Readline Navigation ---
 
   def handle_event({:key, {:ctrl, "a"}}, assigns) do
-    assigns |> set_cursor(assigns.cursor_line, 0) |> noreply()
+    assigns
+    |> set_cursor(assigns.cursor_line, 0)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   def handle_event({:key, {:ctrl, "e"}}, assigns) do
     line_len = length(Enum.at(assigns.lines, assigns.cursor_line))
-    assigns |> set_cursor(assigns.cursor_line, line_len) |> noreply()
+
+    assigns
+    |> set_cursor(assigns.cursor_line, line_len)
+    |> maybe_dismiss_autocomplete()
+    |> noreply()
   end
 
   def handle_event({:key, {:ctrl, "p"}}, assigns) do
-    move_vertical(assigns, -1) |> noreply()
+    if autocomplete_showing?(assigns) do
+      ac = Autocomplete.navigate(assigns.autocomplete, :up)
+      {:noreply, assign(assigns, :autocomplete, ac)}
+    else
+      move_vertical(assigns, -1) |> noreply()
+    end
   end
 
   def handle_event({:key, {:ctrl, "n"}}, assigns) do
-    move_vertical(assigns, 1) |> noreply()
+    if autocomplete_showing?(assigns) do
+      ac = Autocomplete.navigate(assigns.autocomplete, :down)
+      {:noreply, assign(assigns, :autocomplete, ac)}
+    else
+      move_vertical(assigns, 1) |> noreply()
+    end
   end
 
   def handle_event({:key, {:ctrl, "f"}}, assigns) do
@@ -396,6 +541,7 @@ defmodule Courgette.Components.Textarea do
     |> set_cursor(assigns.cursor_line, 0)
     |> sync_value()
     |> notify_change()
+    |> maybe_dismiss_autocomplete()
     |> noreply()
   end
 
@@ -413,6 +559,7 @@ defmodule Courgette.Components.Textarea do
     |> set_cursor(assigns.cursor_line, new_col)
     |> sync_value()
     |> notify_change()
+    |> maybe_dismiss_autocomplete()
     |> noreply()
   end
 
@@ -476,6 +623,7 @@ defmodule Courgette.Components.Textarea do
     assigns
     |> set_cursor(new_line, new_col)
     |> ensure_cursor_visible()
+    |> maybe_dismiss_autocomplete()
     |> noreply()
   end
 
@@ -486,6 +634,7 @@ defmodule Courgette.Components.Textarea do
     assigns
     |> set_cursor(new_line, new_col)
     |> ensure_cursor_visible()
+    |> maybe_dismiss_autocomplete()
     |> noreply()
   end
 
@@ -507,6 +656,121 @@ defmodule Courgette.Components.Textarea do
   # Catch-all
   def handle_event(_event, assigns) do
     {:noreply, assigns}
+  end
+
+  # --- Autocomplete Helpers ---
+
+  defp handle_char_autocomplete(assigns, ch) do
+    ac = assigns.autocomplete
+
+    if Autocomplete.active?(ac) do
+      if Autocomplete.query_char?(ch) do
+        # Still in a valid query — extract and notify parent
+        query = Autocomplete.extract_query(ac, assigns.lines, assigns.cursor_line, assigns.cursor_col)
+        notify_trigger(assigns, ac.active.trigger.tag, query)
+        assigns
+      else
+        # Non-query char typed — dismiss autocomplete
+        assign(assigns, :autocomplete, Autocomplete.dismiss(ac))
+      end
+    else
+      # Not active — check if this char starts a trigger
+      new_ac = Autocomplete.check_trigger(ac, ch, assigns.cursor_line, assigns.cursor_col, assigns.lines)
+
+      if Autocomplete.active?(new_ac) do
+        assigns = assign(assigns, :autocomplete, new_ac)
+        notify_trigger(assigns, new_ac.active.trigger.tag, "")
+        assigns
+      else
+        assigns
+      end
+    end
+  end
+
+  defp handle_autocomplete_accept(assigns) do
+    {acceptance, dismissed_ac} = Autocomplete.accept(assigns.autocomplete)
+
+    if acceptance do
+      # Replace trigger + query with trigger_char + value + trailing space
+      line = Enum.at(assigns.lines, acceptance.start_line)
+      trigger_char = assigns.autocomplete.active.trigger.char
+      replacement = String.graphemes(trigger_char <> acceptance.value <> " ")
+      # Remove from start_col to current cursor_col, insert replacement
+      before = Enum.slice(line, 0, acceptance.start_col)
+      after_cursor = Enum.slice(line, assigns.cursor_col..-1//1)
+      new_line = before ++ replacement ++ after_cursor
+      new_col = length(before) + length(replacement)
+      new_lines = List.replace_at(assigns.lines, acceptance.start_line, new_line)
+
+      assigns =
+        assigns
+        |> assign(:lines, new_lines)
+        |> set_cursor(acceptance.start_line, new_col)
+        |> assign(:autocomplete, dismissed_ac)
+        |> sync_value()
+        |> notify_change()
+
+      notify_trigger_accepted(assigns, acceptance)
+
+      noreply(assigns)
+    else
+      {:noreply, assign(assigns, :autocomplete, dismissed_ac)}
+    end
+  end
+
+  defp maybe_dismiss_autocomplete(assigns) do
+    ac = assigns.autocomplete
+
+    cond do
+      not Autocomplete.active?(ac) ->
+        assigns
+
+      Autocomplete.should_dismiss?(ac, assigns.cursor_line, assigns.cursor_col, assigns.lines) ->
+        assign(assigns, :autocomplete, Autocomplete.dismiss(ac))
+
+      true ->
+        notify_autocomplete_query(assigns, ac)
+        assigns
+    end
+  end
+
+  defp notify_autocomplete_query(assigns, ac) do
+    query = Autocomplete.extract_query(ac, assigns.lines, assigns.cursor_line, assigns.cursor_col)
+
+    if query do
+      notify_trigger(assigns, ac.active.trigger.tag, query)
+    end
+  end
+
+  defp notify_trigger(assigns, tag, query) do
+    if assigns.on_trigger && assigns[:parent_pid] do
+      send(assigns.parent_pid, {assigns.on_trigger, %{tag: tag, query: query}})
+    end
+  end
+
+  defp notify_trigger_accepted(assigns, acceptance) do
+    if assigns.on_trigger && assigns[:parent_pid] do
+      send(assigns.parent_pid, {assigns.on_trigger, %{tag: acceptance.tag, value: acceptance.value, accepted: true}})
+    end
+  end
+
+  defp handle_enter(assigns) do
+    line = Enum.at(assigns.lines, assigns.cursor_line)
+    before = Enum.slice(line, 0, assigns.cursor_col)
+    after_cursor = Enum.slice(line, assigns.cursor_col..-1//1)
+
+    new_lines =
+      assigns.lines
+      |> List.replace_at(assigns.cursor_line, before)
+      |> List.insert_at(assigns.cursor_line + 1, after_cursor)
+
+    assigns
+    |> assign(:lines, new_lines)
+    |> set_cursor(assigns.cursor_line + 1, 0)
+    |> ensure_cursor_visible()
+    |> sync_value()
+    |> notify_change()
+    |> noreply()
   end
 
   # --- Private Helpers ---

@@ -461,4 +461,328 @@ defmodule Courgette.Components.TextareaTest do
       _ -> false
     end)
   end
+
+  # ===== Autocomplete Integration Tests =====
+
+  defmodule AutocompleteHost do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns) do
+      {:ok,
+       assigns
+       |> assign_new(:textarea_value, fn -> "" end)
+       |> assign_new(:height, fn -> 10 end)
+       |> assign_new(:files, fn -> ["foo.ex", "bar.ex", "baz.ex", "lib/app.ex"] end)
+       |> assign_new(:suggestions, fn -> [] end)
+       |> assign_new(:last_trigger_event, fn -> nil end)}
+    end
+
+    @impl true
+    def render(assigns) do
+      live_component(Textarea,
+        id: "ta",
+        value: assigns.textarea_value,
+        triggers: [%{char: "@", tag: :file_ref}],
+        on_trigger: :autocomplete,
+        trigger_suggestions: assigns.suggestions,
+        height: assigns.height,
+        focusable: true
+      )
+    end
+
+    @impl true
+    def handle_info({:autocomplete, %{accepted: true} = event}, assigns) do
+      {:noreply,
+       assigns
+       |> assign(:suggestions, [])
+       |> assign(:last_trigger_event, event)}
+    end
+
+    def handle_info({:autocomplete, %{tag: :file_ref, query: q} = event}, assigns) do
+      matches =
+        assigns.files
+        |> Enum.filter(&String.contains?(&1, q))
+        |> Enum.take(10)
+
+      Courgette.send_update(Textarea, id: "ta", trigger_suggestions: matches)
+
+      {:noreply, assign(assigns, :last_trigger_event, event)}
+    end
+
+    def handle_info(_msg, assigns) do
+      {:noreply, assigns}
+    end
+  end
+
+  describe "autocomplete" do
+    test "typing trigger char activates autocomplete and notifies parent" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      # Type "@" — should trigger autocomplete
+      send_event(view, {:key, {:char, "@"}})
+
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+      assert state.autocomplete.active.trigger.tag == :file_ref
+
+      # Parent should have been notified with empty query
+      host_state = :sys.get_state(view.server).assigns
+      assert host_state.last_trigger_event == %{tag: :file_ref, query: ""}
+    end
+
+    test "trigger provides suggestions from parent" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      # Type "@" — triggers, parent filters all files (empty query matches all)
+      send_event(view, {:key, {:char, "@"}})
+
+      state = get_autocomplete_textarea_state(view)
+      assert length(state.autocomplete.suggestions) == 4
+    end
+
+    test "typing query chars narrows suggestions" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      send_event(view, {:key, {:char, "b"}})
+
+      state = get_autocomplete_textarea_state(view)
+      # "b" matches "bar.ex", "baz.ex", "lib/app.ex"
+      labels = Enum.map(state.autocomplete.suggestions, & &1.label)
+      assert "bar.ex" in labels
+      assert "baz.ex" in labels
+      refute "foo.ex" in labels
+    end
+
+    test "arrow keys navigate suggestions when popup is showing" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.cursor == 0
+
+      send_event(view, {:key, :arrow_down})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.cursor == 1
+
+      send_event(view, {:key, :arrow_up})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.cursor == 0
+    end
+
+    test "ctrl+p/n navigate suggestions when popup is showing" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+
+      send_event(view, {:key, {:ctrl, "n"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.cursor == 1
+
+      send_event(view, {:key, {:ctrl, "p"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.cursor == 0
+    end
+
+    test "enter accepts selected suggestion" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      # Navigate to second suggestion
+      send_event(view, {:key, :arrow_down})
+      # Accept
+      send_event(view, {:key, :enter})
+
+      state = get_autocomplete_textarea_state(view)
+      # Autocomplete should be dismissed
+      assert state.autocomplete.active == nil
+      assert state.autocomplete.suggestions == []
+
+      # Value should contain the accepted suggestion with trailing space
+      # The suggestions were ["bar.ex", "baz.ex", "foo.ex", "lib/app.ex"] sorted by filter
+      # Actually they come in order: ["foo.ex", "bar.ex", "baz.ex", "lib/app.ex"]
+      # cursor=1 means second item: "bar.ex"
+      assert state.value =~ "@bar.ex "
+
+      # Parent should have received acceptance event
+      host_state = :sys.get_state(view.server).assigns
+      assert host_state.last_trigger_event.accepted == true
+      assert host_state.last_trigger_event.value == "bar.ex"
+    end
+
+    test "escape dismisses autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+
+      send_event(view, {:key, :escape})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+      assert state.autocomplete.suggestions == []
+    end
+
+    test "backspace past trigger dismisses autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+
+      # Backspace removes the "@" — cursor is now at or before trigger col
+      send_event(view, {:key, :backspace})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+    end
+
+    test "moving cursor before trigger dismisses autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      send_event(view, {:key, {:char, "f"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+
+      # Move left past the trigger
+      send_event(view, {:key, :arrow_left})
+      send_event(view, {:key, :arrow_left})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+    end
+
+    test "trigger does not activate mid-word" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      # Type "foo@" — @ is not at a word boundary
+      send_event(view, {:key, {:char, "f"}})
+      send_event(view, {:key, {:char, "o"}})
+      send_event(view, {:key, {:char, "o"}})
+      send_event(view, {:key, {:char, "@"}})
+
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+    end
+
+    test "trigger activates after space" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "h"}})
+      send_event(view, {:key, {:char, "i"}})
+      send_event(view, {:key, {:char, " "}})
+      send_event(view, {:key, {:char, "@"}})
+
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+      assert state.autocomplete.active.start_col == 3
+    end
+
+    test "non-query char dismisses active autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+
+      # Space is not a query char — should dismiss
+      send_event(view, {:key, {:char, " "}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+    end
+
+    test "enter does normal line split when no autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "a"}})
+      send_event(view, {:key, {:char, "b"}})
+      send_event(view, {:key, :enter})
+      send_event(view, {:key, {:char, "c"}})
+
+      state = get_autocomplete_textarea_state(view)
+      assert state.value == "ab\nc"
+    end
+
+    test "arrow keys do normal movement when no autocomplete" do
+      view = mount(AutocompleteHost, initial_assigns: %{textarea_value: "abc\ndef"})
+      send_tab(view)
+
+      send_event(view, {:key, :arrow_up})
+      state = get_autocomplete_textarea_state(view)
+      assert state.cursor_line == 0
+    end
+
+    test "popup renders with suggestions" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+
+      text = render_text(view)
+      assert text =~ "foo.ex"
+      assert text =~ "bar.ex"
+    end
+
+    test "accepted value replaces trigger and query in text" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      # Type "hello @fo" then accept first suggestion
+      send_event(view, {:key, {:char, "h"}})
+      send_event(view, {:key, {:char, "e"}})
+      send_event(view, {:key, {:char, "l"}})
+      send_event(view, {:key, {:char, "l"}})
+      send_event(view, {:key, {:char, "o"}})
+      send_event(view, {:key, {:char, " "}})
+      send_event(view, {:key, {:char, "@"}})
+      send_event(view, {:key, {:char, "f"}})
+      send_event(view, {:key, {:char, "o"}})
+
+      state = get_autocomplete_textarea_state(view)
+      # "fo" matches "foo.ex"
+      assert state.autocomplete.suggestions != []
+
+      # Accept first suggestion
+      send_event(view, {:key, :enter})
+
+      state = get_autocomplete_textarea_state(view)
+      assert state.value == "hello @foo.ex "
+    end
+
+    test "blur dismisses autocomplete" do
+      view = mount(AutocompleteHost)
+      send_tab(view)
+
+      send_event(view, {:key, {:char, "@"}})
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active != nil
+
+      # Blur (e.g., by focusing away)
+      send_event(view, :blur)
+      state = get_autocomplete_textarea_state(view)
+      assert state.autocomplete.active == nil
+    end
+  end
+
+  defp get_autocomplete_textarea_state(view) do
+    :sys.get_state(view.server)
+
+    case Courgette.ComponentRegistry.lookup(Textarea, "ta") do
+      {:ok, pid} -> :sys.get_state(pid).assigns
+      _ -> raise "textarea component not found in registry"
+    end
+  end
 end

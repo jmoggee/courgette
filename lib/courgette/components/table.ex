@@ -1,19 +1,41 @@
 defmodule Courgette.Components.Table do
   @moduledoc """
-  Tabular data display with row navigation.
+  Tabular data display with row navigation and per-column alignment.
 
   Renders a bordered table with column headers, a separator line, and
-  data rows. Arrow keys navigate between rows and Enter confirms a
-  selection. Notifies the parent via
+  data rows. Each cell is a layout box with explicit width and alignment,
+  so the flexbox engine handles column sizing. Arrow keys navigate between
+  rows and Enter confirms a selection. Notifies the parent via
   `send(assigns.parent_pid, {on_select, row_map})` when confirmed.
 
   ## Props
 
-  - `columns` — list of column definitions. Each is a string (used as
-    both key and header) or `{key, header}` tuple.
+  - `columns` — list of column definitions, each a keyword list:
+    - `:key` — (required) map key for data lookup
+    - `:header` — (required) display text for the column header
+    - `:align` — `:left` (default), `:center`, or `:right`
+    - `:width` — explicit column width (default `:auto`, sized to content)
   - `rows` — list of maps with data keyed by column keys.
   - `selected` — initially selected row index (default 0).
   - `on_select` — message tag sent to parent on Enter (optional).
+
+  ## Example
+
+      live_component(Table,
+        id: "users",
+        focusable: true,
+        columns: [
+          [key: :id, header: "ID", align: :right],
+          [key: :name, header: "Name"],
+          [key: :role, header: "Role", align: :center],
+          [key: :status, header: "Status", width: 12]
+        ],
+        rows: [
+          %{id: 1, name: "Alice", role: "Engineer", status: "Active"},
+          %{id: 2, name: "Bob", role: "Designer", status: "Away"}
+        ],
+        on_select: :row_selected
+      )
   """
 
   use Courgette.LiveComponent
@@ -38,15 +60,13 @@ defmodule Courgette.Components.Table do
     rows = assigns.rows
     widths = column_widths(columns, rows)
 
-    box border: :single, border_color: border_color do
+    box border: :single, border_color: border_color, flex_direction: :column do
       # Header row
-      text bold: true do
-        format_row_cells(columns, widths, fn {_key, header} -> header end)
-      end
+      render_row(columns, widths, "  ", fn col -> col.header end, bold: true)
 
       # Separator
       text do
-        separator_line(widths)
+        "  " <> separator_line(widths)
       end
 
       # Data rows
@@ -107,36 +127,82 @@ defmodule Courgette.Components.Table do
   # -- Private helpers --
 
   defp render_data_row(row, idx, selected_idx, columns, widths) do
-    cells = format_row_cells(columns, widths, fn {key, _header} -> cell_value(row, key) end)
-
     if idx == selected_idx do
-      text bold: true, fg: :cyan do
-        "▸ " <> cells
-      end
+      render_row(columns, widths, "▸ ", fn col -> cell_value(row, col.key) end,
+        bold: true,
+        fg: :cyan
+      )
     else
-      text do
-        "  " <> cells
+      render_row(columns, widths, "  ", fn col -> cell_value(row, col.key) end, [])
+    end
+  end
+
+  defp render_row(columns, widths, prefix, value_fn, style) do
+    box flex_direction: :row do
+      text Keyword.merge(style, []) do
+        prefix
+      end
+
+      columns
+      |> Enum.zip(widths)
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {{col, width}, idx} ->
+        cell = render_cell(value_fn.(col), width, col.align, style)
+
+        if idx > 0 do
+          separator =
+            text Keyword.merge(style, []) do
+              " │ "
+            end
+
+          [separator, cell]
+        else
+          [cell]
+        end
+      end)
+    end
+  end
+
+  defp render_cell(value, width, align, style) do
+    justify = alignment_to_justify(align)
+
+    box width: width, justify_content: justify do
+      text Keyword.merge(style, []) do
+        value
       end
     end
   end
 
+  defp alignment_to_justify(:left), do: :flex_start
+  defp alignment_to_justify(:center), do: :center
+  defp alignment_to_justify(:right), do: :flex_end
+
   defp normalize_columns(columns) do
-    Enum.map(columns, fn
-      {key, header} -> {key, header}
-      str when is_binary(str) -> {str, str}
+    Enum.map(columns, fn col when is_list(col) ->
+      %{
+        key: Keyword.fetch!(col, :key),
+        header: Keyword.fetch!(col, :header),
+        align: Keyword.get(col, :align, :left),
+        width: Keyword.get(col, :width, :auto)
+      }
     end)
   end
 
   defp column_widths(columns, rows) do
-    Enum.map(columns, fn {key, header} ->
-      header_width = String.length(to_string(header))
+    Enum.map(columns, fn col ->
+      header_width = String.length(to_string(col.header))
 
       max_cell =
         rows
-        |> Enum.map(fn row -> String.length(cell_value(row, key)) end)
+        |> Enum.map(fn row -> String.length(cell_value(row, col.key)) end)
         |> Enum.max(fn -> 0 end)
 
-      max(header_width, max_cell)
+      auto_width = max(header_width, max_cell)
+
+      case col.width do
+        :auto -> auto_width
+        explicit when is_integer(explicit) -> max(explicit, header_width)
+      end
     end)
   end
 
@@ -159,14 +225,6 @@ defmodule Courgette.Components.Table do
   end
 
   defp atom_key_lookup(_row, _key), do: nil
-
-  defp format_row_cells(columns, widths, value_fn) do
-    columns
-    |> Enum.zip(widths)
-    |> Enum.map_join(" │ ", fn {col, width} ->
-      String.pad_trailing(value_fn.(col), width)
-    end)
-  end
 
   defp separator_line(widths) do
     Enum.map_join(widths, "─┼─", fn w -> String.duplicate("─", w) end)
