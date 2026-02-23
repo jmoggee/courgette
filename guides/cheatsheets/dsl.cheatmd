@@ -40,16 +40,6 @@ button padding_h: 1, border: :rounded do
 end
 ```
 
-### scrollable_area
-
-Clipping viewport with scroll offset.
-
-```elixir
-scrollable_area scroll_offset: @offset, height: 10 do
-  # content taller than 10 rows
-end
-```
-
 ### grid / col
 
 Grid container and column children.
@@ -203,7 +193,8 @@ Borders create a 1-cell inset on each side, reducing inner content space.
 
 ```elixir
 overflow: :visible          # default — content can exceed bounds
-overflow: :hidden           # clip content outside bounds
+overflow: :hidden           # clip content to inner bounds
+overflow: :scroll           # clip + shift by scroll_offset
 
 white_space: :normal        # default — text wraps
 white_space: :nowrap        # prevent wrapping

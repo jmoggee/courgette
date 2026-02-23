@@ -2,7 +2,7 @@
 
 ## Element Macros
 
-Available macros: `box`, `text`, `grid`, `col`, `scrollable_area`, `button`, `input`
+Available macros: `box`, `text`, `grid`, `col`, `button`, `input`
 
 ### Syntax Forms
 
@@ -133,7 +133,7 @@ These props apply to `text` elements:
 
 | Prop | Values | Default |
 |------|--------|---------|
-| `overflow` | `:visible`, `:hidden` | `:visible` |
+| `overflow` | `:visible`, `:hidden`, `:scroll` | `:visible` |
 | `white_space` | `:normal`, `:nowrap` | `:normal` |
 | `overflow_wrap` | `:normal`, `:break_word` | `:normal` |
 | `text_overflow` | `:clip`, `:ellipsis` | `:clip` |

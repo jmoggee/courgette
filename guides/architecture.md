@@ -46,8 +46,8 @@ information.
 }
 ```
 
-Element types: `:box`, `:text`, `:grid`, `:col`, `:scrollable_area`,
-`:button`, `:input`, `:live_component`.
+Element types: `:box`, `:text`, `:grid`, `:col`, `:button`, `:input`,
+`:live_component`.
 
 ### 2. Layout (Flexbox)
 
@@ -66,9 +66,8 @@ Key capabilities:
 - **Gaps** — `gap` for spacing between flex items
 - **Constraints** — `min_width`, `max_width`, `min_height`, `max_height`
 - **Content sizing** — automatic minimum sizes based on text content
-- **Overflow** — `:visible`, `:hidden`
+- **Overflow** — `:visible`, `:hidden`, `:scroll` (clip + shift by `scroll_offset`)
 - **Text wrapping** — `white_space` (`:normal`, `:nowrap`), `overflow_wrap` (`:normal`, `:break_word`)
-- **Scrollable areas** — unlimited height with content-driven width
 
 The output is a layout tree where each node is `{element, bounds, children}`.
 
