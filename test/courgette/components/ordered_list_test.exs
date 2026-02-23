@@ -12,9 +12,7 @@ defmodule Courgette.Components.OrderedListTest do
 
       texts =
         Enum.map(el.children, fn row ->
-          row.children
-          |> Enum.map(fn child -> hd(child.children) end)
-          |> Enum.join()
+          Enum.map_join(row.children, fn child -> hd(child.children) end)
         end)
 
       assert Enum.at(texts, 0) =~ "1. Alpha"
@@ -35,9 +33,7 @@ defmodule Courgette.Components.OrderedListTest do
 
       texts =
         Enum.map(el.children, fn row ->
-          row.children
-          |> Enum.map(fn child -> hd(child.children) end)
-          |> Enum.join()
+          Enum.map_join(row.children, fn child -> hd(child.children) end)
         end)
 
       assert Enum.at(texts, 0) =~ "5. A"

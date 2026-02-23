@@ -2,8 +2,8 @@ defmodule Courgette.Components.RadioGroupTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.RadioGroup
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.RadioGroup
 
   setup do
     ComponentRegistry.create_table()

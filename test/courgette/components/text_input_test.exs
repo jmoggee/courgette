@@ -2,8 +2,8 @@ defmodule Courgette.Components.TextInputTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.TextInput
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.TextInput
 
   setup do
     ComponentRegistry.create_table()

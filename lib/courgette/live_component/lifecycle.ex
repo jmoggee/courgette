@@ -91,19 +91,7 @@ defmodule Courgette.LiveComponent.Lifecycle do
     # Determine starts and updates
     {to_start, to_update} =
       Enum.reduce(new_specs, {[], []}, fn {mod, id, props}, {starts, updates} ->
-        key = {mod, id}
-
-        case Map.get(old_children, key) do
-          nil ->
-            {[{mod, id, props} | starts], updates}
-
-          {pid, old_props} ->
-            if props != old_props do
-              {starts, [{pid, mod, id, props} | updates]}
-            else
-              {starts, updates}
-            end
-        end
+        classify_spec(old_children, {mod, id, props}, starts, updates)
       end)
 
     # Determine stops: old keys not in new specs
@@ -117,5 +105,19 @@ defmodule Courgette.LiveComponent.Lifecycle do
       to_update: Enum.reverse(to_update),
       to_stop: to_stop
     }
+  end
+
+  defp classify_spec(old_children, {mod, id, props}, starts, updates) do
+    case Map.get(old_children, {mod, id}) do
+      nil ->
+        {[{mod, id, props} | starts], updates}
+
+      {pid, old_props} ->
+        if props != old_props do
+          {starts, [{pid, mod, id, props} | updates]}
+        else
+          {starts, updates}
+        end
+    end
   end
 end

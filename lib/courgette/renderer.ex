@@ -22,12 +22,12 @@ defmodule Courgette.Renderer do
 
   use GenServer
 
+  alias Courgette.ANSI
   alias Courgette.Buffer
   alias Courgette.Buffer.Diff
   alias Courgette.Buffer.Writer
   alias Courgette.Layout.Bounds
   alias Courgette.Layout.Engine
-  alias Courgette.ANSI
   alias Courgette.Painter
   alias Courgette.Terminal
 

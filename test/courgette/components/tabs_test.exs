@@ -2,8 +2,8 @@ defmodule Courgette.Components.TabsTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Tabs
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Tabs
 
   setup do
     ComponentRegistry.create_table()

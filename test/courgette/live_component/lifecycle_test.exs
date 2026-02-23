@@ -1,8 +1,8 @@
 defmodule Courgette.LiveComponent.LifecycleTest do
   use ExUnit.Case
 
-  alias Courgette.LiveComponent.Lifecycle
   alias Courgette.Element
+  alias Courgette.LiveComponent.Lifecycle
 
   # Dummy modules for specs
   defmodule Counter, do: :ok

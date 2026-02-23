@@ -1,9 +1,9 @@
 defmodule Courgette.Layout.Engine.RoundTest do
   use ExUnit.Case, async: true
 
+  alias Courgette.Element
   alias Courgette.Layout.Bounds
   alias Courgette.Layout.Engine.Round
-  alias Courgette.Element
 
   defp float_node(x, y, w, h, children \\ []) do
     %{

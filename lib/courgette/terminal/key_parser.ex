@@ -170,22 +170,24 @@ defmodule Courgette.Terminal.KeyParser do
 
   defp parse_ss3(<<>>), do: {:incomplete, <<0x1B, ?O>>}
 
-  defp parse_ss3(<<final, rest::binary>>) do
-    case final do
-      ?P -> {:ok, {:key, :f1}, rest}
-      ?Q -> {:ok, {:key, :f2}, rest}
-      ?R -> {:ok, {:key, :f3}, rest}
-      ?S -> {:ok, {:key, :f4}, rest}
-      # Application mode arrows
-      ?A -> {:ok, {:key, :arrow_up}, rest}
-      ?B -> {:ok, {:key, :arrow_down}, rest}
-      ?C -> {:ok, {:key, :arrow_right}, rest}
-      ?D -> {:ok, {:key, :arrow_left}, rest}
-      ?H -> {:ok, {:key, :home}, rest}
-      ?F -> {:ok, {:key, :end}, rest}
-      _ -> {:ok, {:key, :escape}, <<?O, final, rest::binary>>}
-    end
-  end
+  # Function keys
+  defp parse_ss3(<<?P, rest::binary>>), do: {:ok, {:key, :f1}, rest}
+  defp parse_ss3(<<?Q, rest::binary>>), do: {:ok, {:key, :f2}, rest}
+  defp parse_ss3(<<?R, rest::binary>>), do: {:ok, {:key, :f3}, rest}
+  defp parse_ss3(<<?S, rest::binary>>), do: {:ok, {:key, :f4}, rest}
+
+  # Application mode arrows
+  defp parse_ss3(<<?A, rest::binary>>), do: {:ok, {:key, :arrow_up}, rest}
+  defp parse_ss3(<<?B, rest::binary>>), do: {:ok, {:key, :arrow_down}, rest}
+  defp parse_ss3(<<?C, rest::binary>>), do: {:ok, {:key, :arrow_right}, rest}
+  defp parse_ss3(<<?D, rest::binary>>), do: {:ok, {:key, :arrow_left}, rest}
+
+  # Navigation
+  defp parse_ss3(<<?H, rest::binary>>), do: {:ok, {:key, :home}, rest}
+  defp parse_ss3(<<?F, rest::binary>>), do: {:ok, {:key, :end}, rest}
+
+  # Unknown SS3 sequence
+  defp parse_ss3(<<final, rest::binary>>), do: {:ok, {:key, :escape}, <<?O, final, rest::binary>>}
 
   # -- CSI sequences (ESC[ ...) --
 
@@ -403,27 +405,29 @@ defmodule Courgette.Terminal.KeyParser do
         button_code = String.to_integer(button_s)
         x = String.to_integer(x_s)
         y = String.to_integer(y_s)
-
         action = if final == ?M, do: :press, else: :release
-        mods = sgr_modifiers(button_code)
 
-        case sgr_button(button_code) do
-          {:scroll, dir} ->
-            case mods do
-              [] -> {:ok, {:mouse, dir, x, y}, rest}
-              mods -> {:ok, {:mouse, dir, x, y, mods}, rest}
-            end
-
-          button ->
-            case mods do
-              [] -> {:ok, {:mouse, action, button, x, y}, rest}
-              mods -> {:ok, {:mouse, action, button, x, y, mods}, rest}
-            end
-        end
+        build_mouse_event(sgr_button(button_code), action, x, y, sgr_modifiers(button_code), rest)
 
       _ ->
         {:ok, {:key, :escape}, rest}
     end
+  end
+
+  defp build_mouse_event({:scroll, dir}, _action, x, y, [], rest) do
+    {:ok, {:mouse, dir, x, y}, rest}
+  end
+
+  defp build_mouse_event({:scroll, dir}, _action, x, y, mods, rest) do
+    {:ok, {:mouse, dir, x, y, mods}, rest}
+  end
+
+  defp build_mouse_event(button, action, x, y, [], rest) do
+    {:ok, {:mouse, action, button, x, y}, rest}
+  end
+
+  defp build_mouse_event(button, action, x, y, mods, rest) do
+    {:ok, {:mouse, action, button, x, y, mods}, rest}
   end
 
   # SGR button code: low 2 bits = button

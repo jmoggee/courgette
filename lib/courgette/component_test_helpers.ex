@@ -25,9 +25,9 @@ defmodule Courgette.ComponentTestHelpers do
       end
   """
 
+  alias Courgette.Element
   alias Courgette.LiveComponent.Server
   alias Courgette.Renderer
-  alias Courgette.Element
 
   @type view :: %{
           server: pid(),

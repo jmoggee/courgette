@@ -2,8 +2,8 @@ defmodule Courgette.Components.TreeTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Tree
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Tree
 
   setup do
     ComponentRegistry.create_table()

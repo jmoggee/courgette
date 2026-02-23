@@ -1,10 +1,10 @@
 defmodule Courgette.LiveComponent.ServerTest do
   use ExUnit.Case
 
+  alias Courgette.ComponentRegistry
+  alias Courgette.Element
   alias Courgette.LiveComponent.Server
   alias Courgette.Renderer
-  alias Courgette.Element
-  alias Courgette.ComponentRegistry
 
   # -- Test Components --
 

@@ -67,13 +67,16 @@ defmodule Courgette.Components.Scrollbar do
       thumb_pos =
         round(offset * (viewport_length - thumb_size) / (content_length - viewport_length))
 
+      thumb_end = thumb_pos + thumb_size
+
       for i <- 0..(viewport_length - 1) do
-        if i >= thumb_pos and i < thumb_pos + thumb_size do
-          thumb_char
-        else
-          track_char
-        end
+        cell_char(i, thumb_pos, thumb_end, thumb_char, track_char)
       end
     end
+  end
+
+  @spec cell_char(integer(), integer(), integer(), String.t(), String.t()) :: String.t()
+  defp cell_char(i, thumb_pos, thumb_end, thumb_char, track_char) do
+    if i >= thumb_pos and i < thumb_end, do: thumb_char, else: track_char
   end
 end

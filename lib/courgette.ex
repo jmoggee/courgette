@@ -30,8 +30,8 @@ defmodule Courgette do
       Courgette.run(MyApp)
   """
 
-  alias Courgette.LiveComponent.Server
   alias Courgette.ComponentRegistry
+  alias Courgette.LiveComponent.Server
   alias Courgette.Renderer
   alias Courgette.Terminal
 
@@ -139,27 +139,26 @@ defmodule Courgette do
       end
   """
   def stop(server \\ nil) do
-    pid =
-      if server do
-        server
-      else
-        # Find the app server by walking the process list.
-        # In practice there's only one LiveComponent.Server.
-        Process.list()
-        |> Enum.find(fn pid ->
-          case Process.info(pid, :dictionary) do
-            {:dictionary, dict} ->
-              Keyword.get(dict, :"$initial_call") ==
-                {Courgette.LiveComponent.Server, :init, 1}
-
-            _ ->
-              false
-          end
-        end)
-      end
+    pid = server || find_app_server()
 
     if pid && Process.alive?(pid) do
       GenServer.stop(pid, :normal)
     end
+  end
+
+  # Find the app server by walking the process list.
+  # In practice there's only one LiveComponent.Server.
+  defp find_app_server do
+    Process.list()
+    |> Enum.find(fn pid ->
+      case Process.info(pid, :dictionary) do
+        {:dictionary, dict} ->
+          Keyword.get(dict, :"$initial_call") ==
+            {Courgette.LiveComponent.Server, :init, 1}
+
+        _ ->
+          false
+      end
+    end)
   end
 end

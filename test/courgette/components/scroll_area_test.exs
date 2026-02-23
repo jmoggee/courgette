@@ -2,8 +2,8 @@ defmodule Courgette.Components.ScrollAreaTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.ScrollArea
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.ScrollArea
   alias Courgette.Element
 
   setup do

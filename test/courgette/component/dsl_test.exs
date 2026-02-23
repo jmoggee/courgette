@@ -1,7 +1,10 @@
 defmodule Courgette.Component.DSLTest do
   use ExUnit.Case, async: true
 
-  import Courgette.Component.DSL
+  alias Courgette.Component.DSL
+
+  import DSL
+
   alias Courgette.Element
 
   describe "box macro" do
@@ -263,17 +266,17 @@ defmodule Courgette.Component.DSLTest do
     end
   end
 
-  describe "__flatten_children__/1" do
+  describe "DSL.__flatten_children__/1" do
     test "flattens nested lists" do
-      assert Courgette.Component.DSL.__flatten_children__([["a", "b"], "c"]) == ["a", "b", "c"]
+      assert DSL.__flatten_children__([["a", "b"], "c"]) == ["a", "b", "c"]
     end
 
     test "removes nils" do
-      assert Courgette.Component.DSL.__flatten_children__(["a", nil, "b"]) == ["a", "b"]
+      assert DSL.__flatten_children__(["a", nil, "b"]) == ["a", "b"]
     end
 
     test "handles empty list" do
-      assert Courgette.Component.DSL.__flatten_children__([]) == []
+      assert DSL.__flatten_children__([]) == []
     end
   end
 end

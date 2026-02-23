@@ -2,8 +2,8 @@ defmodule Courgette.Components.SwitchTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Switch
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Switch
 
   setup do
     ComponentRegistry.create_table()

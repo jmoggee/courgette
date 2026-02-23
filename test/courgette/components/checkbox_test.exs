@@ -2,8 +2,8 @@ defmodule Courgette.Components.CheckboxTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Checkbox
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Checkbox
 
   setup do
     ComponentRegistry.create_table()

@@ -32,11 +32,11 @@ defmodule Courgette.LiveComponent.Server do
 
   use GenServer
 
-  alias Courgette.Terminal.KeyParser
-  alias Courgette.Renderer
-  alias Courgette.LiveComponent.Lifecycle
   alias Courgette.ComponentRegistry
   alias Courgette.FocusManager
+  alias Courgette.LiveComponent.Lifecycle
+  alias Courgette.Renderer
+  alias Courgette.Terminal.KeyParser
 
   @type state :: %{
           module: module(),
@@ -212,25 +212,7 @@ defmodule Courgette.LiveComponent.Server do
 
       {mod, id} ->
         state = cleanup_crashed_child(state, {mod, id})
-
-        if reason in [:normal, :shutdown] or (is_tuple(reason) and elem(reason, 0) == :shutdown) do
-          # Normal/shutdown — quiet cleanup, no notification
-          {:noreply, state}
-        else
-          # Abnormal crash — notify parent module and force re-render
-          state =
-            if function_exported?(state.module, :handle_info, 2) do
-              {:noreply, new_assigns} =
-                state.module.handle_info({:child_crashed, {mod, id}, reason}, state.assigns)
-
-              %{state | assigns: new_assigns}
-            else
-              state
-            end
-
-          state = force_rerender(state)
-          {:noreply, state}
-        end
+        handle_child_exit(state, {mod, id}, reason)
     end
   end
 
@@ -264,6 +246,34 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   # -- Private helpers --
+
+  defp handle_child_exit(state, _child_key, reason)
+       when reason in [:normal, :shutdown] do
+    # Normal/shutdown — quiet cleanup, no notification
+    {:noreply, state}
+  end
+
+  defp handle_child_exit(state, _child_key, {:shutdown, _}) do
+    {:noreply, state}
+  end
+
+  defp handle_child_exit(state, {mod, id}, reason) do
+    # Abnormal crash — notify parent module and force re-render
+    state = notify_parent_of_crash(state, {mod, id}, reason)
+    state = force_rerender(state)
+    {:noreply, state}
+  end
+
+  defp notify_parent_of_crash(state, {mod, id}, reason) do
+    if function_exported?(state.module, :handle_info, 2) do
+      {:noreply, new_assigns} =
+        state.module.handle_info({:child_crashed, {mod, id}, reason}, state.assigns)
+
+      %{state | assigns: new_assigns}
+    else
+      state
+    end
+  end
 
   defp dispatch_event(event, state) do
     if state.parent == nil do
@@ -304,16 +314,20 @@ defmodule Courgette.LiveComponent.Server do
         dispatch_event_local(event, state)
 
       focused_key ->
-        case Map.get(state.children, focused_key) do
-          {pid, _props} ->
-            case route_to_child(pid, event) do
-              {:ok, true} -> state
-              _ -> dispatch_event_local(event, state)
-            end
+        route_to_focused_child(event, state, focused_key)
+    end
+  end
 
-          nil ->
-            dispatch_event_local(event, state)
+  defp route_to_focused_child(event, state, focused_key) do
+    case Map.get(state.children, focused_key) do
+      {pid, _props} ->
+        case route_to_child(pid, event) do
+          {:ok, true} -> state
+          _ -> dispatch_event_local(event, state)
         end
+
+      nil ->
+        dispatch_event_local(event, state)
     end
   end
 
@@ -367,11 +381,9 @@ defmodule Courgette.LiveComponent.Server do
   # The {:EXIT, pid, reason} message will arrive separately and trigger
   # error boundary cleanup.
   defp route_to_child(pid, event) do
-    try do
-      GenServer.call(pid, {:routed_event, event})
-    catch
-      :exit, _ -> :error
-    end
+    GenServer.call(pid, {:routed_event, event})
+  catch
+    :exit, _ -> :error
   end
 
   defp maybe_rerender(state, new_assigns) do

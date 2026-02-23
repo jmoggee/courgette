@@ -2,8 +2,8 @@ defmodule Courgette.Components.SpinnerTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Spinner
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Spinner
 
   setup do
     ComponentRegistry.create_table()

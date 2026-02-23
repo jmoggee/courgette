@@ -2,8 +2,8 @@ defmodule Courgette.Components.ProgressBarTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.ProgressBar
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.ProgressBar
 
   setup do
     ComponentRegistry.create_table()

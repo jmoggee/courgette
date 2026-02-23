@@ -51,19 +51,7 @@ defmodule Courgette.Components.Table do
 
       # Data rows
       for {row, idx} <- Enum.with_index(rows) do
-        selected? = idx == assigns.selected
-
-        if selected? do
-          text bold: true, fg: :cyan do
-            "▸ " <>
-              format_row_cells(columns, widths, fn {key, _header} -> cell_value(row, key) end)
-          end
-        else
-          text do
-            "  " <>
-              format_row_cells(columns, widths, fn {key, _header} -> cell_value(row, key) end)
-          end
-        end
+        render_data_row(row, idx, assigns.selected, columns, widths)
       end
     end
   end
@@ -118,6 +106,20 @@ defmodule Courgette.Components.Table do
 
   # -- Private helpers --
 
+  defp render_data_row(row, idx, selected_idx, columns, widths) do
+    cells = format_row_cells(columns, widths, fn {key, _header} -> cell_value(row, key) end)
+
+    if idx == selected_idx do
+      text bold: true, fg: :cyan do
+        "▸ " <> cells
+      end
+    else
+      text do
+        "  " <> cells
+      end
+    end
+  end
+
   defp normalize_columns(columns) do
     Enum.map(columns, fn
       {key, header} -> {key, header}
@@ -147,11 +149,9 @@ defmodule Courgette.Components.Table do
   end
 
   defp atom_key_lookup(row, key) when is_binary(key) do
-    try do
-      Map.get(row, String.to_existing_atom(key))
-    rescue
-      ArgumentError -> nil
-    end
+    Map.get(row, String.to_existing_atom(key))
+  rescue
+    ArgumentError -> nil
   end
 
   defp atom_key_lookup(row, key) when is_atom(key) do
@@ -163,15 +163,12 @@ defmodule Courgette.Components.Table do
   defp format_row_cells(columns, widths, value_fn) do
     columns
     |> Enum.zip(widths)
-    |> Enum.map(fn {col, width} ->
+    |> Enum.map_join(" │ ", fn {col, width} ->
       String.pad_trailing(value_fn.(col), width)
     end)
-    |> Enum.join(" │ ")
   end
 
   defp separator_line(widths) do
-    widths
-    |> Enum.map(fn w -> String.duplicate("─", w) end)
-    |> Enum.join("─┼─")
+    Enum.map_join(widths, "─┼─", fn w -> String.duplicate("─", w) end)
   end
 end

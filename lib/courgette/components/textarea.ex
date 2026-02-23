@@ -43,44 +43,53 @@ defmodule Courgette.Components.Textarea do
     border_color = if assigns.focused, do: :cyan, else: :white
 
     cond do
-      assigns.focused ->
-        visible_height = max(assigns.height - 2, 1)
-        offset = assigns.scroll_offset
-        visible_lines = Enum.slice(assigns.lines, offset, visible_height)
+      assigns.focused -> render_focused(assigns, border_color)
+      assigns.value == "" -> render_placeholder(assigns, border_color)
+      true -> render_readonly(assigns, border_color)
+    end
+  end
 
-        box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
-          for {line_graphemes, idx} <- Enum.with_index(visible_lines) do
-            actual_line = idx + offset
+  defp render_focused(assigns, border_color) do
+    visible_height = max(assigns.height - 2, 1)
+    offset = assigns.scroll_offset
+    visible_lines = Enum.slice(assigns.lines, offset, visible_height)
 
-            if actual_line == assigns.cursor_line do
-              render_cursor_line(line_graphemes, assigns.cursor_col)
-            else
-              content = if line_graphemes == [], do: " ", else: Enum.join(line_graphemes)
+    box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
+      for {line_graphemes, idx} <- Enum.with_index(visible_lines) do
+        render_visible_line(line_graphemes, idx + offset, assigns.cursor_line, assigns.cursor_col)
+      end
+    end
+  end
 
-              box flex_direction: :row do
-                text(do: content)
-              end
-            end
-          end
-        end
+  defp render_placeholder(assigns, border_color) do
+    box border: :single, border_color: border_color, height: assigns.height do
+      text dim: true do
+        assigns.placeholder
+      end
+    end
+  end
 
-      assigns.value == "" ->
-        box border: :single, border_color: border_color, height: assigns.height do
-          text dim: true do
-            assigns.placeholder
-          end
-        end
+  defp render_readonly(assigns, border_color) do
+    box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
+      for line_graphemes <- assigns.lines do
+        render_plain_line(line_graphemes)
+      end
+    end
+  end
 
-      true ->
-        box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
-          for line_graphemes <- assigns.lines do
-            content = if line_graphemes == [], do: " ", else: Enum.join(line_graphemes)
+  defp render_visible_line(line_graphemes, actual_line, cursor_line, cursor_col) do
+    if actual_line == cursor_line do
+      render_cursor_line(line_graphemes, cursor_col)
+    else
+      render_plain_line(line_graphemes)
+    end
+  end
 
-            box flex_direction: :row do
-              text(do: content)
-            end
-          end
-        end
+  defp render_plain_line(line_graphemes) do
+    content = if line_graphemes == [], do: " ", else: Enum.join(line_graphemes)
+
+    box flex_direction: :row do
+      text(do: content)
     end
   end
 
@@ -618,9 +627,7 @@ defmodule Courgette.Components.Textarea do
   end
 
   defp lines_to_string(lines) do
-    lines
-    |> Enum.map(&Enum.join/1)
-    |> Enum.join("\n")
+    Enum.map_join(lines, "\n", &Enum.join/1)
   end
 
   # --- Word helpers ---

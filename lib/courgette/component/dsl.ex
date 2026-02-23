@@ -69,7 +69,7 @@ defmodule Courgette.Component.DSL do
           Element.new(
             :live_component,
             [{:module, unquote(module)} | unquote(props)],
-            Courgette.Component.DSL.__flatten_children__(unquote(children))
+            unquote(__MODULE__).__flatten_children__(unquote(children))
           )
         end
 
@@ -91,7 +91,7 @@ defmodule Courgette.Component.DSL do
       Element.new(
         :live_component,
         [{:module, unquote(module)} | unquote(opts)],
-        Courgette.Component.DSL.__flatten_children__(unquote(children))
+        unquote(__MODULE__).__flatten_children__(unquote(children))
       )
     end
   end
@@ -115,7 +115,7 @@ defmodule Courgette.Component.DSL do
           Element.new(
             unquote(type),
             unquote(props),
-            Courgette.Component.DSL.__flatten_children__(unquote(children))
+            unquote(__MODULE__).__flatten_children__(unquote(children))
           )
         end
 
@@ -134,7 +134,7 @@ defmodule Courgette.Component.DSL do
       Element.new(
         unquote(type),
         unquote(opts),
-        Courgette.Component.DSL.__flatten_children__(unquote(children))
+        unquote(__MODULE__).__flatten_children__(unquote(children))
       )
     end
   end

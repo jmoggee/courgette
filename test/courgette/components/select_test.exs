@@ -2,8 +2,8 @@ defmodule Courgette.Components.SelectTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Select
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Select
 
   setup do
     ComponentRegistry.create_table()

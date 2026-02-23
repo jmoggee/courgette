@@ -2,8 +2,8 @@ defmodule Courgette.Components.TextareaTest do
   use ExUnit.Case, async: false
   use Courgette.ComponentTestHelpers
 
-  alias Courgette.Components.Textarea
   alias Courgette.ComponentRegistry
+  alias Courgette.Components.Textarea
 
   setup do
     ComponentRegistry.create_table()

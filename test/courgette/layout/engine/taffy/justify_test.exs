@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.MaxLineLength
 defmodule Courgette.Layout.Engine.Taffy.JustifyTest do
   @moduledoc "Auto-generated from Taffy border_box fixtures. DO NOT EDIT."
   use ExUnit.Case, async: true

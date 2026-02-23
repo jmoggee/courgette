@@ -1,3 +1,5 @@
+# credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
+# credo:disable-for-this-file Credo.Check.Refactor.Nesting
 defmodule Mix.Tasks.Taffy.Generate do
   @moduledoc """
   Generate ExUnit tests from Taffy flex test fixtures.
@@ -673,9 +675,7 @@ defmodule Mix.Tasks.Taffy.Generate do
         props = format_props(node.style, true)
 
         children_code =
-          children
-          |> Enum.map(&generate_element(&1, nodes, indent + 2))
-          |> Enum.join(",\n#{pad}  ")
+          Enum.map_join(children, ",\n#{pad}  ", &generate_element(&1, nodes, indent + 2))
 
         if props == "" do
           "box([], [\n#{pad}  #{children_code}\n#{pad}])"
@@ -724,11 +724,10 @@ defmodule Mix.Tasks.Taffy.Generate do
     props =
       ordered_keys
       |> Enum.filter(&Map.has_key?(style, &1))
-      |> Enum.map(fn key ->
+      |> Enum.map_join(", ", fn key ->
         val = Map.get(style, key)
         "#{key}: #{format_value(val)}"
       end)
-      |> Enum.join(", ")
 
     # Leaf nodes with a single prop can use bare keyword syntax: box(flex_grow: 1)
     # Parent nodes MUST bracket props: box([flex_grow: 1], [children...])
@@ -826,8 +825,7 @@ defmodule Mix.Tasks.Taffy.Generate do
     test_bodies =
       tests
       |> Enum.sort_by(fn {name, _, _, _} -> name end)
-      |> Enum.map(fn {_name, code, _, _skip} -> code end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn {_name, code, _, _skip} -> code end)
 
     """
     defmodule Courgette.Layout.Engine.Taffy.#{module_name}Test do

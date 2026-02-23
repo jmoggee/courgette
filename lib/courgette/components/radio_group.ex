@@ -40,27 +40,7 @@ defmodule Courgette.Components.RadioGroup do
       end
 
       for {opt, idx} <- Enum.with_index(assigns.options) do
-        {value, label} = opt
-        selected? = value == assigns.selected
-        cursor? = idx == assigns.cursor
-
-        indicator = if selected?, do: "(●)", else: "( )"
-
-        if cursor? do
-          text bold: true, fg: :cyan do
-            "#{indicator} #{label}"
-          end
-        else
-          if selected? do
-            text bold: true, fg: :cyan do
-              "#{indicator} #{label}"
-            end
-          else
-            text do
-              "#{indicator} #{label}"
-            end
-          end
-        end
+        render_option(opt, idx, assigns)
       end
     end
   end
@@ -110,6 +90,23 @@ defmodule Courgette.Components.RadioGroup do
 
   def handle_event(_event, assigns) do
     {:noreply, assigns}
+  end
+
+  defp render_option({value, label}, idx, assigns) do
+    selected? = value == assigns.selected
+    cursor? = idx == assigns.cursor
+    indicator = if selected?, do: "(●)", else: "( )"
+    content = "#{indicator} #{label}"
+
+    if cursor? or selected? do
+      text bold: true, fg: :cyan do
+        content
+      end
+    else
+      text do
+        content
+      end
+    end
   end
 
   defp normalize_options(options) do

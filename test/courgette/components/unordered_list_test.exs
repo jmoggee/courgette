@@ -12,9 +12,7 @@ defmodule Courgette.Components.UnorderedListTest do
 
       texts =
         Enum.map(el.children, fn row ->
-          row.children
-          |> Enum.map(fn child -> hd(child.children) end)
-          |> Enum.join()
+          Enum.map_join(row.children, fn child -> hd(child.children) end)
         end)
 
       assert Enum.at(texts, 0) =~ "\u2022 Alpha"
@@ -27,9 +25,7 @@ defmodule Courgette.Components.UnorderedListTest do
 
       texts =
         Enum.map(el.children, fn row ->
-          row.children
-          |> Enum.map(fn child -> hd(child.children) end)
-          |> Enum.join()
+          Enum.map_join(row.children, fn child -> hd(child.children) end)
         end)
 
       assert Enum.at(texts, 0) =~ "- One"
