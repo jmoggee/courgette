@@ -285,6 +285,12 @@ defmodule Courgette.Layout.Engine.Flex do
     Enum.map(abs_children, fn child ->
       child_style = Style.from_element(child)
 
+      # When both opposing insets are set (left+right or top+bottom) and no
+      # explicit dimension, infer size from the insets — matching CSS behavior
+      # for `position: absolute; inset: 0;`.
+      {child, child_style} =
+        infer_absolute_size(child, child_style, content_w, content_h)
+
       # Absolute children with no explicit size shrink-to-fit (available = nil).
       # With explicit size, they use the parent content area as available space.
       avail_w = if child_style.width != nil, do: content_w, else: nil
@@ -318,6 +324,31 @@ defmodule Courgette.Layout.Engine.Flex do
 
       %{result | x: x, y: y}
     end)
+  end
+
+  defp infer_absolute_size(child, style, content_w, content_h) do
+    props = child.props
+
+    props =
+      if style.width == nil and style.left != nil and style.right != nil and content_w != nil do
+        Map.put(props, :width, max(0, content_w - style.left - style.right))
+      else
+        props
+      end
+
+    props =
+      if style.height == nil and style.top != nil and style.bottom != nil and content_h != nil do
+        Map.put(props, :height, max(0, content_h - style.top - style.bottom))
+      else
+        props
+      end
+
+    if props != child.props do
+      child = %{child | props: props}
+      {child, Style.from_element(child)}
+    else
+      {child, style}
+    end
   end
 
   # ── Step 1: Generate flex items ───────────────────────────────────
