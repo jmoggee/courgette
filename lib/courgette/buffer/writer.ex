@@ -41,7 +41,7 @@ defmodule Courgette.Buffer.Writer do
   end
 
   defp render_cell(%Cell{} = cell, state) do
-    new_state = {cell.fg, cell.bg, cell.style}
+    new_state = {cell.fg, cell.bg, cell.style, cell.url}
     codes = style_diff(state, new_state)
     {[codes, cell.grapheme], new_state}
   end
@@ -55,7 +55,7 @@ defmodule Courgette.Buffer.Writer do
   defp style_diff(state, state), do: []
 
   # Different state
-  defp style_diff({prev_fg, prev_bg, prev_style}, {new_fg, new_bg, new_style} = new_state) do
+  defp style_diff({prev_fg, prev_bg, prev_style, prev_url}, {new_fg, new_bg, new_style, new_url} = new_state) do
     removed_keys = Map.keys(prev_style) -- Map.keys(new_style)
 
     if removed_keys != [] do
@@ -63,15 +63,16 @@ defmodule Courgette.Buffer.Writer do
       [ANSI.reset() | emit_from_reset(new_state)]
     else
       # No removals — emit only targeted changes
-      emit_changes(prev_fg, prev_bg, prev_style, new_fg, new_bg, new_style)
+      emit_changes(prev_fg, prev_bg, prev_style, prev_url, new_fg, new_bg, new_style, new_url)
     end
   end
 
   # After a reset, emit only non-default attributes
-  defp emit_from_reset({fg, bg, style}) do
+  defp emit_from_reset({fg, bg, style, url}) do
     io = []
     io = if fg != nil, do: [ANSI.fg(fg) | io], else: io
     io = if bg != nil, do: [ANSI.bg(bg) | io], else: io
+    io = if url != nil, do: [url_open(url) | io], else: io
 
     Enum.reduce(style, io, fn {key, val}, acc ->
       [emit_style_attr(key, val) | acc]
@@ -79,10 +80,11 @@ defmodule Courgette.Buffer.Writer do
   end
 
   # Emit only changed attributes (no removals — only additions/modifications)
-  defp emit_changes(prev_fg, prev_bg, prev_style, new_fg, new_bg, new_style) do
+  defp emit_changes(prev_fg, prev_bg, prev_style, prev_url, new_fg, new_bg, new_style, new_url) do
     io = []
     io = if new_fg != prev_fg, do: [emit_color_change(:fg, new_fg) | io], else: io
     io = if new_bg != prev_bg, do: [emit_color_change(:bg, new_bg) | io], else: io
+    io = url_diff(prev_url, new_url, io)
 
     Enum.reduce(new_style, io, fn {key, val}, acc ->
       if Map.get(prev_style, key) != val do
@@ -112,4 +114,14 @@ defmodule Courgette.Buffer.Writer do
   # Parameterized style attributes
   defp emit_style_attr(:underline_style, style), do: ANSI.underline_style(style)
   defp emit_style_attr(:underline_color, color), do: ANSI.underline_color(color)
+
+  # -- Hyperlink (OSC 8) helpers --
+
+  defp url_open(url), do: ["\e]8;;", url, "\e\\"]
+  defp url_close, do: "\e]8;;\e\\"
+
+  defp url_diff(same, same, io), do: io
+  defp url_diff(nil, url, io), do: [url_open(url) | io]
+  defp url_diff(_prev, nil, io), do: [url_close() | io]
+  defp url_diff(_prev, url, io), do: [url_open(url), url_close() | io]
 end

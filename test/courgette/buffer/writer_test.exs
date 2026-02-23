@@ -349,6 +349,65 @@ defmodule Courgette.Buffer.WriterTest do
     end
   end
 
+  describe "hyperlinks (OSC 8)" do
+    test "cell with url emits OSC 8 open sequence" do
+      cell = Cell.new("L", fg: :blue, url: "https://example.com", underline: true)
+      run = %Run{x: 0, y: 0, cells: [cell]}
+      result = to_binary(Writer.render([run]))
+      assert result =~ "\e]8;;https://example.com\e\\"
+    end
+
+    test "transition from url cell to non-url cell emits close sequence" do
+      cell1 = Cell.new("L", url: "https://example.com")
+      cell2 = Cell.new("X")
+      run = %Run{x: 0, y: 0, cells: [cell1, cell2]}
+      result = to_binary(Writer.render([run]))
+      # Open for cell1
+      assert result =~ "\e]8;;https://example.com\e\\"
+      # Close before cell2
+      assert result =~ "\e]8;;\e\\"
+    end
+
+    test "adjacent cells with same url share one open sequence" do
+      cell = Cell.new("A", url: "https://example.com")
+      run = %Run{x: 0, y: 0, cells: [cell, cell, cell]}
+      result = to_binary(Writer.render([run]))
+      assert count(result, "\e]8;;https://example.com\e\\") == 1
+      assert result =~ "AAA"
+    end
+
+    test "transition between different urls emits close then open" do
+      cell1 = Cell.new("A", url: "https://one.com")
+      cell2 = Cell.new("B", url: "https://two.com")
+      run = %Run{x: 0, y: 0, cells: [cell1, cell2]}
+      result = to_binary(Writer.render([run]))
+      assert result =~ "\e]8;;https://one.com\e\\"
+      assert result =~ "\e]8;;https://two.com\e\\"
+      # Close sequence between the two
+      assert result =~ "\e]8;;\e\\"
+    end
+
+    test "url re-emitted after reset" do
+      cell1 = Cell.new("A", url: "https://example.com", bold: true)
+      cell2 = Cell.new("B", url: "https://example.com")
+      run = %Run{x: 0, y: 0, cells: [cell1, cell2]}
+      result = to_binary(Writer.render([run]))
+      # Bold removed triggers reset, url should be re-emitted
+      assert count(result, "\e]8;;https://example.com\e\\") == 2
+    end
+
+    test "url tracked across runs" do
+      cell = Cell.new("A", url: "https://example.com")
+      runs = [
+        %Run{x: 0, y: 0, cells: [cell]},
+        %Run{x: 5, y: 0, cells: [cell]}
+      ]
+      result = to_binary(Writer.render(runs))
+      # URL emitted once, not re-emitted for second run with same state
+      assert count(result, "\e]8;;https://example.com\e\\") == 1
+    end
+  end
+
   describe "complex scenarios" do
     test "multiple runs, mixed styles" do
       runs = [

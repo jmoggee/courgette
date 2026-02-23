@@ -102,6 +102,20 @@ defmodule Courgette.Buffer.CellTest do
       cell = Cell.new("a", [])
       assert cell == Cell.new("a")
     end
+
+    test "sets url" do
+      cell = Cell.new("x", url: "https://example.com")
+      assert cell.url == "https://example.com"
+      assert cell.fg == nil
+      assert cell.style == %{}
+    end
+
+    test "url with colors and styles" do
+      cell = Cell.new("x", fg: :blue, url: "https://example.com", underline: true)
+      assert cell.url == "https://example.com"
+      assert cell.fg == :blue
+      assert cell.style == %{underline: true}
+    end
   end
 
   # -- Empty --
@@ -140,6 +154,10 @@ defmodule Courgette.Buffer.CellTest do
 
     test "false when style is set" do
       refute Cell.empty?(Cell.new(" ", bold: true))
+    end
+
+    test "false when url is set" do
+      refute Cell.empty?(Cell.new(" ", url: "https://example.com"))
     end
   end
 

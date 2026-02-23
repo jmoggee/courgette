@@ -247,7 +247,8 @@ defmodule Courgette.Painter do
   end
 
   @text_prop_keys [:color, :bg, :bold, :dim, :italic, :underline, :strikethrough,
-                   :reverse, :blink, :hidden, :overline, :underline_style, :underline_color]
+                   :reverse, :blink, :hidden, :overline, :underline_style, :underline_color,
+                   :url]
 
   defp text_opts(props) do
     Enum.reduce(@text_prop_keys, [], fn key, opts ->

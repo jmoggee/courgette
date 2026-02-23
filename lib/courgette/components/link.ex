@@ -3,7 +3,9 @@ defmodule Courgette.Components.Link do
   A styled text element representing a navigable link.
 
   Renders underlined text in a configurable color (default cyan).
-  The URL prop is stored for potential future interactivity.
+  When a URL is provided, the text is wrapped in OSC 8 hyperlink
+  sequences, making it clickable in supported terminals (iTerm2,
+  kitty, ghostty, WezTerm).
 
   ## Props
 

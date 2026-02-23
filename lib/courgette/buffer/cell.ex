@@ -38,12 +38,13 @@ defmodule Courgette.Buffer.Cell do
           grapheme: String.t(),
           fg: color() | nil,
           bg: color() | nil,
+          url: String.t() | nil,
           style: %{atom() => true | atom() | color()}
         }
 
-  defstruct grapheme: " ", fg: nil, bg: nil, style: %{}
+  defstruct grapheme: " ", fg: nil, bg: nil, url: nil, style: %{}
 
-  @color_keys [:fg, :bg]
+  @extract_keys [:fg, :bg, :url]
 
   @doc """
   Returns the canonical empty cell (space, no colors, no style).
@@ -55,7 +56,7 @@ defmodule Courgette.Buffer.Cell do
   Returns `true` if `cell` is equal to the empty cell.
   """
   @spec empty?(t()) :: boolean()
-  def empty?(%__MODULE__{grapheme: " ", fg: nil, bg: nil, style: style}),
+  def empty?(%__MODULE__{grapheme: " ", fg: nil, bg: nil, url: nil, style: style}),
     do: style == %{}
 
   def empty?(%__MODULE__{}), do: false
@@ -85,12 +86,13 @@ defmodule Courgette.Buffer.Cell do
   """
   @spec new(String.t(), keyword()) :: t()
   def new(grapheme, opts) when is_binary(grapheme) and is_list(opts) do
-    {colors, style_pairs} = Keyword.split(opts, @color_keys)
+    {extracted, style_pairs} = Keyword.split(opts, @extract_keys)
 
     %__MODULE__{
       grapheme: grapheme,
-      fg: Keyword.get(colors, :fg),
-      bg: Keyword.get(colors, :bg),
+      fg: Keyword.get(extracted, :fg),
+      bg: Keyword.get(extracted, :bg),
+      url: Keyword.get(extracted, :url),
       style: Map.new(style_pairs)
     }
   end
