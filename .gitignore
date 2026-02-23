@@ -22,5 +22,8 @@ courgette-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
+# Benchmark HTML reports.
+/bench/reports/
+
 # MacOs finder files.
 .DS_Store

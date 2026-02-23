@@ -1,0 +1,287 @@
+{
+  "timestamp": "2026-02-23T03:15:52.904478Z",
+  "otp": "28",
+  "elixir": "1.19.5",
+  "results": [
+    {
+      "input": "deep",
+      "name": "Engine.compute",
+      "suite": "layout",
+      "ips": 10.2,
+      "average_us": 98036.68,
+      "median_us": 97988.08,
+      "deviation": 1.2,
+      "memory_kb": 225705.45
+    },
+    {
+      "input": "large",
+      "name": "Engine.compute",
+      "suite": "layout",
+      "ips": 47.35,
+      "average_us": 21120.88,
+      "median_us": 20913.71,
+      "deviation": 4.63,
+      "memory_kb": 51476.77
+    },
+    {
+      "input": "medium",
+      "name": "Engine.compute",
+      "suite": "layout",
+      "ips": 357.73,
+      "average_us": 2795.44,
+      "median_us": 2758.21,
+      "deviation": 5.55,
+      "memory_kb": 6677.27
+    },
+    {
+      "input": "small",
+      "name": "Engine.compute",
+      "suite": "layout",
+      "ips": 21748.06,
+      "average_us": 45.98,
+      "median_us": 45.44,
+      "deviation": 13.06,
+      "memory_kb": 104.2
+    },
+    {
+      "input": "deep",
+      "name": "Painter.paint",
+      "suite": "paint",
+      "ips": 8082.66,
+      "average_us": 123.72,
+      "median_us": 123.33,
+      "deviation": 4.08,
+      "memory_kb": 518.11
+    },
+    {
+      "input": "large",
+      "name": "Painter.paint",
+      "suite": "paint",
+      "ips": 1101.16,
+      "average_us": 908.13,
+      "median_us": 899.88,
+      "deviation": 6.46,
+      "memory_kb": 3601.07
+    },
+    {
+      "input": "medium",
+      "name": "Painter.paint",
+      "suite": "paint",
+      "ips": 26563.87,
+      "average_us": 37.65,
+      "median_us": 36.63,
+      "deviation": 14.41,
+      "memory_kb": 161.12
+    },
+    {
+      "input": "small",
+      "name": "Painter.paint",
+      "suite": "paint",
+      "ips": 65003.15,
+      "average_us": 15.38,
+      "median_us": 14.83,
+      "deviation": 10.87,
+      "memory_kb": 75.52
+    },
+    {
+      "input": "deep",
+      "name": "no change",
+      "suite": "diff",
+      "ips": 6285.0,
+      "average_us": 159.11,
+      "median_us": 158.21,
+      "deviation": 4.06,
+      "memory_kb": 75.09
+    },
+    {
+      "input": "deep",
+      "name": "full redraw",
+      "suite": "diff",
+      "ips": 4131.01,
+      "average_us": 242.07,
+      "median_us": 240.46,
+      "deviation": 4.53,
+      "memory_kb": 157.98
+    },
+    {
+      "input": "deep",
+      "name": "small change",
+      "suite": "diff",
+      "ips": 3889.87,
+      "average_us": 257.08,
+      "median_us": 256.71,
+      "deviation": 3.68,
+      "memory_kb": 134.95
+    },
+    {
+      "input": "large",
+      "name": "no change",
+      "suite": "diff",
+      "ips": 1483.78,
+      "average_us": 673.95,
+      "median_us": 674.71,
+      "deviation": 4.55,
+      "memory_kb": 281.34
+    },
+    {
+      "input": "large",
+      "name": "full redraw",
+      "suite": "diff",
+      "ips": 894.17,
+      "average_us": 1118.35,
+      "median_us": 1121.42,
+      "deviation": 5.04,
+      "memory_kb": 709.29
+    },
+    {
+      "input": "large",
+      "name": "small change",
+      "suite": "diff",
+      "ips": 829.41,
+      "average_us": 1205.68,
+      "median_us": 1200.84,
+      "deviation": 4.48,
+      "memory_kb": 405.16
+    },
+    {
+      "input": "medium",
+      "name": "no change",
+      "suite": "diff",
+      "ips": 9238.09,
+      "average_us": 108.25,
+      "median_us": 107.46,
+      "deviation": 3.63,
+      "memory_kb": 56.34
+    },
+    {
+      "input": "medium",
+      "name": "small change",
+      "suite": "diff",
+      "ips": 7084.0,
+      "average_us": 141.16,
+      "median_us": 140.58,
+      "deviation": 3.42,
+      "memory_kb": 57.54
+    },
+    {
+      "input": "medium",
+      "name": "full redraw",
+      "suite": "diff",
+      "ips": 6499.36,
+      "average_us": 153.86,
+      "median_us": 155.71,
+      "deviation": 7.07,
+      "memory_kb": 85.73
+    },
+    {
+      "input": "small",
+      "name": "no change",
+      "suite": "diff",
+      "ips": 50591.68,
+      "average_us": 19.77,
+      "median_us": 19.63,
+      "deviation": 15.56,
+      "memory_kb": 11.34
+    },
+    {
+      "input": "small",
+      "name": "full redraw",
+      "suite": "diff",
+      "ips": 37265.93,
+      "average_us": 26.83,
+      "median_us": 26.58,
+      "deviation": 6.96,
+      "memory_kb": 21.5
+    },
+    {
+      "input": "small",
+      "name": "small change",
+      "suite": "diff",
+      "ips": 35897.12,
+      "average_us": 27.86,
+      "median_us": 26.83,
+      "deviation": 14.54,
+      "memory_kb": 13.79
+    },
+    {
+      "input": "deep",
+      "name": "Writer.render",
+      "suite": "writer",
+      "ips": 28645.26,
+      "average_us": 34.91,
+      "median_us": 33.58,
+      "deviation": 11.49,
+      "memory_kb": 195.73
+    },
+    {
+      "input": "large",
+      "name": "Writer.render",
+      "suite": "writer",
+      "ips": 5054.07,
+      "average_us": 197.86,
+      "median_us": 192.21,
+      "deviation": 14.27,
+      "memory_kb": 971.06
+    },
+    {
+      "input": "medium",
+      "name": "Writer.render",
+      "suite": "writer",
+      "ips": 80210.93,
+      "average_us": 12.47,
+      "median_us": 12.0,
+      "deviation": 31.96,
+      "memory_kb": 73.5
+    },
+    {
+      "input": "small",
+      "name": "Writer.render",
+      "suite": "writer",
+      "ips": 254763.41,
+      "average_us": 3.93,
+      "median_us": 3.79,
+      "deviation": 121.09,
+      "memory_kb": 23.18
+    },
+    {
+      "input": "deep",
+      "name": "element → iodata",
+      "suite": "full_pipeline",
+      "ips": 9.89,
+      "average_us": 101112.72,
+      "median_us": 100949.3,
+      "deviation": 1.04,
+      "memory_kb": 226579.01
+    },
+    {
+      "input": "large",
+      "name": "element → iodata",
+      "suite": "full_pipeline",
+      "ips": 43.56,
+      "average_us": 22957.56,
+      "median_us": 22766.51,
+      "deviation": 3.04,
+      "memory_kb": 56758.43
+    },
+    {
+      "input": "medium",
+      "name": "element → iodata",
+      "suite": "full_pipeline",
+      "ips": 333.83,
+      "average_us": 2995.54,
+      "median_us": 2973.22,
+      "deviation": 3.34,
+      "memory_kb": 6998.67
+    },
+    {
+      "input": "small",
+      "name": "element → iodata",
+      "suite": "full_pipeline",
+      "ips": 10431.32,
+      "average_us": 95.87,
+      "median_us": 94.92,
+      "deviation": 4.76,
+      "memory_kb": 225.32
+    }
+  ]
+}
