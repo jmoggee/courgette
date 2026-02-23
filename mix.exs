@@ -112,6 +112,7 @@ defmodule Courgette.MixProject do
   defp package do
     [
       licenses: ["MIT"],
+      files: ~w(lib mix.exs README.md LICENSE usage-rules.md usage-rules),
       links: %{
         "GitHub" => @source_url,
         "Specification" => "https://github.com/loam/rhyzo-architecture/blob/main/spec/appendices/C-courgette-framework.md"
