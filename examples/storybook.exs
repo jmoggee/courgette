@@ -228,8 +228,9 @@ defmodule Storybook do
        # Feedback
        progress: 0.0,
 
-       # Overlay
-       show_overlay: false
+       # Overlay / Command Palette
+       palette_filter: "",
+       palette_selected: nil
      }}
   end
 
@@ -1103,47 +1104,28 @@ defmodule Storybook do
     end
   end
 
-  defp render_overlay_page(assigns) do
+  @palette_items Enum.map(Storybook.Nav.items(), fn {id, label} ->
+                   {id, String.trim(label)}
+                 end)
+
+  defp render_overlay_page(_assigns) do
     box flex_direction: :column do
       heading(text: "Overlay", color: :cyan)
 
       text dim: true do
-        "Modal/popup container. Centered with border and title."
+        "Testing the overlay component with static content."
       end
 
-      box flex_direction: :column, padding_v: 1 do
-        text do
-          "Background content sits behind the overlay."
-        end
-
-        text do
-          "Press Enter (when focused on sidebar) to see it in context."
-        end
-
-        if assigns.show_overlay do
-          overlay(
-            title: "Confirm Action",
-            width: 40,
-            height: 8,
-            do: [
-              text(do: "Are you sure you want to proceed?"),
-              text(dim: true, do: "(This is a demo overlay)")
-            ]
-          )
-        else
-          box border: :rounded, padding: 1 do
-            text dim: true do
-              "Overlay preview:"
-            end
-
-            overlay(
-              title: "Example",
-              width: 36,
-              height: 6,
-              do: text(do: "Overlay content goes here.")
-            )
-          end
-        end
+      box padding_v: 1, flex: 1 do
+        overlay(
+          title: "Simple Overlay",
+          width: 40,
+          do: [
+            text(do: "Line one"),
+            text(do: "Line two"),
+            text(fg: :cyan, do: "Line three (cyan)")
+          ]
+        )
       end
     end
   end
@@ -1240,6 +1222,15 @@ defmodule Storybook do
 
     Courgette.send_update(Textarea, id: "textarea_ac", trigger_suggestions: matches)
     {:noreply, assigns}
+  end
+
+  # Command palette
+  def handle_info({:palette_filter_changed, value}, assigns) do
+    {:noreply, assign(assigns, :palette_filter, value)}
+  end
+
+  def handle_info({:palette_selected, id}, assigns) do
+    {:noreply, assign(assigns, :palette_selected, id)}
   end
 
   # Data display
