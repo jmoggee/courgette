@@ -148,8 +148,8 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   def handle_call({:routed_event, event}, _from, state) do
-    new_state = dispatch_event_local(event, state)
-    handled = new_state.assigns != state.assigns
+    new_state = dispatch_event(event, state)
+    handled = event_handled?(event, state, new_state)
     {:reply, {:ok, handled}, new_state}
   end
 
@@ -276,38 +276,24 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   defp dispatch_event(event, state) do
-    if state.parent == nil do
+    if state.focus.order != [] do
       dispatch_event_root(event, state)
     else
       dispatch_event_local(event, state)
     end
   end
 
-  # Root server: intercepts Tab/Shift-Tab for focus cycling,
-  # routes other events to focused child or dispatches locally.
+  # Hierarchical Tab/Shift-Tab: route to focused child first so inner
+  # controls cycle before advancing focus at this level.
   defp dispatch_event_root({:key, :tab}, state) do
-    {old_focused, new_focus} = FocusManager.focus_next(state.focus)
-    state = %{state | focus: new_focus}
-
-    if old_focused == new_focus.focused and old_focused == nil do
-      # No focusable children — dispatch tab to root module
-      dispatch_event_local({:key, :tab}, state)
-    else
-      handle_focus_change(state, old_focused, new_focus.focused)
-    end
+    handle_tab({:key, :tab}, state, :next)
   end
 
   defp dispatch_event_root({:key, {:shift, :tab}}, state) do
-    {old_focused, new_focus} = FocusManager.focus_prev(state.focus)
-    state = %{state | focus: new_focus}
-
-    if old_focused == new_focus.focused and old_focused == nil do
-      dispatch_event_local({:key, {:shift, :tab}}, state)
-    else
-      handle_focus_change(state, old_focused, new_focus.focused)
-    end
+    handle_tab({:key, {:shift, :tab}}, state, :prev)
   end
 
+  # Other events: route to focused child or dispatch locally.
   defp dispatch_event_root(event, state) do
     case FocusManager.current(state.focus) do
       nil ->
@@ -316,6 +302,66 @@ defmodule Courgette.LiveComponent.Server do
       focused_key ->
         route_to_focused_child(event, state, focused_key)
     end
+  end
+
+  defp handle_tab(tab_event, state, direction) do
+    # First, try routing Tab to the focused child
+    if try_route_to_child(state, tab_event) do
+      state
+    else
+      advance_focus_or_fallback(state, direction, tab_event)
+    end
+  end
+
+  defp try_route_to_child(state, event) do
+    case FocusManager.current(state.focus) do
+      nil ->
+        false
+
+      focused_key ->
+        case Map.get(state.children, focused_key) do
+          {pid, _props} ->
+            case route_to_child(pid, event) do
+              {:ok, true} -> true
+              _ -> false
+            end
+
+          nil ->
+            false
+        end
+    end
+  end
+
+  defp advance_focus_or_fallback(state, direction, tab_event) do
+    # Child servers don't wrap — they let the parent cycle instead
+    if state.parent != nil and would_focus_wrap?(state.focus, direction) do
+      dispatch_event_local(tab_event, state)
+    else
+      {old_focused, new_focus} =
+        case direction do
+          :next -> FocusManager.focus_next(state.focus)
+          :prev -> FocusManager.focus_prev(state.focus)
+        end
+
+      state = %{state | focus: new_focus}
+
+      if old_focused == new_focus.focused and old_focused == nil do
+        dispatch_event_local(tab_event, state)
+      else
+        handle_focus_change(state, old_focused, new_focus.focused)
+      end
+    end
+  end
+
+  defp would_focus_wrap?(%{order: []}, _direction), do: false
+  defp would_focus_wrap?(%{focused: nil}, _direction), do: false
+
+  defp would_focus_wrap?(%{focused: focused, order: order}, :next) do
+    focused == List.last(order)
+  end
+
+  defp would_focus_wrap?(%{focused: focused, order: order}, :prev) do
+    focused == hd(order)
   end
 
   defp route_to_focused_child(event, state, focused_key) do
@@ -330,6 +376,12 @@ defmodule Courgette.LiveComponent.Server do
         dispatch_event_local(event, state)
     end
   end
+
+  # For Tab/Shift-Tab, only focus changes count as "handled" — prevents
+  # leaf children from accidentally consuming Tab via catch-all handle_event.
+  defp event_handled?({:key, :tab}, old, new), do: new.focus != old.focus
+  defp event_handled?({:key, {:shift, :tab}}, old, new), do: new.focus != old.focus
+  defp event_handled?(_event, old, new), do: new.assigns != old.assigns or new.focus != old.focus
 
   # Local dispatch — calls module's handle_event directly.
   defp dispatch_event_local(event, state) do
@@ -466,18 +518,14 @@ defmodule Courgette.LiveComponent.Server do
     state = update_children(state, actions.to_update)
     state = stop_children(state, actions.to_stop)
 
-    # Update focus order for root servers
-    if state.parent == nil do
-      focusable_order = Lifecycle.extract_focusable_order(state.raw_tree)
-      old_focused = state.focus.focused
-      new_focus = FocusManager.update_order(state.focus, focusable_order)
-      state = %{state | focus: new_focus}
+    # Update focus order for any server with focusable children
+    focusable_order = Lifecycle.extract_focusable_order(state.raw_tree)
+    old_focused = state.focus.focused
+    new_focus = FocusManager.update_order(state.focus, focusable_order)
+    state = %{state | focus: new_focus}
 
-      if new_focus.focused != old_focused do
-        handle_focus_change(state, old_focused, new_focus.focused)
-      else
-        state
-      end
+    if new_focus.focused != old_focused do
+      handle_focus_change(state, old_focused, new_focus.focused)
     else
       state
     end
