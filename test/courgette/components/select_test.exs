@@ -50,57 +50,125 @@ defmodule Courgette.Components.SelectTest do
     end
   end
 
-  test "renders all options" do
+  # -- Collapsed display --
+
+  test "renders only selected option when collapsed" do
     view = mount(Host)
+    text = render_text(view)
+    assert text =~ "Red"
+    assert text =~ "▾"
+    refute text =~ "Green"
+    refute text =~ "Blue"
+  end
+
+  test "shows dropdown indicator when collapsed" do
+    view = mount(Host)
+    text = render_text(view)
+    assert text =~ "▾"
+  end
+
+  test "initial selected prop respected" do
+    view = mount(Host, initial_assigns: %{selected: 1})
+    text = render_text(view)
+    assert text =~ "Green"
+    assert text =~ "▾"
+    refute text =~ "Red"
+    refute text =~ "Blue"
+  end
+
+  # -- Expanding --
+
+  test "enter expands the dropdown" do
+    view = mount(Host)
+    send_tab(view)
+    send_event(view, {:key, :enter})
+    text = render_text(view)
+    # When expanded, all options should be visible
+    assert text =~ "Red"
+    assert text =~ "Green"
+    assert text =~ "Blue"
+  end
+
+  test "space expands the dropdown" do
+    view = mount(Host)
+    send_tab(view)
+    send_event(view, {:key, {:char, " "}})
     text = render_text(view)
     assert text =~ "Red"
     assert text =~ "Green"
     assert text =~ "Blue"
   end
 
-  test "arrow down moves selection" do
-    view = mount(Host)
-    text = render_text(view)
-    # Initially "Red" is selected (has ▸ marker)
-    assert text =~ "▸ Red"
-
-    # Focus the select, then press down
+  test "when expanded, all options visible with cursor on selected" do
+    view = mount(Host, initial_assigns: %{selected: 1})
     send_tab(view)
+    send_event(view, {:key, :enter})
+    text = render_text(view)
+    # Cursor should be on Green (the selected item)
+    assert text =~ "▸ Green"
+    # Other items should not have the cursor marker
+    assert text =~ "Red"
+    assert text =~ "Blue"
+  end
+
+  # -- Navigation while expanded --
+
+  test "arrow down moves cursor while expanded" do
+    view = mount(Host)
+    send_tab(view)
+    # Expand
+    send_event(view, {:key, :enter})
+    # Cursor starts at 0 (Red), move down
     send_event(view, {:key, :arrow_down})
     text = render_text(view)
     assert text =~ "▸ Green"
   end
 
-  test "arrow up moves selection" do
+  test "arrow up moves cursor while expanded" do
     view = mount(Host, initial_assigns: %{selected: 2})
     send_tab(view)
+    send_event(view, {:key, :enter})
     send_event(view, {:key, :arrow_up})
     text = render_text(view)
     assert text =~ "▸ Green"
   end
 
-  test "clamps at top (no wrap)" do
+  test "clamps cursor at top while expanded" do
     view = mount(Host, initial_assigns: %{selected: 0})
     send_tab(view)
+    send_event(view, {:key, :enter})
     send_event(view, {:key, :arrow_up})
     text = render_text(view)
     assert text =~ "▸ Red"
   end
 
-  test "clamps at bottom (no wrap)" do
+  test "clamps cursor at bottom while expanded" do
     view = mount(Host, initial_assigns: %{selected: 2})
     send_tab(view)
+    send_event(view, {:key, :enter})
     send_event(view, {:key, :arrow_down})
     text = render_text(view)
     assert text =~ "▸ Blue"
   end
 
-  test "enter sends on_select to parent" do
+  # -- Selection --
+
+  test "enter while expanded selects cursor item and collapses" do
     view = mount(Host, initial_assigns: %{on_select: :picked})
     send_tab(view)
+    # Expand
+    send_event(view, {:key, :enter})
     # Move to Green
     send_event(view, {:key, :arrow_down})
+    # Select
     send_event(view, {:key, :enter})
+
+    # Should be collapsed now showing only Green
+    text = render_text(view)
+    assert text =~ "Green"
+    assert text =~ "▾"
+    refute text =~ "Red"
+    refute text =~ "Blue"
 
     # Parent should have received {:picked, "Green"}
     :sys.get_state(view.server)
@@ -108,14 +176,68 @@ defmodule Courgette.Components.SelectTest do
     assert state.assigns.last_selected == "Green"
   end
 
+  test "space while expanded selects cursor item and collapses" do
+    view = mount(Host, initial_assigns: %{on_select: :picked})
+    send_tab(view)
+    send_event(view, {:key, {:char, " "}})
+    send_event(view, {:key, :arrow_down})
+    send_event(view, {:key, {:char, " "}})
+
+    text = render_text(view)
+    assert text =~ "Green"
+    assert text =~ "▾"
+    refute text =~ "Red"
+
+    :sys.get_state(view.server)
+    state = :sys.get_state(view.server)
+    assert state.assigns.last_selected == "Green"
+  end
+
+  # -- Escape --
+
+  test "escape collapses without changing selection" do
+    view = mount(Host)
+    send_tab(view)
+    # Expand
+    send_event(view, {:key, :enter})
+    # Move cursor to Green
+    send_event(view, {:key, :arrow_down})
+    # Escape without selecting
+    send_event(view, {:key, :escape})
+
+    # Should be collapsed, still showing Red (original selection)
+    text = render_text(view)
+    assert text =~ "Red"
+    assert text =~ "▾"
+    refute text =~ "Green"
+    refute text =~ "Blue"
+  end
+
+  # -- Arrow keys ignored when collapsed --
+
+  test "arrow keys ignored when collapsed" do
+    view = mount(Host)
+    send_tab(view)
+    send_event(view, {:key, :arrow_down})
+    text = render_text(view)
+    # Should still show Red, not Green
+    assert text =~ "Red"
+    refute text =~ "Green"
+  end
+
+  # -- No notification without on_select --
+
   test "no notification without on_select prop" do
     view = mount(Host, initial_assigns: %{on_select: nil})
     send_tab(view)
+    send_event(view, {:key, :enter})
     send_event(view, {:key, :enter})
 
     state = :sys.get_state(view.server)
     assert state.assigns.last_selected == nil
   end
+
+  # -- Focus/blur --
 
   test "focus/blur changes border" do
     view = mount(Host)
@@ -128,16 +250,29 @@ defmodule Courgette.Components.SelectTest do
     assert find_border_color(tree) == :cyan
   end
 
+  # -- Prompt --
+
+  test "prompt text renders" do
+    view = mount(Host, initial_assigns: %{prompt: "Pick a color:"})
+    text = render_text(view)
+    assert text =~ "Pick a color:"
+  end
+
+  # -- Option formats --
+
   test "string options normalized to {value, label}" do
     view = mount(Host, initial_assigns: %{options: ["A", "B"]})
     text = render_text(view)
     assert text =~ "A"
-    assert text =~ "B"
   end
 
-  test "tuple options work" do
-    view = mount(Host, initial_assigns: %{options: [{"r", "Red"}, {"g", "Green"}], on_select: :picked})
+  test "tuple options send value not label" do
+    view =
+      mount(Host, initial_assigns: %{options: [{"r", "Red"}, {"g", "Green"}], on_select: :picked})
+
     send_tab(view)
+    # Expand then select
+    send_event(view, {:key, :enter})
     send_event(view, {:key, :enter})
 
     # Should send the value "r", not the label "Red"
@@ -146,30 +281,27 @@ defmodule Courgette.Components.SelectTest do
     assert state.assigns.last_selected == "r"
   end
 
-  test "prompt text renders above options" do
-    view = mount(Host, initial_assigns: %{prompt: "Pick a color:"})
-    text = render_text(view)
-    assert text =~ "Pick a color:"
-  end
-
-  test "initial selected prop respected" do
-    view = mount(Host, initial_assigns: %{selected: 1})
-    text = render_text(view)
-    assert text =~ "▸ Green"
-  end
+  # -- Update options --
 
   test "update options via props" do
     view = mount(Host, initial_assigns: %{options: ["X", "Y"]})
     text = render_text(view)
     assert text =~ "X"
-    assert text =~ "Y"
 
     send_info(view, {:set, :options, ["A", "B", "C"]})
     text = render_text(view)
     assert text =~ "A"
-    assert text =~ "B"
-    assert text =~ "C"
     refute text =~ "X"
+  end
+
+  # -- Cursor starts at selected index when expanding --
+
+  test "cursor starts at selected index when expanding" do
+    view = mount(Host, initial_assigns: %{selected: 2})
+    send_tab(view)
+    send_event(view, {:key, :enter})
+    text = render_text(view)
+    assert text =~ "▸ Blue"
   end
 
   # Helper to find border_color in tree
