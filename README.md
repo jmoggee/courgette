@@ -7,8 +7,8 @@ A declarative TUI framework for Elixir, built on OTP.
 
 Courgette gives you a component model inspired by Phoenix LiveView — stateful
 components with `mount`, `render`, and `handle_event` callbacks — but targeting
-the terminal instead of the browser. Layout uses a CSS Flexbox engine. Rendering
-is incremental via double-buffered diffing. There are zero external dependencies.
+the terminal instead of the browser. Layout uses a CSS inspired Flexbox engine.
+Rendering is incremental via double-buffered diffing. 
 
 ## Quick Start
 
@@ -42,6 +42,9 @@ Courgette.run(HelloApp)
 ```
 
 ## Installation
+
+> [!WARNING]
+> v0.1.0 has not been released yet.
 
 Add `courgette` to your dependencies in `mix.exs`:
 
@@ -162,7 +165,10 @@ Interactive components are live components:
 
 ## Layout
 
-Courgette uses a CSS Flexbox engine for layout. Style props go directly on elements:
+Courgette uses a port of the [taffy engine](https://lib.rs/crates/taffy) for
+layout. It's been adapted for terminal layouts.
+
+Style props go directly on elements:
 
 ```elixir
 box flex_direction: :row, gap: 1 do
