@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project is a work in progress. APIs may change without notice.
+
 # Courgette
 
 A declarative TUI framework for Elixir, built on OTP.
