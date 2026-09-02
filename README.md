@@ -3,6 +3,10 @@
 
 # Courgette
 
+[![Hex.pm](https://img.shields.io/hexpm/v/courgette.svg)](https://hex.pm/packages/courgette)
+[![Hexdocs](https://img.shields.io/badge/hexdocs-courgette-blue.svg)](https://hexdocs.pm/courgette)
+[![License](https://img.shields.io/hexpm/l/courgette.svg)](https://github.com/LoamStudios/courgette/blob/main/LICENSE)
+
 A declarative TUI framework for Elixir, built on OTP.
 
 Courgette gives you a component model inspired by Phoenix LiveView — stateful

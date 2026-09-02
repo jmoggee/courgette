@@ -1242,7 +1242,7 @@ defmodule Storybook.Pages.Link do
       end
 
       box flex_direction: :column, padding_v: 1 do
-        link(label: "Courgette on GitHub", url: "https://github.com/loam/courgette")
+        link(label: "Courgette on GitHub", url: "https://github.com/LoamStudios/courgette")
         link(label: "Elixir Docs", url: "https://hexdocs.pm/elixir", color: :green)
         link(label: "Hex.pm", url: "https://hex.pm", color: :yellow)
       end

@@ -2,7 +2,7 @@ defmodule Courgette.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/loam/courgette"
+  @source_url "https://github.com/LoamStudios/courgette"
 
   def project do
     [
@@ -117,11 +117,8 @@ defmodule Courgette.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib mix.exs README.md LICENSE usage-rules.md usage-rules),
-      links: %{
-        "GitHub" => @source_url,
-        "Specification" => "https://github.com/loam/rhyzo-architecture/blob/main/spec/appendices/C-courgette-framework.md"
-      }
+      files: ~w(lib guides .formatter.exs mix.exs README.md LICENSE usage-rules.md usage-rules),
+      links: %{"GitHub" => @source_url}
     ]
   end
 end
