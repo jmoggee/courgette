@@ -21,10 +21,12 @@ defmodule Courgette.Layout.Engine.Style do
           flex_grow: float(),
           flex_shrink: float(),
           flex_basis: :auto | float(),
-          justify_content: :flex_start | :flex_end | :center | :space_between | :space_around | :space_evenly,
+          justify_content:
+            :flex_start | :flex_end | :center | :space_between | :space_around | :space_evenly,
           align_items: :flex_start | :flex_end | :center | :stretch | :baseline,
           align_self: :auto | :flex_start | :flex_end | :center | :stretch | :baseline,
-          align_content: :flex_start | :flex_end | :center | :stretch | :space_between | :space_around,
+          align_content:
+            :flex_start | :flex_end | :center | :stretch | :space_between | :space_around,
           width: float() | nil,
           height: float() | nil,
           min_width: float() | nil,
@@ -99,12 +101,13 @@ defmodule Courgette.Layout.Engine.Style do
   # ── Position ─────────────────────────────────────────────────────
 
   defp resolve_position(style, props) do
-    %{style |
-      position: Map.get(props, :position, :static),
-      top: to_maybe_float(Map.get(props, :top)),
-      left: to_maybe_float(Map.get(props, :left)),
-      right: to_maybe_float(Map.get(props, :right)),
-      bottom: to_maybe_float(Map.get(props, :bottom))
+    %{
+      style
+      | position: Map.get(props, :position, :static),
+        top: to_maybe_float(Map.get(props, :top)),
+        left: to_maybe_float(Map.get(props, :left)),
+        right: to_maybe_float(Map.get(props, :right)),
+        bottom: to_maybe_float(Map.get(props, :bottom))
     }
   end
 
@@ -241,11 +244,12 @@ defmodule Courgette.Layout.Engine.Style do
   # ── Text / Overflow ─────────────────────────────────────────────
 
   defp resolve_text_props(style, props) do
-    %{style |
-      overflow: Map.get(props, :overflow, :visible),
-      white_space: Map.get(props, :white_space, :normal),
-      overflow_wrap: Map.get(props, :overflow_wrap, :normal),
-      text_overflow: Map.get(props, :text_overflow, :clip)
+    %{
+      style
+      | overflow: Map.get(props, :overflow, :visible),
+        white_space: Map.get(props, :white_space, :normal),
+        overflow_wrap: Map.get(props, :overflow_wrap, :normal),
+        text_overflow: Map.get(props, :text_overflow, :clip)
     }
   end
 

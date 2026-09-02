@@ -71,7 +71,10 @@ defmodule Mix.Tasks.Taffy.Generate do
       |> Enum.reject(&is_nil/1)
 
     {active, skipped} = Enum.split_with(all, fn {_, _, _, skip} -> skip == nil end)
-    Mix.shell().info("Parsed #{length(all)} tests (#{length(active)} active, #{length(skipped)} skipped)")
+
+    Mix.shell().info(
+      "Parsed #{length(all)} tests (#{length(active)} active, #{length(skipped)} skipped)"
+    )
 
     # Group active tests by category (skipped tests are omitted entirely)
     grouped = Enum.group_by(active, fn {_name, _test, category, _skip} -> category end)
@@ -94,9 +97,7 @@ defmodule Mix.Tasks.Taffy.Generate do
     if File.dir?(@taffy_dir) do
       Mix.shell().info("Updating Taffy repo...")
 
-      case System.cmd("git", ["-C", @taffy_dir, "pull", "--ff-only"],
-             stderr_to_stdout: true
-           ) do
+      case System.cmd("git", ["-C", @taffy_dir, "pull", "--ff-only"], stderr_to_stdout: true) do
         {output, 0} ->
           Mix.shell().info(String.trim(output))
 
@@ -287,7 +288,11 @@ defmodule Mix.Tasks.Taffy.Generate do
 
   defp parse_flex_basis(text, props) do
     cond do
-      match = Regex.run(~r/flex_basis:\s*taffy::style::Dimension::from_length\((\d+(?:\.\d+)?)f32\)/, text) ->
+      match =
+          Regex.run(
+            ~r/flex_basis:\s*taffy::style::Dimension::from_length\((\d+(?:\.\d+)?)f32\)/,
+            text
+          ) ->
         [_, val] = match
         Map.put(props, :flex_basis, parse_number(val))
 
@@ -303,7 +308,8 @@ defmodule Mix.Tasks.Taffy.Generate do
   defp parse_flex_direction(text, props) do
     case Regex.run(~r/flex_direction:\s*taffy::style::FlexDirection::(\w+)/, text) do
       [_, "Column"] -> Map.put(props, :flex_direction, :column)
-      [_, "Row"] -> props  # Row is default
+      # Row is default
+      [_, "Row"] -> props
       _ -> props
     end
   end
@@ -408,7 +414,10 @@ defmodule Mix.Tasks.Taffy.Generate do
   end
 
   defp parse_gap(text, props) do
-    case Regex.run(~r/gap:\s*taffy::geometry::Size\s*\{\s*width:\s*(.+?)\s*,\s*height:\s*(.+?)\s*\}/, text) do
+    case Regex.run(
+           ~r/gap:\s*taffy::geometry::Size\s*\{\s*width:\s*(.+?)\s*,\s*height:\s*(.+?)\s*\}/,
+           text
+         ) do
       [_, col_text, row_text] ->
         cg = parse_gap_value(col_text)
         rg = parse_gap_value(row_text)
@@ -758,9 +767,13 @@ defmodule Mix.Tasks.Taffy.Generate do
 
     # Track which intermediate variables we've declared
     {lines, _declared} =
-      Enum.reduce(assertion_entries, {[], MapSet.new()}, fn {_name, path, values}, {lines, declared} ->
+      Enum.reduce(assertion_entries, {[], MapSet.new()}, fn {_name, path, values},
+                                                            {lines, declared} ->
         {accessor, new_lines, declared} = build_accessor(path, declared)
-        assertion = "      assert_layout(#{accessor}, %{w: #{format_num(values.w)}, h: #{format_num(values.h)}, x: #{format_num(values.x)}, y: #{format_num(values.y)}})"
+
+        assertion =
+          "      assert_layout(#{accessor}, %{w: #{format_num(values.w)}, h: #{format_num(values.h)}, x: #{format_num(values.x)}, y: #{format_num(values.y)}})"
+
         {lines ++ new_lines ++ [assertion], declared}
       end)
 
@@ -868,6 +881,7 @@ defmodule Mix.Tasks.Taffy.Generate do
   end
 
   defp format_num(val) when is_integer(val), do: "#{val}"
+
   defp format_num(val) when is_float(val) do
     if val == Float.round(val), do: "#{trunc(val)}", else: "#{val}"
   end

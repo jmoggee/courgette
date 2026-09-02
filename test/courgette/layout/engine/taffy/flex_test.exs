@@ -8,24 +8,30 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
   defp box(props, children \\ []), do: Element.new(:box, props, children)
 
   defp assert_layout(result, expected) do
-    assert_in_delta result.width, expected.w, 0.5,
-      "width: expected #{expected.w}, got #{result.width}"
-    assert_in_delta result.height, expected.h, 0.5,
-      "height: expected #{expected.h}, got #{result.height}"
-    assert_in_delta result.x, expected.x, 0.5,
-      "x: expected #{expected.x}, got #{result.x}"
-    assert_in_delta result.y, expected.y, 0.5,
-      "y: expected #{expected.y}, got #{result.y}"
+    assert_in_delta result.width,
+                    expected.w,
+                    0.5,
+                    "width: expected #{expected.w}, got #{result.width}"
+
+    assert_in_delta result.height,
+                    expected.h,
+                    0.5,
+                    "height: expected #{expected.h}, got #{result.height}"
+
+    assert_in_delta result.x, expected.x, 0.5, "x: expected #{expected.x}, got #{result.x}"
+    assert_in_delta result.y, expected.y, 0.5, "y: expected #{expected.y}, got #{result.y}"
   end
 
   defp child(result, idx), do: Enum.at(result.children, idx)
 
   describe "flex_basis_and_main_dimen_set_when_flexing" do
     test "border_box" do
-      el = box([width: 100], [
-        box([width: 50, height: 50, flex_grow: 1, flex_basis: 10]),
-        box([width: 0, height: 50, flex_grow: 1, flex_basis: 10])
-      ])
+      el =
+        box([width: 100], [
+          box(width: 50, height: 50, flex_grow: 1, flex_basis: 10),
+          box(width: 0, height: 50, flex_grow: 1, flex_basis: 10)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 50, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 50, h: 50, x: 0, y: 0})
@@ -35,10 +41,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_flex_grow_column" do
     test "border_box" do
-      el = box([width: 100, height: 100, flex_direction: :column], [
-        box([flex_grow: 1, flex_basis: 50]),
-        box(flex_grow: 1)
-      ])
+      el =
+        box([width: 100, height: 100, flex_direction: :column], [
+          box(flex_grow: 1, flex_basis: 50),
+          box(flex_grow: 1)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 75, x: 0, y: 0})
@@ -48,10 +56,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_flex_grow_row" do
     test "border_box" do
-      el = box([width: 100, height: 100], [
-        box([flex_grow: 1, flex_basis: 50]),
-        box(flex_grow: 1)
-      ])
+      el =
+        box([width: 100, height: 100], [
+          box(flex_grow: 1, flex_basis: 50),
+          box(flex_grow: 1)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 75, h: 100, x: 0, y: 0})
@@ -61,10 +71,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_flex_shrink_column" do
     test "border_box" do
-      el = box([width: 100, height: 100, flex_direction: :column], [
-        box(flex_basis: 100),
-        box(flex_basis: 50)
-      ])
+      el =
+        box([width: 100, height: 100, flex_direction: :column], [
+          box(flex_basis: 100),
+          box(flex_basis: 50)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 67, x: 0, y: 0})
@@ -74,10 +86,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_flex_shrink_row" do
     test "border_box" do
-      el = box([width: 100, height: 100], [
-        box(flex_basis: 100),
-        box(flex_basis: 50)
-      ])
+      el =
+        box([width: 100, height: 100], [
+          box(flex_basis: 100),
+          box(flex_basis: 50)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 67, h: 100, x: 0, y: 0})
@@ -87,11 +101,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_larger_than_content_column" do
     test "border_box" do
-      el = box([height: 100, flex_direction: :column], [
-        box([flex_direction: :column, flex_basis: 50], [
-          box([width: 100, height: 10])
+      el =
+        box([height: 100, flex_direction: :column], [
+          box([flex_direction: :column, flex_basis: 50], [
+            box(width: 100, height: 10)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 50, x: 0, y: 0})
@@ -102,11 +118,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_larger_than_content_row" do
     test "border_box" do
-      el = box([width: 100], [
-        box([flex_direction: :column, flex_basis: 50], [
-          box([width: 10, height: 100])
+      el =
+        box([width: 100], [
+          box([flex_direction: :column, flex_basis: 50], [
+            box(width: 10, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 50, h: 100, x: 0, y: 0})
@@ -117,11 +135,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_overrides_main_size" do
     test "border_box" do
-      el = box([width: 100, height: 100], [
-        box([width: 20, flex_grow: 1, flex_basis: 50]),
-        box([width: 10, flex_grow: 1]),
-        box([width: 10, flex_grow: 1])
-      ])
+      el =
+        box([width: 100, height: 100], [
+          box(width: 20, flex_grow: 1, flex_basis: 50),
+          box(width: 10, flex_grow: 1),
+          box(width: 10, flex_grow: 1)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 60, h: 100, x: 0, y: 0})
@@ -132,14 +152,16 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_slightly_smaller_then_content_with_flex_grow_large_size" do
     test "border_box" do
-      el = box([width: 100], [
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 60], [
-          box([width: 70, height: 100])
-        ]),
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 20, height: 100])
+      el =
+        box([width: 100], [
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 60], [
+            box(width: 70, height: 100)
+          ]),
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 20, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 80, h: 100, x: 0, y: 0})
@@ -153,11 +175,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_than_content_column" do
     test "border_box" do
-      el = box([height: 100, flex_direction: :column], [
-        box([flex_direction: :column, flex_basis: 50], [
-          box([width: 100, height: 100])
+      el =
+        box([height: 100, flex_direction: :column], [
+          box([flex_direction: :column, flex_basis: 50], [
+            box(width: 100, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 100, x: 0, y: 0})
@@ -168,11 +192,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_than_content_row" do
     test "border_box" do
-      el = box([width: 100], [
-        box([flex_direction: :column, flex_basis: 50], [
-          box([width: 100, height: 100])
+      el =
+        box([width: 100], [
+          box([flex_direction: :column, flex_basis: 50], [
+            box(width: 100, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 100, x: 0, y: 0})
@@ -183,9 +209,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_than_main_dimen_column" do
     test "border_box" do
-      el = box([height: 100, flex_direction: :column], [
-        box([width: 50, height: 50, flex_basis: 10])
-      ])
+      el =
+        box([height: 100, flex_direction: :column], [
+          box(width: 50, height: 50, flex_basis: 10)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 50, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 50, h: 10, x: 0, y: 0})
@@ -194,9 +222,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_than_main_dimen_row" do
     test "border_box" do
-      el = box([width: 100], [
-        box([width: 50, height: 50, flex_basis: 10])
-      ])
+      el =
+        box([width: 100], [
+          box(width: 50, height: 50, flex_basis: 10)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 50, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 10, h: 50, x: 0, y: 0})
@@ -205,14 +235,16 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_then_content_with_flex_grow_large_size" do
     test "border_box" do
-      el = box([width: 100], [
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 70, height: 100])
-        ]),
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 20, height: 100])
+      el =
+        box([width: 100], [
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 70, height: 100)
+          ]),
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 20, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 70, h: 100, x: 0, y: 0})
@@ -226,14 +258,16 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_then_content_with_flex_grow_small_size" do
     test "border_box" do
-      el = box([width: 10], [
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 70, height: 100])
-        ]),
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 20, height: 100])
+      el =
+        box([width: 10], [
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 70, height: 100)
+          ]),
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 20, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 10.0, height: nil})
       assert_layout(r, %{w: 10, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 70, h: 100, x: 0, y: 0})
@@ -247,14 +281,16 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_then_content_with_flex_grow_unconstraint_size" do
     test "border_box" do
-      el = box([], [
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 70, height: 100])
-        ]),
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 20, height: 100])
+      el =
+        box([], [
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 70, height: 100)
+          ]),
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 20, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 90, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 70, h: 100, x: 0, y: 0})
@@ -268,14 +304,16 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_smaller_then_content_with_flex_grow_very_large_size" do
     test "border_box" do
-      el = box([width: 200], [
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 70, height: 100])
-        ]),
-        box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
-          box([width: 20, height: 100])
+      el =
+        box([width: 200], [
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 70, height: 100)
+          ]),
+          box([flex_direction: :column, flex_grow: 1, flex_basis: 0], [
+            box(width: 20, height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 200.0, height: nil})
       assert_layout(r, %{w: 200, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 100, x: 0, y: 0})
@@ -289,9 +327,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_unconstraint_column" do
     test "border_box" do
-      el = box([flex_direction: :column], [
-        box([width: 100, flex_basis: 50])
-      ])
+      el =
+        box([flex_direction: :column], [
+          box(width: 100, flex_basis: 50)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 100, h: 50, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 50, x: 0, y: 0})
@@ -300,9 +340,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_unconstraint_row" do
     test "border_box" do
-      el = box([], [
-        box([height: 100, flex_basis: 50])
-      ])
+      el =
+        box([], [
+          box(height: 100, flex_basis: 50)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 0, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 100, x: 0, y: 0})
@@ -311,11 +353,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_basis_zero_undefined_main_size" do
     test "border_box" do
-      el = box([], [
-        box([flex_direction: :column, flex_basis: 0], [
-          box([width: 100, height: 50])
+      el =
+        box([], [
+          box([flex_direction: :column, flex_basis: 0], [
+            box(width: 100, height: 50)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 100, h: 50, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 50, x: 0, y: 0})
@@ -326,11 +370,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_direction_column" do
     test "border_box" do
-      el = box([width: 100, height: 100, flex_direction: :column], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
+      el =
+        box([width: 100, height: 100, flex_direction: :column], [
+          box(height: 10),
+          box(height: 10),
+          box(height: 10)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
@@ -341,11 +387,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_direction_column_no_height" do
     test "border_box" do
-      el = box([width: 100, flex_direction: :column], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
+      el =
+        box([width: 100, flex_direction: :column], [
+          box(height: 10),
+          box(height: 10),
+          box(height: 10)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 30, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 10, x: 0, y: 0})
@@ -356,11 +404,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_direction_row" do
     test "border_box" do
-      el = box([width: 100, height: 100], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 10, h: 100, x: 0, y: 0})
@@ -371,11 +421,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_direction_row_no_width" do
     test "border_box" do
-      el = box([height: 100], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([height: 100], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 30, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 10, h: 100, x: 0, y: 0})
@@ -386,9 +438,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_child" do
     test "border_box" do
-      el = box([], [
-        box([height: 100, flex_grow: 1, flex_basis: 0])
-      ])
+      el =
+        box([], [
+          box(height: 100, flex_grow: 1, flex_basis: 0)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 0, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 100, x: 0, y: 0})
@@ -397,12 +451,14 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_height_maximized" do
     test "border_box" do
-      el = box([width: 100, height: 500, flex_direction: :column], [
-        box([min_height: 100, max_height: 500, flex_direction: :column, flex_grow: 1], [
-          box([flex_grow: 1, flex_basis: 200]),
-          box(height: 100)
+      el =
+        box([width: 100, height: 500, flex_direction: :column], [
+          box([min_height: 100, max_height: 500, flex_direction: :column, flex_grow: 1], [
+            box(flex_grow: 1, flex_basis: 200),
+            box(height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: 500.0})
       assert_layout(r, %{w: 100, h: 500, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 500, x: 0, y: 0})
@@ -414,11 +470,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_in_at_most_container" do
     test "border_box" do
-      el = box([width: 100, height: 100, align_items: :flex_start], [
-        box([], [
-          box([flex_grow: 1, flex_basis: 0])
+      el =
+        box([width: 100, height: 100, align_items: :flex_start], [
+          box([], [
+            box(flex_grow: 1, flex_basis: 0)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 0, x: 0, y: 0})
@@ -429,11 +487,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_less_than_factor_one" do
     test "border_box" do
-      el = box([width: 500, height: 200], [
-        box([flex_grow: 0.2, flex_shrink: 0, flex_basis: 40]),
-        box([flex_grow: 0.2, flex_shrink: 0]),
-        box([flex_grow: 0.4, flex_shrink: 0])
-      ])
+      el =
+        box([width: 500, height: 200], [
+          box(flex_grow: 0.2, flex_shrink: 0, flex_basis: 40),
+          box(flex_grow: 0.2, flex_shrink: 0),
+          box(flex_grow: 0.4, flex_shrink: 0)
+        ])
+
       r = Flex.layout(el, %{width: 500.0, height: 200.0})
       assert_layout(r, %{w: 500, h: 200, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 132, h: 200, x: 0, y: 0})
@@ -444,12 +504,14 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_root_minimized" do
     test "border_box" do
-      el = box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
-        box([min_height: 100, max_height: 500, flex_direction: :column, flex_grow: 1], [
-          box([flex_grow: 1, flex_basis: 200]),
-          box(height: 100)
+      el =
+        box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
+          box([min_height: 100, max_height: 500, flex_direction: :column, flex_grow: 1], [
+            box(flex_grow: 1, flex_basis: 200),
+            box(height: 100)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 300, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 300, x: 0, y: 0})
@@ -461,11 +523,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_shrink_at_most" do
     test "border_box" do
-      el = box([width: 100, height: 100], [
-        box([], [
-          box(flex_grow: 1)
+      el =
+        box([width: 100, height: 100], [
+          box([], [
+            box(flex_grow: 1)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 100, x: 0, y: 0})
@@ -476,10 +540,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_to_min" do
     test "border_box" do
-      el = box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
-        box(flex_grow: 1),
-        box(height: 50)
-      ])
+      el =
+        box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
+          box(flex_grow: 1),
+          box(height: 50)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 50, x: 0, y: 0})
@@ -489,10 +555,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_max_column" do
     test "border_box" do
-      el = box([width: 100, max_height: 100, flex_direction: :column], [
-        box(flex_basis: 100),
-        box(height: 50)
-      ])
+      el =
+        box([width: 100, max_height: 100, flex_direction: :column], [
+          box(flex_basis: 100),
+          box(height: 50)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 67, x: 0, y: 0})
@@ -502,12 +570,14 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_max_row" do
     test "border_box" do
-      el = box([width: 200, flex_direction: :column], [
-        box([height: 100, max_width: 100], [
-          box(flex_basis: 100),
-          box(width: 50)
+      el =
+        box([width: 200, flex_direction: :column], [
+          box([height: 100, max_width: 100], [
+            box(flex_basis: 100),
+            box(width: 50)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 200.0, height: nil})
       assert_layout(r, %{w: 200, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 100, x: 0, y: 0})
@@ -519,11 +589,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_max_width" do
     test "border_box" do
-      el = box([width: 200, height: 100, flex_direction: :column], [
-        box([max_width: 300], [
-          box([height: 20, flex_grow: 1])
+      el =
+        box([width: 200, height: 100, flex_direction: :column], [
+          box([max_width: 300], [
+            box(height: 20, flex_grow: 1)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 200.0, height: 100.0})
       assert_layout(r, %{w: 200, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 200, h: 20, x: 0, y: 0})
@@ -534,10 +606,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_min_column" do
     test "border_box" do
-      el = box([min_height: 100, flex_direction: :column], [
-        box(flex_grow: 1),
-        box(height: 50)
-      ])
+      el =
+        box([min_height: 100, flex_direction: :column], [
+          box(flex_grow: 1),
+          box(height: 50)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 0, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 50, x: 0, y: 0})
@@ -547,10 +621,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_min_max_column" do
     test "border_box" do
-      el = box([min_height: 100, max_height: 200, flex_direction: :column], [
-        box(flex_grow: 1),
-        box(height: 50)
-      ])
+      el =
+        box([min_height: 100, max_height: 200, flex_direction: :column], [
+          box(flex_grow: 1),
+          box(height: 50)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: nil})
       assert_layout(r, %{w: 0, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 0, h: 50, x: 0, y: 0})
@@ -560,10 +636,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_constrained_min_row" do
     test "border_box" do
-      el = box([height: 100, min_width: 100], [
-        box(flex_grow: 1),
-        box(width: 50)
-      ])
+      el =
+        box([height: 100, min_width: 100], [
+          box(flex_grow: 1),
+          box(width: 50)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 100, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 50, h: 100, x: 0, y: 0})
@@ -573,11 +651,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_grow_within_max_width" do
     test "border_box" do
-      el = box([width: 200, height: 100, flex_direction: :column], [
-        box([max_width: 100], [
-          box([height: 20, flex_grow: 1])
+      el =
+        box([width: 200, height: 100, flex_direction: :column], [
+          box([max_width: 100], [
+            box(height: 20, flex_grow: 1)
+          ])
         ])
-      ])
+
       r = Flex.layout(el, %{width: 200.0, height: 100.0})
       assert_layout(r, %{w: 200, h: 100, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 20, x: 0, y: 0})
@@ -588,10 +668,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_root_ignored" do
     test "border_box" do
-      el = box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
-        box([flex_grow: 1, flex_basis: 200]),
-        box(height: 100)
-      ])
+      el =
+        box([width: 100, min_height: 100, max_height: 500, flex_direction: :column], [
+          box(flex_grow: 1, flex_basis: 200),
+          box(height: 100)
+        ])
+
       r = Flex.layout(el, %{width: 100.0, height: nil})
       assert_layout(r, %{w: 100, h: 300, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 100, h: 200, x: 0, y: 0})
@@ -601,9 +683,11 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_shrink_by_outer_margin_with_max_size" do
     test "border_box" do
-      el = box([height: 100, max_height: 80, flex_direction: :column], [
-        box([width: 20, height: 20, margin_top: 100])
-      ])
+      el =
+        box([height: 100, max_height: 80, flex_direction: :column], [
+          box(width: 20, height: 20, margin_top: 100)
+        ])
+
       r = Flex.layout(el, %{width: nil, height: 100.0})
       assert_layout(r, %{w: 20, h: 80, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 20, h: 0, x: 0, y: 100})
@@ -612,10 +696,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_shrink_flex_grow_child_flex_shrink_other_child" do
     test "border_box" do
-      el = box([width: 500, height: 500], [
-        box([width: 500, height: 100]),
-        box([width: 500, height: 100, flex_grow: 1])
-      ])
+      el =
+        box([width: 500, height: 500], [
+          box(width: 500, height: 100),
+          box(width: 500, height: 100, flex_grow: 1)
+        ])
+
       r = Flex.layout(el, %{width: 500.0, height: 500.0})
       assert_layout(r, %{w: 500, h: 500, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 250, h: 100, x: 0, y: 0})
@@ -625,10 +711,12 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_shrink_flex_grow_row" do
     test "border_box" do
-      el = box([width: 500, height: 500], [
-        box([width: 500, height: 100]),
-        box([width: 500, height: 100])
-      ])
+      el =
+        box([width: 500, height: 500], [
+          box(width: 500, height: 100),
+          box(width: 500, height: 100)
+        ])
+
       r = Flex.layout(el, %{width: 500.0, height: 500.0})
       assert_layout(r, %{w: 500, h: 500, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 250, h: 100, x: 0, y: 0})
@@ -638,11 +726,13 @@ defmodule Courgette.Layout.Engine.Taffy.FlexTest do
 
   describe "flex_shrink_to_zero" do
     test "border_box" do
-      el = box([width: 75], [
-        box([width: 50, height: 50, flex_shrink: 0]),
-        box([width: 50, height: 50]),
-        box([width: 50, height: 50, flex_shrink: 0])
-      ])
+      el =
+        box([width: 75], [
+          box(width: 50, height: 50, flex_shrink: 0),
+          box(width: 50, height: 50),
+          box(width: 50, height: 50, flex_shrink: 0)
+        ])
+
       r = Flex.layout(el, %{width: 75.0, height: nil})
       assert_layout(r, %{w: 75, h: 50, x: 0, y: 0})
       assert_layout(child(r, 0), %{w: 50, h: 50, x: 0, y: 0})

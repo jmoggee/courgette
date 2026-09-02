@@ -24,7 +24,8 @@ defmodule Courgette.Buffer do
   Creates a new buffer of the given dimensions, filled with empty cells.
   """
   @spec new(pos_integer(), pos_integer()) :: t()
-  def new(width, height) when is_integer(width) and width > 0 and is_integer(height) and height > 0 do
+  def new(width, height)
+      when is_integer(width) and width > 0 and is_integer(height) and height > 0 do
     cells =
       for y <- 0..(height - 1), x <- 0..(width - 1), into: %{} do
         {{x, y}, Cell.empty()}

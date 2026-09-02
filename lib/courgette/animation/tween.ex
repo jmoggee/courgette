@@ -151,7 +151,9 @@ defmodule Courgette.Animation.Tween do
   @spec stop_timer(map()) :: map()
   def stop_timer(assigns) do
     case Map.get(assigns, :__tween_timer__) do
-      nil -> assigns
+      nil ->
+        assigns
+
       ref ->
         Process.cancel_timer(ref)
         Map.delete(assigns, :__tween_timer__)
@@ -166,7 +168,9 @@ defmodule Courgette.Animation.Tween do
     timer_key = :"__#{name}_timer__"
 
     case Map.get(assigns, timer_key) do
-      nil -> assigns
+      nil ->
+        assigns
+
       ref ->
         Process.cancel_timer(ref)
         Map.delete(assigns, timer_key)

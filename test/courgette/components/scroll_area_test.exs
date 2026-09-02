@@ -326,13 +326,20 @@ defmodule Courgette.Components.ScrollAreaTest do
   # The scrollbar is the second child of the outer row box, after the scroll box
   defp find_scrollbar_box(nil), do: nil
 
-  defp find_scrollbar_box(%Element{type: :box, props: %{flex_direction: :row}, children: children}) do
+  defp find_scrollbar_box(%Element{
+         type: :box,
+         props: %{flex_direction: :row},
+         children: children
+       }) do
     case children do
-      [%Element{type: :box, props: %{overflow: :scroll}}, %Element{type: :box} = scrollbar | _] -> scrollbar
-      _ -> Enum.find_value(children, fn
-        %Element{} = child -> find_scrollbar_box(child)
-        _ -> nil
-      end)
+      [%Element{type: :box, props: %{overflow: :scroll}}, %Element{type: :box} = scrollbar | _] ->
+        scrollbar
+
+      _ ->
+        Enum.find_value(children, fn
+          %Element{} = child -> find_scrollbar_box(child)
+          _ -> nil
+        end)
     end
   end
 

@@ -186,8 +186,7 @@ formatters = [
 benchee_opts = [warmup: 2, time: 5, memory_time: 2, inputs: fixtures, formatters: formatters]
 
 suites = [
-  {"layout", "Layout",
-   %{"Engine.compute" => fn fix -> Engine.compute(fix.tree, fix.bounds) end}},
+  {"layout", "Layout", %{"Engine.compute" => fn fix -> Engine.compute(fix.tree, fix.bounds) end}},
   {"paint", "Paint",
    %{"Painter.paint" => fn fix -> Painter.paint(fix.layout_tree, fix.empty_buffer) end}},
   {"diff", "Diff",
@@ -196,8 +195,7 @@ suites = [
      "small change" => fn fix -> Diff.diff(fix.painted_buffer, fix.changed_buffer) end,
      "full redraw" => fn fix -> Diff.diff(fix.empty_buffer, fix.painted_buffer) end
    }},
-  {"writer", "Writer",
-   %{"Writer.render" => fn fix -> Writer.render(fix.full_diff_runs) end}},
+  {"writer", "Writer", %{"Writer.render" => fn fix -> Writer.render(fix.full_diff_runs) end}},
   {"full_pipeline", "Full Pipeline",
    %{
      "element → iodata" => fn fix ->

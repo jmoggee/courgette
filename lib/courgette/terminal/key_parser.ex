@@ -25,7 +25,8 @@ defmodule Courgette.Terminal.KeyParser do
           | {:mouse, mouse_action(), button(), non_neg_integer(), non_neg_integer()}
           | {:mouse, mouse_action(), button(), non_neg_integer(), non_neg_integer(), [modifier()]}
           | {:mouse, :scroll_up | :scroll_down, non_neg_integer(), non_neg_integer()}
-          | {:mouse, :scroll_up | :scroll_down, non_neg_integer(), non_neg_integer(), [modifier()]}
+          | {:mouse, :scroll_up | :scroll_down, non_neg_integer(), non_neg_integer(),
+             [modifier()]}
           | {:focus, :in | :out}
           | {:paste, :start | :end}
           | {:cursor_position, pos_integer(), pos_integer()}

@@ -317,8 +317,14 @@ defmodule Courgette.PainterTest do
   describe "box with bg and border" do
     test "border is drawn on top of background" do
       buffer = Buffer.new(10, 5)
-      node = layout_node(:box, [bg: :blue, border: :single, border_color: :white],
-               Bounds.new(0, 0, 6, 4))
+
+      node =
+        layout_node(
+          :box,
+          [bg: :blue, border: :single, border_color: :white],
+          Bounds.new(0, 0, 6, 4)
+        )
+
       result = Painter.paint(node, buffer)
 
       # Corners have border graphemes
@@ -509,7 +515,14 @@ defmodule Courgette.PainterTest do
         text_node("Line 6", [], Bounds.new(0, 6, 6, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll], Bounds.new(0, 0, 20, 5), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 0, overflow: :scroll],
+          Bounds.new(0, 0, 20, 5),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       assert grapheme_at(result, 0, 0) == "L"
@@ -531,7 +544,14 @@ defmodule Courgette.PainterTest do
         text_node("GGG", [], Bounds.new(0, 6, 3, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 5), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 2, overflow: :scroll],
+          Bounds.new(0, 0, 20, 5),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # With offset=2, row 0 shows "CCC" (originally at y=2)
@@ -551,7 +571,14 @@ defmodule Courgette.PainterTest do
         text_node("BOT", [], Bounds.new(0, 2, 3, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 2, overflow: :scroll],
+          Bounds.new(0, 0, 20, 3),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Only "BOT" is visible at row 0; TOP and MID shifted above viewport
@@ -573,7 +600,14 @@ defmodule Courgette.PainterTest do
         text_node("EEE", [], Bounds.new(0, 4, 3, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 0, overflow: :scroll],
+          Bounds.new(0, 0, 20, 3),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Only first 3 lines visible
@@ -593,7 +627,14 @@ defmodule Courgette.PainterTest do
         text_node("EEE", [], Bounds.new(0, 4, 3, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 2, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 2, overflow: :scroll],
+          Bounds.new(0, 0, 20, 3),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       assert grapheme_at(result, 0, 0) == "C"
@@ -609,7 +650,14 @@ defmodule Courgette.PainterTest do
         text_node("BBB", [], Bounds.new(0, 1, 3, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 10, overflow: :scroll], Bounds.new(0, 0, 20, 3), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 10, overflow: :scroll],
+          Bounds.new(0, 0, 20, 3),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # All content shifted above viewport
@@ -627,8 +675,14 @@ defmodule Courgette.PainterTest do
         text_node("Foo!!", [], Bounds.new(1, 3, 5, 1))
       ]
 
-      sa = layout_node(:box, [border: :single, scroll_offset: 1, overflow: :scroll],
-             Bounds.new(0, 0, 12, 5), children)
+      sa =
+        layout_node(
+          :box,
+          [border: :single, scroll_offset: 1, overflow: :scroll],
+          Bounds.new(0, 0, 12, 5),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Border is at viewport bounds (unshifted)
@@ -652,8 +706,14 @@ defmodule Courgette.PainterTest do
         text_node("ZZZZZZZZ", [], Bounds.new(1, 2, 8, 1))
       ]
 
-      sa = layout_node(:box, [border: :single, scroll_offset: 0, overflow: :scroll],
-             Bounds.new(0, 0, 12, 4), children)
+      sa =
+        layout_node(
+          :box,
+          [border: :single, scroll_offset: 0, overflow: :scroll],
+          Bounds.new(0, 0, 12, 4),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Top border row preserved
@@ -673,8 +733,14 @@ defmodule Courgette.PainterTest do
         text_node("Hi", [], Bounds.new(0, 0, 2, 1))
       ]
 
-      sa = layout_node(:box, [bg: :blue, scroll_offset: 2, overflow: :scroll],
-             Bounds.new(0, 0, 10, 4), children)
+      sa =
+        layout_node(
+          :box,
+          [bg: :blue, scroll_offset: 2, overflow: :scroll],
+          Bounds.new(0, 0, 10, 4),
+          children
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Background fills entire viewport
@@ -686,8 +752,14 @@ defmodule Courgette.PainterTest do
     test "background and border both render" do
       buffer = Buffer.new(10, 4)
 
-      sa = layout_node(:box, [bg: :red, border: :single, overflow: :scroll],
-             Bounds.new(0, 0, 10, 4), [])
+      sa =
+        layout_node(
+          :box,
+          [bg: :red, border: :single, overflow: :scroll],
+          Bounds.new(0, 0, 10, 4),
+          []
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Border corners
@@ -723,12 +795,23 @@ defmodule Courgette.PainterTest do
         text_node("DD", [], Bounds.new(2, 5, 2, 1))
       ]
 
-      inner_sa = layout_node(:box, [scroll_offset: 1, overflow: :scroll],
-                   Bounds.new(2, 2, 16, 3), inner_children)
+      inner_sa =
+        layout_node(
+          :box,
+          [scroll_offset: 1, overflow: :scroll],
+          Bounds.new(2, 2, 16, 3),
+          inner_children
+        )
 
       outer_children = [inner_sa]
-      outer_sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll],
-                   Bounds.new(0, 0, 20, 6), outer_children)
+
+      outer_sa =
+        layout_node(
+          :box,
+          [scroll_offset: 0, overflow: :scroll],
+          Bounds.new(0, 0, 20, 6),
+          outer_children
+        )
 
       result = Painter.paint(outer_sa, buffer)
 
@@ -748,8 +831,13 @@ defmodule Courgette.PainterTest do
         text_node("World", [], Bounds.new(2, 3, 5, 1))
       ]
 
-      sa = layout_node(:box, [scroll_offset: 0, overflow: :scroll],
-             Bounds.new(2, 2, 16, 6), children)
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 0, overflow: :scroll],
+          Bounds.new(2, 2, 16, 6),
+          children
+        )
 
       # Parent is smaller — clips the scrollable area
       parent = layout_node(:box, [], Bounds.new(0, 0, 10, 5), [sa])
@@ -765,8 +853,14 @@ defmodule Courgette.PainterTest do
     test "empty scroll box does not crash" do
       buffer = Buffer.new(20, 5)
 
-      sa = layout_node(:box, [scroll_offset: 5, bg: :green, overflow: :scroll],
-             Bounds.new(0, 0, 20, 5), [])
+      sa =
+        layout_node(
+          :box,
+          [scroll_offset: 5, bg: :green, overflow: :scroll],
+          Bounds.new(0, 0, 20, 5),
+          []
+        )
+
       result = Painter.paint(sa, buffer)
 
       # Background still painted
@@ -802,8 +896,9 @@ defmodule Courgette.PainterTest do
       ]
 
       # Bordered box: inner area is (1,1) to (8,3), so text clips at x=9
-      node = layout_node(:box, [overflow: :hidden, border: :single],
-               Bounds.new(0, 0, 10, 5), children)
+      node =
+        layout_node(:box, [overflow: :hidden, border: :single], Bounds.new(0, 0, 10, 5), children)
+
       result = Painter.paint(node, buffer)
 
       # Border intact
@@ -897,7 +992,11 @@ defmodule Courgette.PainterTest do
       sidebar = layout_node(:box, [border: :single], Bounds.new(0, 1, 10, 18), [sidebar_title])
 
       content_text = text_node("Welcome!", [], Bounds.new(12, 3, 26, 1))
-      content = layout_node(:box, [border: :rounded, bg: :black], Bounds.new(10, 1, 30, 18), [content_text])
+
+      content =
+        layout_node(:box, [border: :rounded, bg: :black], Bounds.new(10, 1, 30, 18), [
+          content_text
+        ])
 
       root = layout_node(:box, [], Bounds.new(0, 0, 40, 20), [header, sidebar, content])
       result = Painter.paint(root, buffer)

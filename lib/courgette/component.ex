@@ -157,7 +157,12 @@ defmodule Courgette.Component do
       new_slots = all_slots |> Enum.take(new_slot_count) |> Enum.reverse()
 
       Module.put_attribute(env.module, :courgette_components, {name, new_attrs, new_slots})
-      Module.put_attribute(env.module, :courgette_consumed, {length(all_attrs), length(all_slots)})
+
+      Module.put_attribute(
+        env.module,
+        :courgette_consumed,
+        {length(all_attrs), length(all_slots)}
+      )
     end
   end
 

@@ -73,14 +73,22 @@ defmodule Courgette.FocusManagerTest do
     end
 
     test "advances to next" do
-      fm = %FocusManager{focused: {Input, "a"}, order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]}
+      fm = %FocusManager{
+        focused: {Input, "a"},
+        order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]
+      }
+
       {old, new_fm} = FocusManager.focus_next(fm)
       assert old == {Input, "a"}
       assert new_fm.focused == {Select, "b"}
     end
 
     test "wraps from last to first" do
-      fm = %FocusManager{focused: {Button, "c"}, order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]}
+      fm = %FocusManager{
+        focused: {Button, "c"},
+        order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]
+      }
+
       {old, new_fm} = FocusManager.focus_next(fm)
       assert old == {Button, "c"}
       assert new_fm.focused == {Input, "a"}
@@ -117,14 +125,22 @@ defmodule Courgette.FocusManagerTest do
     end
 
     test "retreats to previous" do
-      fm = %FocusManager{focused: {Select, "b"}, order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]}
+      fm = %FocusManager{
+        focused: {Select, "b"},
+        order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]
+      }
+
       {old, new_fm} = FocusManager.focus_prev(fm)
       assert old == {Select, "b"}
       assert new_fm.focused == {Input, "a"}
     end
 
     test "wraps from first to last" do
-      fm = %FocusManager{focused: {Input, "a"}, order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]}
+      fm = %FocusManager{
+        focused: {Input, "a"},
+        order: [{Input, "a"}, {Select, "b"}, {Button, "c"}]
+      }
+
       {old, new_fm} = FocusManager.focus_prev(fm)
       assert old == {Input, "a"}
       assert new_fm.focused == {Button, "c"}

@@ -11,7 +11,19 @@ defmodule Courgette.ThemeTest do
 
     test "has all standard tokens" do
       theme = Theme.default()
-      expected = [:bg, :fg, :primary, :secondary, :success, :warning, :danger, :muted, :border, :surface]
+
+      expected = [
+        :bg,
+        :fg,
+        :primary,
+        :secondary,
+        :success,
+        :warning,
+        :danger,
+        :muted,
+        :border,
+        :surface
+      ]
 
       for token <- expected do
         assert Map.has_key?(theme.tokens, token), "missing token: #{token}"

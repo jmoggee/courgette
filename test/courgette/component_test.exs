@@ -1,7 +1,7 @@
 defmodule TestComponents do
   use Courgette.Component
 
-  attr :name, :string, default: "stranger"
+  attr(:name, :string, default: "stranger")
 
   def greeting(assigns) do
     assigns = assigns(assigns)
@@ -12,7 +12,7 @@ defmodule TestComponents do
     end
   end
 
-  attr :color, :atom
+  attr(:color, :atom)
 
   def themed_text(assigns) do
     assigns = assigns(assigns)
@@ -20,9 +20,9 @@ defmodule TestComponents do
     text(color: color, do: "themed")
   end
 
-  attr :title, :string, default: "Untitled"
-  slot :header
-  slot :body
+  attr(:title, :string, default: "Untitled")
+  slot(:header)
+  slot(:body)
 
   def card(assigns) do
     assigns = assigns(assigns)
@@ -184,8 +184,8 @@ defmodule Courgette.ComponentTest do
           defmodule DuplicateAttrComponent do
             use Courgette.Component
 
-            attr :name, :string
-            attr :name, :string
+            attr(:name, :string)
+            attr(:name, :string)
 
             def my_func(assigns) do
               assigns = assigns(assigns)
@@ -203,7 +203,7 @@ defmodule Courgette.ComponentTest do
           defmodule InvalidTypeComponent do
             use Courgette.Component
 
-            attr :name, :nonsense
+            attr(:name, :nonsense)
 
             def my_func(assigns) do
               assigns = assigns(assigns)
@@ -221,8 +221,8 @@ defmodule Courgette.ComponentTest do
           defmodule DuplicateSlotComponent do
             use Courgette.Component
 
-            slot :header
-            slot :header
+            slot(:header)
+            slot(:header)
 
             def my_func(assigns) do
               assigns = assigns(assigns)

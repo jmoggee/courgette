@@ -55,7 +55,10 @@ defmodule Courgette.Buffer.Writer do
   defp style_diff(state, state), do: []
 
   # Different state
-  defp style_diff({prev_fg, prev_bg, prev_style, prev_url}, {new_fg, new_bg, new_style, new_url} = new_state) do
+  defp style_diff(
+         {prev_fg, prev_bg, prev_style, prev_url},
+         {new_fg, new_bg, new_style, new_url} = new_state
+       ) do
     removed_keys = Map.keys(prev_style) -- Map.keys(new_style)
 
     if removed_keys != [] do

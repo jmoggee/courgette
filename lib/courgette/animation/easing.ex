@@ -104,8 +104,12 @@ defmodule Courgette.Animation.Easing do
     t = clamp(t)
 
     cond do
-      t == 0.0 -> 0.0
-      t == 1.0 -> 1.0
+      t == 0.0 ->
+        0.0
+
+      t == 1.0 ->
+        1.0
+
       true ->
         c4 = 2.0 * :math.pi() / 3.0
         :math.pow(2.0, -10.0 * t) * :math.sin((t * 10.0 - 0.75) * c4) + 1.0

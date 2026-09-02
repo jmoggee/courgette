@@ -10,9 +10,10 @@ defmodule Courgette.LiveComponent.LifecycleTest do
 
   describe "extract_components/1" do
     test "returns [] for tree with no live_components" do
-      tree = Element.new(:box, [], [
-        Element.new(:text, [], ["Hello"])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:text, [], ["Hello"])
+        ])
 
       assert Lifecycle.extract_components(tree) == []
     end
@@ -22,10 +23,11 @@ defmodule Courgette.LiveComponent.LifecycleTest do
     end
 
     test "finds direct live_component children" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", initial: 1], []),
-        Element.new(:live_component, [module: AgentCard, id: "b"], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a", initial: 1], []),
+          Element.new(:live_component, [module: AgentCard, id: "b"], [])
+        ])
 
       specs = Lifecycle.extract_components(tree)
 
@@ -40,10 +42,10 @@ defmodule Courgette.LiveComponent.LifecycleTest do
       # but verifies we don't look inside)
       inner = Element.new(:live_component, [module: AgentCard, id: "inner"], [])
 
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "outer"],
-          [inner])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "outer"], [inner])
+        ])
 
       specs = Lifecycle.extract_components(tree)
 
@@ -53,27 +55,29 @@ defmodule Courgette.LiveComponent.LifecycleTest do
     end
 
     test "finds live_components nested inside boxes" do
-      tree = Element.new(:box, [], [
-        Element.new(:box, [border: :single], [
-          Element.new(:live_component, [module: Counter, id: "deep"], [])
-        ]),
-        Element.new(:text, [], ["Label"])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:box, [border: :single], [
+            Element.new(:live_component, [module: Counter, id: "deep"], [])
+          ]),
+          Element.new(:text, [], ["Label"])
+        ])
 
       specs = Lifecycle.extract_components(tree)
       assert specs == [{Counter, "deep", %{}}]
     end
 
     test "handles multiple levels of nesting" do
-      tree = Element.new(:box, [], [
+      tree =
         Element.new(:box, [], [
           Element.new(:box, [], [
-            Element.new(:live_component, [module: Counter, id: "1"], []),
-            Element.new(:live_component, [module: Counter, id: "2"], [])
-          ])
-        ]),
-        Element.new(:live_component, [module: AgentCard, id: "3"], [])
-      ])
+            Element.new(:box, [], [
+              Element.new(:live_component, [module: Counter, id: "1"], []),
+              Element.new(:live_component, [module: Counter, id: "2"], [])
+            ])
+          ]),
+          Element.new(:live_component, [module: AgentCard, id: "3"], [])
+        ])
 
       specs = Lifecycle.extract_components(tree)
 
@@ -90,9 +94,10 @@ defmodule Courgette.LiveComponent.LifecycleTest do
       child1 = Element.new(:text, [], ["Hello"])
       child2 = Element.new(:text, [], ["World"])
 
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", label: "test"], [child1, child2])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a", label: "test"], [child1, child2])
+        ])
 
       [{Counter, "a", props}] = Lifecycle.extract_components(tree)
       assert props.label == "test"
@@ -100,9 +105,10 @@ defmodule Courgette.LiveComponent.LifecycleTest do
     end
 
     test "element with no children omits :inner_block" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", label: "test"], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a", label: "test"], [])
+        ])
 
       [{Counter, "a", props}] = Lifecycle.extract_components(tree)
       assert props == %{label: "test"}
@@ -112,9 +118,14 @@ defmodule Courgette.LiveComponent.LifecycleTest do
 
   describe "extract_components strips :focusable" do
     test "focusable prop is not included in returned props" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", focusable: true, label: "hi"], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(
+            :live_component,
+            [module: Counter, id: "a", focusable: true, label: "hi"],
+            []
+          )
+        ])
 
       [{Counter, "a", props}] = Lifecycle.extract_components(tree)
       refute Map.has_key?(props, :focusable)
@@ -128,40 +139,44 @@ defmodule Courgette.LiveComponent.LifecycleTest do
     end
 
     test "returns [] when no components are focusable" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a"], []),
-        Element.new(:live_component, [module: AgentCard, id: "b"], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a"], []),
+          Element.new(:live_component, [module: AgentCard, id: "b"], [])
+        ])
 
       assert Lifecycle.extract_focusable_order(tree) == []
     end
 
     test "finds focusable components in document order" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
-        Element.new(:live_component, [module: AgentCard, id: "b", focusable: true], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
+          Element.new(:live_component, [module: AgentCard, id: "b", focusable: true], [])
+        ])
 
       assert Lifecycle.extract_focusable_order(tree) == [{Counter, "a"}, {AgentCard, "b"}]
     end
 
     test "skips non-focusable components" do
-      tree = Element.new(:box, [], [
-        Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
-        Element.new(:live_component, [module: AgentCard, id: "b"], []),
-        Element.new(:live_component, [module: Counter, id: "c", focusable: true], [])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:live_component, [module: Counter, id: "a", focusable: true], []),
+          Element.new(:live_component, [module: AgentCard, id: "b"], []),
+          Element.new(:live_component, [module: Counter, id: "c", focusable: true], [])
+        ])
 
       assert Lifecycle.extract_focusable_order(tree) == [{Counter, "a"}, {Counter, "c"}]
     end
 
     test "finds focusable components nested inside boxes" do
-      tree = Element.new(:box, [], [
-        Element.new(:box, [border: :single], [
-          Element.new(:live_component, [module: Counter, id: "deep", focusable: true], [])
-        ]),
-        Element.new(:text, [], ["Label"])
-      ])
+      tree =
+        Element.new(:box, [], [
+          Element.new(:box, [border: :single], [
+            Element.new(:live_component, [module: Counter, id: "deep", focusable: true], [])
+          ]),
+          Element.new(:text, [], ["Label"])
+        ])
 
       assert Lifecycle.extract_focusable_order(tree) == [{Counter, "deep"}]
     end

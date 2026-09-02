@@ -573,7 +573,8 @@ defmodule Courgette.LiveComponent.ServerTest do
 
     @impl true
     def mount(assigns) do
-      {:ok, assign_new(assigns, :focused, fn -> false end) |> assign_new(:last_event, fn -> nil end)}
+      {:ok,
+       assign_new(assigns, :focused, fn -> false end) |> assign_new(:last_event, fn -> nil end)}
     end
 
     @impl true
@@ -759,13 +760,18 @@ defmodule Courgette.LiveComponent.ServerTest do
 
     @impl true
     def mount(assigns) do
-      {:ok, assign_new(assigns, :root_event, fn -> nil end) |> assign_new(:side_effect_msg, fn -> nil end)}
+      {:ok,
+       assign_new(assigns, :root_event, fn -> nil end)
+       |> assign_new(:side_effect_msg, fn -> nil end)}
     end
 
     @impl true
     def render(assigns) do
       box do
-        text(do: "root:event=#{inspect(assigns.root_event)}:msg=#{inspect(assigns.side_effect_msg)}")
+        text(
+          do: "root:event=#{inspect(assigns.root_event)}:msg=#{inspect(assigns.side_effect_msg)}"
+        )
+
         live_component(SideEffectChild, id: "se1", focusable: true)
       end
     end
@@ -848,6 +854,7 @@ defmodule Courgette.LiveComponent.ServerTest do
         {:ok, pid} = ComponentRegistry.lookup(FocusableChild, "f#{i}")
         :sys.get_state(pid)
       end
+
       :sys.get_state(ctx.server)
 
       tree = last_tree(ctx)
@@ -872,6 +879,7 @@ defmodule Courgette.LiveComponent.ServerTest do
         {:ok, pid} = ComponentRegistry.lookup(FocusableChild, "f#{i}")
         :sys.get_state(pid)
       end
+
       :sys.get_state(ctx.server)
 
       tree = last_tree(ctx)
@@ -1646,7 +1654,8 @@ defmodule Courgette.LiveComponent.ServerTest do
 
     @impl true
     def mount(assigns) do
-      {:ok, assign_new(assigns, :escape_count, fn -> 0 end) |> assign_new(:last_event, fn -> nil end)}
+      {:ok,
+       assign_new(assigns, :escape_count, fn -> 0 end) |> assign_new(:last_event, fn -> nil end)}
     end
 
     @impl true
@@ -1656,7 +1665,8 @@ defmodule Courgette.LiveComponent.ServerTest do
 
     @impl true
     def handle_event({:key, :escape}, assigns) do
-      {:noreply, assigns |> assign(:escape_count, assigns.escape_count + 1) |> assign(:last_event, :escape)}
+      {:noreply,
+       assigns |> assign(:escape_count, assigns.escape_count + 1) |> assign(:last_event, :escape)}
     end
 
     def handle_event(event, assigns) do

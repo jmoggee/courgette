@@ -226,7 +226,12 @@ defmodule Courgette.Buffer.DiffTest do
       assert length(runs) == 3
       assert Enum.at(runs, 0) == %Run{x: 0, y: 0, cells: [Cell.new("h"), Cell.new("i")]}
       assert Enum.at(runs, 1) == %Run{x: 5, y: 0, cells: [Cell.new("!")]}
-      assert Enum.at(runs, 2) == %Run{x: 2, y: 2, cells: [Cell.new("x"), Cell.new("y"), Cell.new("z")]}
+
+      assert Enum.at(runs, 2) == %Run{
+               x: 2,
+               y: 2,
+               cells: [Cell.new("x"), Cell.new("y"), Cell.new("z")]
+             }
     end
   end
 
@@ -238,8 +243,18 @@ defmodule Courgette.Buffer.DiffTest do
       runs = Diff.diff(old, new)
       # One run per row since all cells are adjacent
       assert length(runs) == 2
-      assert Enum.at(runs, 0) == %Run{x: 0, y: 0, cells: [Cell.new("X"), Cell.new("X"), Cell.new("X")]}
-      assert Enum.at(runs, 1) == %Run{x: 0, y: 1, cells: [Cell.new("X"), Cell.new("X"), Cell.new("X")]}
+
+      assert Enum.at(runs, 0) == %Run{
+               x: 0,
+               y: 0,
+               cells: [Cell.new("X"), Cell.new("X"), Cell.new("X")]
+             }
+
+      assert Enum.at(runs, 1) == %Run{
+               x: 0,
+               y: 1,
+               cells: [Cell.new("X"), Cell.new("X"), Cell.new("X")]
+             }
     end
   end
 

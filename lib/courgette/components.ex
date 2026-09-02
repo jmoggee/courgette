@@ -19,8 +19,8 @@ defmodule Courgette.Components do
   @horizontal_rule String.duplicate("─", 500)
   @vertical_rule String.duplicate("│", 500)
 
-  attr :orientation, :atom, default: :horizontal
-  attr :color, :atom
+  attr(:orientation, :atom, default: :horizontal)
+  attr(:color, :atom)
 
   @doc """
   A horizontal or vertical divider line.
@@ -42,8 +42,8 @@ defmodule Courgette.Components do
     end
   end
 
-  attr :label, :string
-  attr :color, :atom
+  attr(:label, :string)
+  attr(:color, :atom)
 
   @doc """
   A colored label badge with rounded border.
@@ -63,9 +63,9 @@ defmodule Courgette.Components do
     end
   end
 
-  attr :text, :string
-  attr :color, :atom
-  attr :divider, :boolean, default: true
+  attr(:text, :string)
+  attr(:color, :atom)
+  attr(:divider, :boolean, default: true)
 
   @doc """
   A themed heading with optional bottom divider.
@@ -90,8 +90,8 @@ defmodule Courgette.Components do
     end
   end
 
-  attr :label, :string
-  attr :value, :string
+  attr(:label, :string)
+  attr(:value, :string)
 
   @doc """
   A key-value pair row with muted label.
@@ -116,7 +116,7 @@ defmodule Courgette.Components do
     end
   end
 
-  attr :message, :string
+  attr(:message, :string)
 
   @doc """
   A centered italic placeholder message for empty states.

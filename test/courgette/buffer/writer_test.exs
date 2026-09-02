@@ -35,6 +35,7 @@ defmodule Courgette.Buffer.WriterTest do
         %Run{x: 0, y: 0, cells: [Cell.new("A")]},
         %Run{x: 5, y: 3, cells: [Cell.new("B")]}
       ]
+
       result = to_binary(Writer.render(runs))
       assert result =~ "\e[1;1H"
       assert result =~ "\e[4;6H"
@@ -245,10 +246,12 @@ defmodule Courgette.Buffer.WriterTest do
 
     test "identical style tracked across runs" do
       cell = Cell.new("A", fg: :red)
+
       runs = [
         %Run{x: 0, y: 0, cells: [cell]},
         %Run{x: 5, y: 0, cells: [cell]}
       ]
+
       result = to_binary(Writer.render(runs))
       # fg(:red) emitted once (first run), not re-emitted for second
       assert count(result, "\e[31m") == 1
@@ -398,10 +401,12 @@ defmodule Courgette.Buffer.WriterTest do
 
     test "url tracked across runs" do
       cell = Cell.new("A", url: "https://example.com")
+
       runs = [
         %Run{x: 0, y: 0, cells: [cell]},
         %Run{x: 5, y: 0, cells: [cell]}
       ]
+
       result = to_binary(Writer.render(runs))
       # URL emitted once, not re-emitted for second run with same state
       assert count(result, "\e]8;;https://example.com\e\\") == 1
@@ -415,6 +420,7 @@ defmodule Courgette.Buffer.WriterTest do
         %Run{x: 5, y: 0, cells: [Cell.new("!", fg: :blue, bold: true)]},
         %Run{x: 0, y: 1, cells: [Cell.new("W"), Cell.new("o"), Cell.new("w")]}
       ]
+
       result = to_binary(Writer.render(runs))
       assert result =~ "\e[1;1H"
       assert result =~ "\e[1;6H"
@@ -451,6 +457,7 @@ defmodule Courgette.Buffer.WriterTest do
         %Run{x: 0, y: 0, cells: [Cell.new("X", fg: :red, bold: true)]},
         %Run{x: 10, y: 5, cells: [Cell.new("Y", bg: {0, 255, 0})]}
       ]
+
       # Should not raise — valid iodata
       result = Writer.render(runs)
       assert is_list(result)

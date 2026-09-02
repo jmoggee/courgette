@@ -220,6 +220,7 @@ defmodule Courgette.Components.TableTest do
       )
 
     tree = render_tree(view)
+
     assert find_justify_content(tree, :center),
            "Expected a cell with justify_content: :center for center alignment"
   end
@@ -256,7 +257,10 @@ defmodule Courgette.Components.TableTest do
   # Helper to find justify_content value in tree
   defp find_justify_content(nil, _target), do: false
 
-  defp find_justify_content(%Courgette.Element{type: :box, props: props, children: children}, target) do
+  defp find_justify_content(
+         %Courgette.Element{type: :box, props: props, children: children},
+         target
+       ) do
     if Map.get(props, :justify_content) == target do
       true
     else

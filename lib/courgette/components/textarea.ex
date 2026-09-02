@@ -73,7 +73,10 @@ defmodule Courgette.Components.Textarea do
     offset = assigns.scroll_offset
     visible_lines = Enum.slice(assigns.lines, offset, visible_height)
 
-    box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
+    box border: :single,
+        border_color: border_color,
+        flex_direction: :column,
+        height: assigns.height do
       for {line_graphemes, idx} <- Enum.with_index(visible_lines) do
         render_visible_line(line_graphemes, idx + offset, assigns.cursor_line, assigns.cursor_col)
       end
@@ -93,7 +96,10 @@ defmodule Courgette.Components.Textarea do
   end
 
   defp render_readonly(assigns, border_color) do
-    box border: :single, border_color: border_color, flex_direction: :column, height: assigns.height do
+    box border: :single,
+        border_color: border_color,
+        flex_direction: :column,
+        height: assigns.height do
       for line_graphemes <- assigns.lines do
         render_plain_line(line_graphemes)
       end
@@ -666,7 +672,9 @@ defmodule Courgette.Components.Textarea do
     if Autocomplete.active?(ac) do
       if Autocomplete.query_char?(ch) do
         # Still in a valid query — extract and notify parent
-        query = Autocomplete.extract_query(ac, assigns.lines, assigns.cursor_line, assigns.cursor_col)
+        query =
+          Autocomplete.extract_query(ac, assigns.lines, assigns.cursor_line, assigns.cursor_col)
+
         notify_trigger(assigns, ac.active.trigger.tag, query)
         assigns
       else
@@ -675,7 +683,8 @@ defmodule Courgette.Components.Textarea do
       end
     else
       # Not active — check if this char starts a trigger
-      new_ac = Autocomplete.check_trigger(ac, ch, assigns.cursor_line, assigns.cursor_col, assigns.lines)
+      new_ac =
+        Autocomplete.check_trigger(ac, ch, assigns.cursor_line, assigns.cursor_col, assigns.lines)
 
       if Autocomplete.active?(new_ac) do
         assigns = assign(assigns, :autocomplete, new_ac)
@@ -750,7 +759,10 @@ defmodule Courgette.Components.Textarea do
 
   defp notify_trigger_accepted(assigns, acceptance) do
     if assigns.on_trigger && assigns[:parent_pid] do
-      send(assigns.parent_pid, {assigns.on_trigger, %{tag: acceptance.tag, value: acceptance.value, accepted: true}})
+      send(
+        assigns.parent_pid,
+        {assigns.on_trigger, %{tag: acceptance.tag, value: acceptance.value, accepted: true}}
+      )
     end
   end
 

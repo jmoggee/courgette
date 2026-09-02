@@ -57,9 +57,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "fixed-size children in row" do
     test "single fixed child" do
-      el = box([width: 80, height: 24], [
-        box(width: 20, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24], [
+          box(width: 20, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -71,10 +72,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "two fixed children laid out left to right" do
-      el = box([width: 80, height: 24], [
-        box(width: 20, height: 10),
-        box(width: 30, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24], [
+          box(width: 20, height: 10),
+          box(width: 30, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c0 = child(result, 0)
@@ -87,10 +89,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "children with gap" do
-      el = box([width: 80, height: 24, gap: 2], [
-        box(width: 20, height: 10),
-        box(width: 20, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, gap: 2], [
+          box(width: 20, height: 10),
+          box(width: 20, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c0 = child(result, 0)
@@ -105,10 +108,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "fixed-size children in column" do
     test "children laid out top to bottom" do
-      el = box([width: 80, height: 24, flex_direction: :column], [
-        box(width: 80, height: 5),
-        box(width: 80, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, flex_direction: :column], [
+          box(width: 80, height: 5),
+          box(width: 80, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c0 = child(result, 0)
@@ -121,10 +125,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "column with gap" do
-      el = box([width: 80, height: 24, flex_direction: :column, gap: 1], [
-        box(width: 80, height: 5),
-        box(width: 80, height: 5)
-      ])
+      el =
+        box([width: 80, height: 24, flex_direction: :column, gap: 1], [
+          box(width: 80, height: 5),
+          box(width: 80, height: 5)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c1 = child(result, 1)
@@ -137,9 +142,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "flex_grow" do
     test "single child grows to fill container" do
-      el = box([width: 100, height: 20], [
-        box(flex: 1, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex: 1, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c = child(result, 0)
@@ -148,10 +154,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "two children with equal flex_grow share space" do
-      el = box([width: 100, height: 20], [
-        box(flex: 1, height: 20),
-        box(flex: 1, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex: 1, height: 20),
+          box(flex: 1, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -164,10 +171,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "unequal flex_grow" do
-      el = box([width: 100, height: 20], [
-        box(flex_grow: 1, flex_basis: 0, height: 20),
-        box(flex_grow: 2, flex_basis: 0, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex_grow: 1, flex_basis: 0, height: 20),
+          box(flex_grow: 2, flex_basis: 0, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -180,10 +188,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
     test "flex_grow with flex_basis" do
       # flex_basis gives initial size, grow distributes remaining
-      el = box([width: 100, height: 20], [
-        box(flex_grow: 1, flex_basis: 20, height: 20),
-        box(flex_grow: 1, flex_basis: 20, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex_grow: 1, flex_basis: 20, height: 20),
+          box(flex_grow: 1, flex_basis: 20, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -194,10 +203,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "flex_grow in column" do
-      el = box([width: 80, height: 100, flex_direction: :column], [
-        box(flex: 1, width: 80),
-        box(flex: 1, width: 80)
-      ])
+      el =
+        box([width: 80, height: 100, flex_direction: :column], [
+          box(flex: 1, width: 80),
+          box(flex: 1, width: 80)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 100.0})
       c0 = child(result, 0)
@@ -212,10 +222,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "flex_shrink" do
     test "children shrink when total exceeds container" do
-      el = box([width: 100, height: 20], [
-        box(width: 80, height: 20, flex_shrink: 1),
-        box(width: 80, height: 20, flex_shrink: 1)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(width: 80, height: 20, flex_shrink: 1),
+          box(width: 80, height: 20, flex_shrink: 1)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -228,10 +239,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "flex_shrink: 0 prevents shrinking" do
-      el = box([width: 100, height: 20], [
-        box(width: 80, height: 20, flex_shrink: 0),
-        box(width: 80, height: 20, flex_shrink: 1)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(width: 80, height: 20, flex_shrink: 0),
+          box(width: 80, height: 20, flex_shrink: 1)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -246,9 +258,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "border and padding offsets" do
     test "children offset by parent border" do
-      el = box([width: 22, height: 12, border: :single], [
-        box(width: 10, height: 5)
-      ])
+      el =
+        box([width: 22, height: 12, border: :single], [
+          box(width: 10, height: 5)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -259,9 +272,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "children offset by parent padding" do
-      el = box([width: 30, height: 20, padding: 3], [
-        box(width: 10, height: 5)
-      ])
+      el =
+        box([width: 30, height: 20, padding: 3], [
+          box(width: 10, height: 5)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -271,9 +285,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "children offset by border + padding combined" do
-      el = box([width: 30, height: 20, border: :single, padding: 2], [
-        box(width: 10, height: 5)
-      ])
+      el =
+        box([width: 30, height: 20, border: :single, padding: 2], [
+          box(width: 10, height: 5)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -289,10 +304,12 @@ defmodule Courgette.Layout.Engine.FlexTest do
     setup do
       # 100-wide container, two 20-wide children = 60 free space
       make = fn jc ->
-        el = box([width: 100, height: 20, justify_content: jc], [
-          box(width: 20, height: 20),
-          box(width: 20, height: 20)
-        ])
+        el =
+          box([width: 100, height: 20, justify_content: jc], [
+            box(width: 20, height: 20),
+            box(width: 20, height: 20)
+          ])
+
         Flex.layout(el, %{width: 100.0, height: 20.0})
       end
 
@@ -343,9 +360,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "align_items" do
     test "stretch (default) — children fill cross axis" do
-      el = box([width: 80, height: 24], [
-        box(flex: 1)
-      ])
+      el =
+        box([width: 80, height: 24], [
+          box(flex: 1)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -355,9 +373,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "flex_start — children at top" do
-      el = box([width: 80, height: 24, align_items: :flex_start], [
-        box(width: 20, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, align_items: :flex_start], [
+          box(width: 20, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -367,9 +386,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "flex_end — children at bottom" do
-      el = box([width: 80, height: 24, align_items: :flex_end], [
-        box(width: 20, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, align_items: :flex_end], [
+          box(width: 20, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -379,9 +399,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "center — children centered on cross axis" do
-      el = box([width: 80, height: 24, align_items: :center], [
-        box(width: 20, height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, align_items: :center], [
+          box(width: 20, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -394,10 +415,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "align_self" do
     test "overrides align_items for individual child" do
-      el = box([width: 80, height: 24, align_items: :flex_start], [
-        box(width: 20, height: 10),
-        box(width: 20, height: 10, align_self: :flex_end)
-      ])
+      el =
+        box([width: 80, height: 24, align_items: :flex_start], [
+          box(width: 20, height: 10),
+          box(width: 20, height: 10, align_self: :flex_end)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c0 = child(result, 0)
@@ -412,10 +434,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "flex_wrap" do
     test "items wrap to next line when exceeding main size" do
-      el = box([width: 50, height: 40, flex_wrap: :wrap, align_content: :flex_start], [
-        box(width: 30, height: 10),
-        box(width: 30, height: 10)
-      ])
+      el =
+        box([width: 50, height: 40, flex_wrap: :wrap, align_content: :flex_start], [
+          box(width: 30, height: 10),
+          box(width: 30, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 50.0, height: 40.0})
       c0 = child(result, 0)
@@ -430,10 +453,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "no_wrap keeps all items on one line" do
-      el = box([width: 50, height: 40, flex_wrap: :no_wrap], [
-        box(width: 30, height: 10),
-        box(width: 30, height: 10)
-      ])
+      el =
+        box([width: 50, height: 40, flex_wrap: :no_wrap], [
+          box(width: 30, height: 10),
+          box(width: 30, height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 50.0, height: 40.0})
       c0 = child(result, 0)
@@ -449,10 +473,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "min/max constraints" do
     test "min_width prevents shrinking below minimum" do
-      el = box([width: 100, height: 20], [
-        box(flex: 1, height: 20, min_width: 60),
-        box(flex: 1, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex: 1, height: 20, min_width: 60),
+          box(flex: 1, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -461,10 +486,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "max_width prevents growing above maximum" do
-      el = box([width: 100, height: 20], [
-        box(flex: 1, height: 20, max_width: 30),
-        box(flex: 1, height: 20)
-      ])
+      el =
+        box([width: 100, height: 20], [
+          box(flex: 1, height: 20, max_width: 30),
+          box(flex: 1, height: 20)
+        ])
 
       result = Flex.layout(el, %{width: 100.0, height: 20.0})
       c0 = child(result, 0)
@@ -477,9 +503,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "text in flex layout" do
     test "text leaf measures content" do
-      el = box([width: 80, height: 24, align_items: :flex_start], [
-        text("Hello")
-      ])
+      el =
+        box([width: 80, height: 24, align_items: :flex_start], [
+          text("Hello")
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -489,9 +516,10 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "text with explicit size uses that size" do
-      el = box([width: 80, height: 24], [
-        text("Hello", width: 20, height: 3)
-      ])
+      el =
+        box([width: 80, height: 24], [
+          text("Hello", width: 20, height: 3)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c = child(result, 0)
@@ -505,12 +533,13 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "nested containers" do
     test "child container lays out its own children" do
-      el = box([width: 80, height: 24], [
-        box([width: 40, height: 24], [
-          box(width: 20, height: 10),
-          box(width: 20, height: 10)
+      el =
+        box([width: 80, height: 24], [
+          box([width: 40, height: 24], [
+            box(width: 20, height: 10),
+            box(width: 20, height: 10)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       outer_child = child(result, 0)
@@ -524,11 +553,12 @@ defmodule Courgette.Layout.Engine.FlexTest do
     end
 
     test "nested container with border offsets grandchildren" do
-      el = box([width: 80, height: 24], [
-        box([width: 40, height: 24, border: :single], [
-          box(width: 10, height: 5)
+      el =
+        box([width: 80, height: 24], [
+          box([width: 40, height: 24, border: :single], [
+            box(width: 10, height: 5)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       outer_child = child(result, 0)
@@ -544,10 +574,11 @@ defmodule Courgette.Layout.Engine.FlexTest do
 
   describe "column with stretch" do
     test "row children stretch in cross (height) when column" do
-      el = box([width: 80, height: 24, flex_direction: :column], [
-        box(height: 5),
-        box(height: 10)
-      ])
+      el =
+        box([width: 80, height: 24, flex_direction: :column], [
+          box(height: 5),
+          box(height: 10)
+        ])
 
       result = Flex.layout(el, %{width: 80.0, height: 24.0})
       c0 = child(result, 0)

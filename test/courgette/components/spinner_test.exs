@@ -99,12 +99,36 @@ defmodule Courgette.Components.SpinnerTest do
 
   test "all styles render without error" do
     styles = [
-      :dots, :dots_pulse, :dots_orbit, :dots_scroll, :dots_bounce, :sand,
-      :braille_double, :braille_six, :braille_eight_double,
-      :circle, :arc, :triangle, :quarter, :box_bounce,
-      :pipe, :box_invert, :square_corners,
-      :wave, :pulse, :meter, :grow_horizontal, :noise, :layer,
-      :line, :star, :point, :bounce, :arrow, :ellipsis, :hamburger
+      :dots,
+      :dots_pulse,
+      :dots_orbit,
+      :dots_scroll,
+      :dots_bounce,
+      :sand,
+      :braille_double,
+      :braille_six,
+      :braille_eight_double,
+      :circle,
+      :arc,
+      :triangle,
+      :quarter,
+      :box_bounce,
+      :pipe,
+      :box_invert,
+      :square_corners,
+      :wave,
+      :pulse,
+      :meter,
+      :grow_horizontal,
+      :noise,
+      :layer,
+      :line,
+      :star,
+      :point,
+      :bounce,
+      :arrow,
+      :ellipsis,
+      :hamburger
     ]
 
     for style <- styles do

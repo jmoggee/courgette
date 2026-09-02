@@ -18,14 +18,18 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
   defp box(props, children \\ []), do: Element.new(:box, props, children)
 
   defp assert_layout(result, expected) do
-    assert_in_delta result.width, expected.w, 0.5,
-      "width: expected #{expected.w}, got #{result.width}"
-    assert_in_delta result.height, expected.h, 0.5,
-      "height: expected #{expected.h}, got #{result.height}"
-    assert_in_delta result.x, expected.x, 0.5,
-      "x: expected #{expected.x}, got #{result.x}"
-    assert_in_delta result.y, expected.y, 0.5,
-      "y: expected #{expected.y}, got #{result.y}"
+    assert_in_delta result.width,
+                    expected.w,
+                    0.5,
+                    "width: expected #{expected.w}, got #{result.width}"
+
+    assert_in_delta result.height,
+                    expected.h,
+                    0.5,
+                    "height: expected #{expected.h}, got #{result.height}"
+
+    assert_in_delta result.x, expected.x, 0.5, "x: expected #{expected.x}, got #{result.x}"
+    assert_in_delta result.y, expected.y, 0.5, "y: expected #{expected.y}, got #{result.y}"
   end
 
   defp child(result, idx), do: Enum.at(result.children, idx)
@@ -34,10 +38,11 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_basis_flex_grow_row" do
     test "child with basis=50 and flex_grow=1 gets 75, other gets 25" do
-      el = box([width: 100, height: 100], [
-        box(flex_grow: 1, flex_basis: 50),
-        box(flex_grow: 1)
-      ])
+      el =
+        box([width: 100, height: 100], [
+          box(flex_grow: 1, flex_basis: 50),
+          box(flex_grow: 1)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -49,10 +54,11 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_basis_flex_grow_column" do
     test "column direction: heights 75 and 25" do
-      el = box([width: 100, height: 100, flex_direction: :column], [
-        box(flex_grow: 1, flex_basis: 50),
-        box(flex_grow: 1)
-      ])
+      el =
+        box([width: 100, height: 100, flex_direction: :column], [
+          box(flex_grow: 1, flex_basis: 50),
+          box(flex_grow: 1)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -64,10 +70,11 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_shrink_flex_grow_row" do
     test "two 500w children in 500w container shrink to 250 each" do
-      el = box([width: 500, height: 500], [
-        box(flex_grow: 0, flex_shrink: 1, width: 500, height: 100),
-        box(flex_grow: 0, flex_shrink: 1, width: 500, height: 100)
-      ])
+      el =
+        box([width: 500, height: 500], [
+          box(flex_grow: 0, flex_shrink: 1, width: 500, height: 100),
+          box(flex_grow: 0, flex_shrink: 1, width: 500, height: 100)
+        ])
 
       r = Flex.layout(el, %{width: 500.0, height: 500.0})
 
@@ -81,11 +88,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "justify_content_row_flex_start" do
     test "three 10w children packed at start" do
-      el = box([width: 100, height: 100, justify_content: :flex_start], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :flex_start], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -98,11 +106,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "justify_content_row_center" do
     test "three 10w children centered" do
-      el = box([width: 100, height: 100, justify_content: :center], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :center], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -114,11 +123,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "justify_content_row_flex_end" do
     test "three 10w children packed at end" do
-      el = box([width: 100, height: 100, justify_content: :flex_end], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :flex_end], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -130,11 +140,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "justify_content_row_space_between" do
     test "three 10w children with space between" do
-      el = box([width: 100, height: 100, justify_content: :space_between], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :space_between], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -146,11 +157,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "justify_content_row_space_around" do
     test "three 10w children with space around" do
-      el = box([width: 100, height: 100, justify_content: :space_around], [
-        box(width: 10),
-        box(width: 10),
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :space_around], [
+          box(width: 10),
+          box(width: 10),
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -164,11 +176,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
   describe "justify_content_row_space_evenly" do
     test "three 0w/10h children with space evenly" do
       # Taffy: children have width=auto (0), height=10
-      el = box([width: 100, height: 100, justify_content: :space_evenly], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
+      el =
+        box([width: 100, height: 100, justify_content: :space_evenly], [
+          box(height: 10),
+          box(height: 10),
+          box(height: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -182,9 +195,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "align_items_flex_start" do
     test "10x10 child at top" do
-      el = box([width: 100, height: 100, align_items: :flex_start], [
-        box(width: 10, height: 10)
-      ])
+      el =
+        box([width: 100, height: 100, align_items: :flex_start], [
+          box(width: 10, height: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -194,9 +208,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "align_items_center" do
     test "10x10 child centered vertically" do
-      el = box([width: 100, height: 100, align_items: :center], [
-        box(width: 10, height: 10)
-      ])
+      el =
+        box([width: 100, height: 100, align_items: :center], [
+          box(width: 10, height: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -206,9 +221,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "align_items_flex_end" do
     test "10x10 child at bottom" do
-      el = box([width: 100, height: 100, align_items: :flex_end], [
-        box(width: 10, height: 10)
-      ])
+      el =
+        box([width: 100, height: 100, align_items: :flex_end], [
+          box(width: 10, height: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -218,9 +234,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "align_items_stretch" do
     test "10w child stretches to full height" do
-      el = box([width: 100, height: 100, align_items: :stretch], [
-        box(width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, align_items: :stretch], [
+          box(width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -230,9 +247,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "align_self_flex_end" do
     test "10x10 child with align_self=flex_end pushed to bottom" do
-      el = box([width: 100, height: 100, align_items: :flex_start], [
-        box(width: 10, height: 10, align_self: :flex_end)
-      ])
+      el =
+        box([width: 100, height: 100, align_items: :flex_start], [
+          box(width: 10, height: 10, align_self: :flex_end)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
 
@@ -244,12 +262,13 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "wrap_row" do
     test "4 children wrap into 2 rows, container height from content" do
-      el = box([width: 100, flex_wrap: :wrap, align_items: :flex_start], [
-        box(width: 31, height: 30),
-        box(width: 32, height: 30),
-        box(width: 33, height: 30),
-        box(width: 34, height: 30)
-      ])
+      el =
+        box([width: 100, flex_wrap: :wrap, align_items: :flex_start], [
+          box(width: 31, height: 30),
+          box(width: 32, height: 30),
+          box(width: 33, height: 30),
+          box(width: 34, height: 30)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: nil})
 
@@ -265,10 +284,11 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_wrap_align_stretch_fits_one_row" do
     test "2 children fit in one row, stretch to full height" do
-      el = box([width: 150, height: 100, flex_wrap: :wrap], [
-        box(width: 50),
-        box(width: 50)
-      ])
+      el =
+        box([width: 150, height: 100, flex_wrap: :wrap], [
+          box(width: 50),
+          box(width: 50)
+        ])
 
       r = Flex.layout(el, %{width: 150.0, height: 100.0})
 
@@ -308,9 +328,10 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
     test "child fills 80x80 inside 100x100 container with 1px border" do
       # Our border is always 1px for :single, so use padding for larger insets
       # Container 100x100 with padding=10 → inner 80x80. Child flex_grow fills it.
-      el = box([width: 100, height: 100, padding: 10], [
-        box(flex_grow: 1, width: 10)
-      ])
+      el =
+        box([width: 100, height: 100, padding: 10], [
+          box(flex_grow: 1, width: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: 100.0})
       c = child(r, 0)
@@ -330,12 +351,13 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
       # Child: auto width, 100h, max_width=100
       #   Grandchild 0: flex_basis=100, flex_shrink=1
       #   Grandchild 1: width=50
-      el = box([width: 200, flex_direction: :column], [
-        box([height: 100, max_width: 100], [
-          box(flex_shrink: 1, flex_basis: 100),
-          box(width: 50)
+      el =
+        box([width: 200, flex_direction: :column], [
+          box([height: 100, max_width: 100], [
+            box(flex_shrink: 1, flex_basis: 100),
+            box(width: 50)
+          ])
         ])
-      ])
 
       r = Flex.layout(el, %{width: 200.0, height: nil})
 
@@ -355,11 +377,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
   describe "gap_column_gap_flexible" do
     test "3 flex children with 10px column gap in 80w container" do
       # In Taffy gap.width = column gap (main axis gap for row)
-      el = box([width: 80, height: 100, gap: 10], [
-        box(flex: 1),
-        box(flex: 1),
-        box(flex: 1)
-      ])
+      el =
+        box([width: 80, height: 100, gap: 10], [
+          box(flex: 1),
+          box(flex: 1),
+          box(flex: 1)
+        ])
 
       r = Flex.layout(el, %{width: 80.0, height: 100.0})
 
@@ -374,8 +397,18 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
       children = for _ <- 1..9, do: box(width: 20, height: 20)
 
       # gap_main = column gap = 10, gap_cross = row gap = 20
-      el = box([width: 80, flex_wrap: :wrap, gap_main: 10, gap_cross: 20,
-                align_items: :flex_start, align_content: :flex_start], children)
+      el =
+        box(
+          [
+            width: 80,
+            flex_wrap: :wrap,
+            gap_main: 10,
+            gap_cross: 20,
+            align_items: :flex_start,
+            align_content: :flex_start
+          ],
+          children
+        )
 
       r = Flex.layout(el, %{width: 80.0, height: nil})
 
@@ -398,11 +431,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_direction_column_no_height" do
     test "column container height from children" do
-      el = box([width: 100, flex_direction: :column], [
-        box(height: 10),
-        box(height: 10),
-        box(height: 10)
-      ])
+      el =
+        box([width: 100, flex_direction: :column], [
+          box(height: 10),
+          box(height: 10),
+          box(height: 10)
+        ])
 
       r = Flex.layout(el, %{width: 100.0, height: nil})
 
@@ -416,11 +450,12 @@ defmodule Courgette.Layout.Engine.TaffyFixturesTest do
 
   describe "flex_basis_smaller_than_content_row" do
     test "nested child and grandchild expand to fill" do
-      el = box([width: 100], [
-        box([flex_direction: :column, flex_basis: 50], [
-          box(width: 100, height: 100)
+      el =
+        box([width: 100], [
+          box([flex_direction: :column, flex_basis: 50], [
+            box(width: 100, height: 100)
+          ])
         ])
-      ])
 
       r = Flex.layout(el, %{width: 100.0, height: nil})
 

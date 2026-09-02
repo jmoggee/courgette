@@ -295,7 +295,11 @@ defmodule Courgette.Components.TextInputTest do
 
   defp find_reversed_text(nil), do: nil
 
-  defp find_reversed_text(%Courgette.Element{type: :text, props: %{reverse: true}, children: [text]})
+  defp find_reversed_text(%Courgette.Element{
+         type: :text,
+         props: %{reverse: true},
+         children: [text]
+       })
        when is_binary(text) do
     text
   end

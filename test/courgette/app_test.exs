@@ -33,7 +33,7 @@ defmodule Courgette.AppTest do
     end
 
     def handle_event({:key, :arrow_down}, assigns) do
-      {:noreply, update(assigns, :count, &(max(&1 - 1, 0)))}
+      {:noreply, update(assigns, :count, &max(&1 - 1, 0))}
     end
 
     def handle_event(_event, assigns) do
@@ -304,6 +304,7 @@ defmodule Courgette.AppTest do
         {:ok, pid} = ComponentRegistry.lookup(FocusableItem, id)
         :sys.get_state(pid)
       end
+
       :sys.get_state(view.server)
 
       assert render_text(view) =~ "x:f=false"
@@ -341,6 +342,7 @@ defmodule Courgette.AppTest do
         {:ok, pid} = ComponentRegistry.lookup(FocusableItem, id)
         :sys.get_state(pid)
       end
+
       :sys.get_state(view.server)
 
       assert render_text(view) =~ "z:f=true"

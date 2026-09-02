@@ -319,7 +319,8 @@ defmodule Courgette.Components.SelectTest do
   # Helper to find position: :absolute box in tree
   defp find_absolute_box(nil), do: nil
 
-  defp find_absolute_box(%Courgette.Element{type: :box, props: %{position: :absolute}} = el), do: el
+  defp find_absolute_box(%Courgette.Element{type: :box, props: %{position: :absolute}} = el),
+    do: el
 
   defp find_absolute_box(%Courgette.Element{children: children}) do
     Enum.find_value(children, fn

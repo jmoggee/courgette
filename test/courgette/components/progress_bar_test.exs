@@ -71,7 +71,11 @@ defmodule Courgette.Components.ProgressBarTest do
   end
 
   test "custom colors applied" do
-    view = mount(Host, initial_assigns: %{bar_value: 0.5, bar_width: 10, bar_color: :green, bar_bg_color: :red})
+    view =
+      mount(Host,
+        initial_assigns: %{bar_value: 0.5, bar_width: 10, bar_color: :green, bar_bg_color: :red}
+      )
+
     tree = render_tree(view)
     # Tree should contain text nodes with the custom colors
     texts = collect_texts(tree)

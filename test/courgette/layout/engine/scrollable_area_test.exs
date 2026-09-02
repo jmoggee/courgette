@@ -24,9 +24,10 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
   describe "Flex.layout with overflow: :scroll" do
     test "empty scroll box has no children" do
-      el = box([width: 40, height: 10], [
-        scroll_box([flex: 1])
-      ])
+      el =
+        box([width: 40, height: 10], [
+          scroll_box(flex: 1)
+        ])
 
       result = Flex.layout(el, %{width: 40.0, height: 10.0})
       sa = child(result, 0)
@@ -36,13 +37,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "children can exceed viewport height" do
       # Viewport is 5 rows, but children total 10 rows
-      el = box([width: 20, height: 5], [
-        scroll_box([flex: 1], [
-          box([height: 4]),
-          box([height: 3]),
-          box([height: 3])
+      el =
+        box([width: 20, height: 5], [
+          scroll_box([flex: 1], [
+            box(height: 4),
+            box(height: 3),
+            box(height: 3)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 20.0, height: 5.0})
       sa = child(result, 0)
@@ -57,13 +59,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
     test "children laid out in column regardless of parent direction" do
       # Parent is row, scroll box should still use column internally
-      el = box([width: 40, height: 10, flex_direction: :row], [
-        scroll_box([flex: 1], [
-          text("Line 1"),
-          text("Line 2"),
-          text("Line 3")
+      el =
+        box([width: 40, height: 10, flex_direction: :row], [
+          scroll_box([flex: 1], [
+            text("Line 1"),
+            text("Line 2"),
+            text("Line 3")
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 40.0, height: 10.0})
       sa = child(result, 0)
@@ -81,13 +84,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "children have correct sequential y positions" do
-      el = box([width: 20, height: 10], [
-        scroll_box([flex: 1], [
-          box([height: 3]),
-          box([height: 2]),
-          box([height: 4])
+      el =
+        box([width: 20, height: 10], [
+          scroll_box([flex: 1], [
+            box(height: 3),
+            box(height: 2),
+            box(height: 4)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 20.0, height: 10.0})
       sa = child(result, 0)
@@ -105,11 +109,12 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "scroll box own bounds equal viewport dimensions" do
-      el = box([width: 40, height: 10], [
-        scroll_box([flex: 1], [
-          box([height: 30])
+      el =
+        box([width: 40, height: 10], [
+          scroll_box([flex: 1], [
+            box(height: 30)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 40.0, height: 10.0})
       sa = child(result, 0)
@@ -120,12 +125,13 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "works with borders — children get inner width" do
-      el = box([width: 22, height: 10], [
-        scroll_box([flex: 1, border: :single], [
-          box([height: 3]),
-          box([height: 3])
+      el =
+        box([width: 22, height: 10], [
+          scroll_box([flex: 1, border: :single], [
+            box(height: 3),
+            box(height: 3)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 22.0, height: 10.0})
       sa = child(result, 0)
@@ -140,13 +146,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "mixed children: text and box" do
-      el = box([width: 30, height: 8], [
-        scroll_box([flex: 1], [
-          text("Header line"),
-          box([height: 5, bg: :blue]),
-          text("Footer line")
+      el =
+        box([width: 30, height: 8], [
+          scroll_box([flex: 1], [
+            text("Header line"),
+            box(height: 5, bg: :blue),
+            text("Footer line")
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 30.0, height: 8.0})
       sa = child(result, 0)
@@ -163,11 +170,12 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "single child taller than viewport" do
-      el = box([width: 20, height: 5], [
-        scroll_box([flex: 1], [
-          box([height: 50])
+      el =
+        box([width: 20, height: 5], [
+          scroll_box([flex: 1], [
+            box(height: 50)
+          ])
         ])
-      ])
 
       result = Flex.layout(el, %{width: 20.0, height: 5.0})
       sa = child(result, 0)
@@ -183,13 +191,14 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
 
   describe "Engine.compute with overflow: :scroll" do
     test "produces integer Bounds for scroll box and children" do
-      el = box([width: 40, height: 10], [
-        scroll_box([flex: 1], [
-          box([height: 3]),
-          box([height: 4]),
-          box([height: 5])
+      el =
+        box([width: 40, height: 10], [
+          scroll_box([flex: 1], [
+            box(height: 3),
+            box(height: 4),
+            box(height: 5)
+          ])
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
       sa = hd(result.children)
@@ -209,12 +218,13 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
     end
 
     test "children y-positions are absolute coordinates" do
-      el = box([width: 40, height: 10], [
-        scroll_box([flex: 1], [
-          box([height: 3]),
-          box([height: 4])
+      el =
+        box([width: 40, height: 10], [
+          scroll_box([flex: 1], [
+            box(height: 3),
+            box(height: 4)
+          ])
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(5, 2, 40, 10))
       sa = hd(result.children)
@@ -225,16 +235,18 @@ defmodule Courgette.Layout.Engine.ScrollableAreaTest do
       # Children offset by parent origin
       assert c0.bounds.x == 5
       assert c0.bounds.y == 2
-      assert c1.bounds.y == 5  # 2 + 3
+      # 2 + 3
+      assert c1.bounds.y == 5
     end
 
     test "children overflow viewport height (not clamped)" do
-      el = box([width: 20, height: 5], [
-        scroll_box([flex: 1], [
-          box([height: 10]),
-          box([height: 10])
+      el =
+        box([width: 20, height: 5], [
+          scroll_box([flex: 1], [
+            box(height: 10),
+            box(height: 10)
+          ])
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 20, 5))
       sa = hd(result.children)

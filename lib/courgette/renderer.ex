@@ -147,7 +147,14 @@ defmodule Courgette.Renderer do
     end
 
     {:reply, :ok,
-     %{state | front: Buffer.new(cols, rows), width: cols, height: rows, last_tree: nil, dirty: false}}
+     %{
+       state
+       | front: Buffer.new(cols, rows),
+         width: cols,
+         height: rows,
+         last_tree: nil,
+         dirty: false
+     }}
   end
 
   def handle_call(:get_last_tree, _from, state) do

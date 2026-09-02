@@ -107,7 +107,8 @@ defmodule Courgette.LiveComponent do
 
   @doc "Set key only if it is not already present in assigns."
   @spec assign_new(map(), atom(), (-> term())) :: map()
-  def assign_new(assigns, key, fun) when is_map(assigns) and is_atom(key) and is_function(fun, 0) do
+  def assign_new(assigns, key, fun)
+      when is_map(assigns) and is_atom(key) and is_function(fun, 0) do
     case assigns do
       %{^key => _} -> assigns
       _ -> Map.put(assigns, key, fun.())

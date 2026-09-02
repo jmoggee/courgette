@@ -62,7 +62,8 @@ defmodule Courgette.Element do
 
   """
   @spec new(element_type(), keyword(), [t() | String.t()]) :: t()
-  def new(type, opts, children) when type in @valid_types and is_list(opts) and is_list(children) do
+  def new(type, opts, children)
+      when type in @valid_types and is_list(opts) and is_list(children) do
     %__MODULE__{type: type, props: Map.new(opts), children: children}
   end
 end

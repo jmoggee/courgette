@@ -68,8 +68,12 @@ defmodule Courgette.Components.Select do
     end
 
     # Options float as overlay
-    box position: :absolute, top: 1, left: 0, flex_direction: :column,
-        border: :single, bg: :black do
+    box position: :absolute,
+        top: 1,
+        left: 0,
+        flex_direction: :column,
+        border: :single,
+        bg: :black do
       for {opt, idx} <- Enum.with_index(assigns.options) do
         {_value, label} = opt
 

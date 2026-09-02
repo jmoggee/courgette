@@ -30,9 +30,10 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "children have absolute coordinates" do
-      el = Element.new(:box, [width: 80, height: 24, border: :single], [
-        Element.new(:box, width: 10, height: 5)
-      ])
+      el =
+        Element.new(:box, [width: 80, height: 24, border: :single], [
+          Element.new(:box, width: 10, height: 5)
+        ])
 
       result = Engine.compute(el, Bounds.new(10, 5, 80, 24))
       child = hd(result.children)
@@ -43,11 +44,12 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "all values are non-negative integers" do
-      el = Element.new(:box, [width: 80, height: 24], [
-        Element.new(:box, flex: 1),
-        Element.new(:box, flex: 1),
-        Element.new(:box, flex: 1)
-      ])
+      el =
+        Element.new(:box, [width: 80, height: 24], [
+          Element.new(:box, flex: 1),
+          Element.new(:box, flex: 1),
+          Element.new(:box, flex: 1)
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 80, 24))
 
@@ -68,10 +70,11 @@ defmodule Courgette.Layout.EngineTest do
 
   describe "flex grow integer results" do
     test "two equal children in 80-wide container" do
-      el = Element.new(:box, [width: 80, height: 24], [
-        Element.new(:box, flex: 1),
-        Element.new(:box, flex: 1)
-      ])
+      el =
+        Element.new(:box, [width: 80, height: 24], [
+          Element.new(:box, flex: 1),
+          Element.new(:box, flex: 1)
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 80, 24))
       [c0, c1] = result.children
@@ -83,11 +86,12 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "three equal children in 100-wide container" do
-      el = Element.new(:box, [width: 100, height: 10], [
-        Element.new(:box, flex: 1),
-        Element.new(:box, flex: 1),
-        Element.new(:box, flex: 1)
-      ])
+      el =
+        Element.new(:box, [width: 100, height: 10], [
+          Element.new(:box, flex: 1),
+          Element.new(:box, flex: 1),
+          Element.new(:box, flex: 1)
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 100, 10))
       [c0, c1, c2] = result.children
@@ -106,9 +110,10 @@ defmodule Courgette.Layout.EngineTest do
 
   describe "Painter compatibility" do
     test "compute output works with Painter.paint" do
-      el = Element.new(:box, [width: 40, height: 12, border: :single, bg: :blue], [
-        Element.new(:text, [color: :green], ["Hello"])
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 12, border: :single, bg: :blue], [
+          Element.new(:text, [color: :green], ["Hello"])
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 12))
       buffer = Buffer.new(40, 12)
@@ -124,11 +129,12 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "nested layout works with Painter" do
-      el = Element.new(:box, [width: 40, height: 12, border: :single], [
-        Element.new(:box, [width: 20, height: 5, border: :rounded, border_color: :cyan], [
-          Element.new(:text, [color: :yellow], ["Nested"])
+      el =
+        Element.new(:box, [width: 40, height: 12, border: :single], [
+          Element.new(:box, [width: 20, height: 5, border: :rounded, border_color: :cyan], [
+            Element.new(:text, [color: :yellow], ["Nested"])
+          ])
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 12))
       buffer = Buffer.new(40, 12)
@@ -150,10 +156,15 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "column layout with text nodes" do
-      el = Element.new(:box, [width: 40, height: 10, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [], ["Line one"]),
-        Element.new(:text, [], ["Line two"])
-      ])
+      el =
+        Element.new(
+          :box,
+          [width: 40, height: 10, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [], ["Line one"]),
+            Element.new(:text, [], ["Line two"])
+          ]
+        )
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
       buffer = Buffer.new(40, 10)
@@ -171,18 +182,25 @@ defmodule Courgette.Layout.EngineTest do
     test "dashboard layout with header, sidebar, content" do
       header = Element.new(:text, [color: :bright_white, bold: true, height: 1], ["Dashboard"])
 
-      sidebar = Element.new(:box, [width: 12, border: :single, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [color: :cyan], ["Menu"])
-      ])
+      sidebar =
+        Element.new(
+          :box,
+          [width: 12, border: :single, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [color: :cyan], ["Menu"])
+          ]
+        )
 
-      content = Element.new(:box, [flex: 1, border: :rounded, bg: :black, align_items: :flex_start], [
-        Element.new(:text, [], ["Welcome!"])
-      ])
+      content =
+        Element.new(:box, [flex: 1, border: :rounded, bg: :black, align_items: :flex_start], [
+          Element.new(:text, [], ["Welcome!"])
+        ])
 
-      el = Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
-        header,
-        Element.new(:box, [flex: 1], [sidebar, content])
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
+          header,
+          Element.new(:box, [flex: 1], [sidebar, content])
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 12))
       buffer = Buffer.new(40, 12)
@@ -199,18 +217,23 @@ defmodule Courgette.Layout.EngineTest do
 
   describe "overflow: :scroll end-to-end" do
     test "text children with offset=0 paint correctly" do
-      el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
-        Element.new(:box, [flex: 1, scroll_offset: 0, overflow: :scroll, flex_direction: :column], [
-          Element.new(:text, [], ["Line A"]),
-          Element.new(:text, [], ["Line B"]),
-          Element.new(:text, [], ["Line C"]),
-          Element.new(:text, [], ["Line D"]),
-          Element.new(:text, [], ["Line E"]),
-          Element.new(:text, [], ["Line F"]),
-          Element.new(:text, [], ["Line G"]),
-          Element.new(:text, [], ["Line H"])
+      el =
+        Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
+          Element.new(
+            :box,
+            [flex: 1, scroll_offset: 0, overflow: :scroll, flex_direction: :column],
+            [
+              Element.new(:text, [], ["Line A"]),
+              Element.new(:text, [], ["Line B"]),
+              Element.new(:text, [], ["Line C"]),
+              Element.new(:text, [], ["Line D"]),
+              Element.new(:text, [], ["Line E"]),
+              Element.new(:text, [], ["Line F"]),
+              Element.new(:text, [], ["Line G"]),
+              Element.new(:text, [], ["Line H"])
+            ]
+          )
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 30, 6))
       buffer = Buffer.new(30, 6)
@@ -228,17 +251,22 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "text children with scroll_offset shift content" do
-      el = Element.new(:box, [width: 30, height: 4, flex_direction: :column], [
-        Element.new(:box, [flex: 1, scroll_offset: 3, overflow: :scroll, flex_direction: :column], [
-          Element.new(:text, [], ["Line A"]),
-          Element.new(:text, [], ["Line B"]),
-          Element.new(:text, [], ["Line C"]),
-          Element.new(:text, [], ["Line D"]),
-          Element.new(:text, [], ["Line E"]),
-          Element.new(:text, [], ["Line F"]),
-          Element.new(:text, [], ["Line G"])
+      el =
+        Element.new(:box, [width: 30, height: 4, flex_direction: :column], [
+          Element.new(
+            :box,
+            [flex: 1, scroll_offset: 3, overflow: :scroll, flex_direction: :column],
+            [
+              Element.new(:text, [], ["Line A"]),
+              Element.new(:text, [], ["Line B"]),
+              Element.new(:text, [], ["Line C"]),
+              Element.new(:text, [], ["Line D"]),
+              Element.new(:text, [], ["Line E"]),
+              Element.new(:text, [], ["Line F"]),
+              Element.new(:text, [], ["Line G"])
+            ]
+          )
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 30, 4))
       buffer = Buffer.new(30, 4)
@@ -256,16 +284,27 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "with border and scroll_offset" do
-      el = Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
-        Element.new(:box, [flex: 1, border: :single, scroll_offset: 2, overflow: :scroll, flex_direction: :column], [
-          Element.new(:text, [], ["Line A"]),
-          Element.new(:text, [], ["Line B"]),
-          Element.new(:text, [], ["Line C"]),
-          Element.new(:text, [], ["Line D"]),
-          Element.new(:text, [], ["Line E"]),
-          Element.new(:text, [], ["Line F"])
+      el =
+        Element.new(:box, [width: 30, height: 6, flex_direction: :column], [
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              border: :single,
+              scroll_offset: 2,
+              overflow: :scroll,
+              flex_direction: :column
+            ],
+            [
+              Element.new(:text, [], ["Line A"]),
+              Element.new(:text, [], ["Line B"]),
+              Element.new(:text, [], ["Line C"]),
+              Element.new(:text, [], ["Line D"]),
+              Element.new(:text, [], ["Line E"]),
+              Element.new(:text, [], ["Line F"])
+            ]
+          )
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 30, 6))
       buffer = Buffer.new(30, 6)
@@ -285,17 +324,29 @@ defmodule Courgette.Layout.EngineTest do
     test "dashboard with scrollable panel" do
       header = Element.new(:text, [color: :bright_white, bold: true, height: 1], ["Dashboard"])
 
-      log_lines = for i <- 1..20 do
-        Element.new(:text, [], ["Log entry #{i}"])
-      end
+      log_lines =
+        for i <- 1..20 do
+          Element.new(:text, [], ["Log entry #{i}"])
+        end
 
-      scroll_panel = Element.new(:box, [flex: 1, border: :single, scroll_offset: 5,
-                                         overflow: :scroll, flex_direction: :column], log_lines)
+      scroll_panel =
+        Element.new(
+          :box,
+          [
+            flex: 1,
+            border: :single,
+            scroll_offset: 5,
+            overflow: :scroll,
+            flex_direction: :column
+          ],
+          log_lines
+        )
 
-      el = Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
-        header,
-        scroll_panel
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 12, flex_direction: :column], [
+          header,
+          scroll_panel
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 12))
       buffer = Buffer.new(40, 12)
@@ -321,18 +372,24 @@ defmodule Courgette.Layout.EngineTest do
 
   describe "absolute positioning" do
     test "absolute child does not push siblings" do
-      el = Element.new(:box, [width: 40, height: 10, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [], ["Line 1"]),
-        Element.new(:box, [position: :absolute, top: 5, left: 0, width: 20, height: 3]),
-        Element.new(:text, [], ["Line 2"])
-      ])
+      el =
+        Element.new(
+          :box,
+          [width: 40, height: 10, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [], ["Line 1"]),
+            Element.new(:box, position: :absolute, top: 5, left: 0, width: 20, height: 3),
+            Element.new(:text, [], ["Line 2"])
+          ]
+        )
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
 
       # Flow children: Line 1 and Line 2 should be adjacent (no gap from absolute child)
-      flow_children = Enum.filter(result.children, fn child ->
-        child.element.type == :text
-      end)
+      flow_children =
+        Enum.filter(result.children, fn child ->
+          child.element.type == :text
+        end)
 
       [line1, line2] = flow_children
       assert line1.bounds.y == 0
@@ -340,9 +397,10 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "absolute child positioned at content origin + top/left" do
-      el = Element.new(:box, [width: 40, height: 20, border: :single], [
-        Element.new(:box, [position: :absolute, top: 2, left: 3, width: 10, height: 5])
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 20, border: :single], [
+          Element.new(:box, position: :absolute, top: 2, left: 3, width: 10, height: 5)
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
       [abs_child] = result.children
@@ -355,9 +413,10 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "absolute child with right/bottom positioning" do
-      el = Element.new(:box, [width: 40, height: 20], [
-        Element.new(:box, [position: :absolute, right: 0, bottom: 0, width: 10, height: 5])
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 20], [
+          Element.new(:box, position: :absolute, right: 0, bottom: 0, width: 10, height: 5)
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
       [abs_child] = result.children
@@ -369,10 +428,15 @@ defmodule Courgette.Layout.EngineTest do
 
     test "absolute child does not affect parent sizing" do
       # A parent with explicit size shouldn't grow due to absolute children
-      el = Element.new(:box, [width: 20, height: 10, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [], ["Hello"]),
-        Element.new(:box, [position: :absolute, top: 0, left: 0, width: 100, height: 50])
-      ])
+      el =
+        Element.new(
+          :box,
+          [width: 20, height: 10, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [], ["Hello"]),
+            Element.new(:box, position: :absolute, top: 0, left: 0, width: 100, height: 50)
+          ]
+        )
 
       result = Engine.compute(el, Bounds.new(0, 0, 80, 24))
 
@@ -385,13 +449,23 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "absolute child with intrinsic sizing" do
-      el = Element.new(:box, [width: 40, height: 20, align_items: :flex_start], [
-        Element.new(:box, [position: :absolute, top: 0, left: 0,
-                           flex_direction: :column, align_items: :flex_start], [
-          Element.new(:text, [], ["Line A"]),
-          Element.new(:text, [], ["Line B"])
+      el =
+        Element.new(:box, [width: 40, height: 20, align_items: :flex_start], [
+          Element.new(
+            :box,
+            [
+              position: :absolute,
+              top: 0,
+              left: 0,
+              flex_direction: :column,
+              align_items: :flex_start
+            ],
+            [
+              Element.new(:text, [], ["Line A"]),
+              Element.new(:text, [], ["Line B"])
+            ]
+          )
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 20))
       [abs_child] = result.children
@@ -403,11 +477,12 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "mixed flow and absolute children" do
-      el = Element.new(:box, [width: 40, height: 10, align_items: :flex_start], [
-        Element.new(:text, [], ["A"]),
-        Element.new(:box, [position: :absolute, top: 5, left: 5, width: 10, height: 3]),
-        Element.new(:text, [], ["B"])
-      ])
+      el =
+        Element.new(:box, [width: 40, height: 10, align_items: :flex_start], [
+          Element.new(:text, [], ["A"]),
+          Element.new(:box, position: :absolute, top: 5, left: 5, width: 10, height: 3),
+          Element.new(:text, [], ["B"])
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 40, 10))
 
@@ -430,12 +505,17 @@ defmodule Courgette.Layout.EngineTest do
 
   describe "absolute positioning with Painter" do
     test "absolute child paints on top of normal content" do
-      el = Element.new(:box, [width: 20, height: 5, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [], ["AAAAAAAAAA"]),
-        Element.new(:box, [position: :absolute, top: 0, left: 0, width: 2, height: 1], [
-          Element.new(:text, [], ["BB"])
-        ])
-      ])
+      el =
+        Element.new(
+          :box,
+          [width: 20, height: 5, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [], ["AAAAAAAAAA"]),
+            Element.new(:box, [position: :absolute, top: 0, left: 0, width: 2, height: 1], [
+              Element.new(:text, [], ["BB"])
+            ])
+          ]
+        )
 
       result = Engine.compute(el, Bounds.new(0, 0, 20, 5))
       buffer = Buffer.new(20, 5)
@@ -452,13 +532,14 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "absolute child escapes parent clip bounds" do
-      el = Element.new(:box, [width: 20, height: 3], [
-        Element.new(:box, [width: 10, height: 3], [
-          Element.new(:box, [position: :absolute, top: 0, left: 12, width: 5, height: 1], [
-            Element.new(:text, [], ["HI"])
+      el =
+        Element.new(:box, [width: 20, height: 3], [
+          Element.new(:box, [width: 10, height: 3], [
+            Element.new(:box, [position: :absolute, top: 0, left: 12, width: 5, height: 1], [
+              Element.new(:text, [], ["HI"])
+            ])
           ])
         ])
-      ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 20, 3))
       buffer = Buffer.new(20, 3)
@@ -473,19 +554,30 @@ defmodule Courgette.Layout.EngineTest do
 
     test "select-like dropdown overlay" do
       # Simulate a select: outer box with a trigger text and absolute dropdown
-      el = Element.new(:box, [width: 30, height: 10, flex_direction: :column], [
-        Element.new(:box, [border: :single, flex_direction: :column], [
-          Element.new(:text, [], ["Red ▾"]),
-          Element.new(:box, [position: :absolute, top: 1, left: 0,
-                             flex_direction: :column, border: :single, bg: :black,
-                             align_items: :flex_start], [
-            Element.new(:text, [bold: true, fg: :cyan], ["▸ Red"]),
-            Element.new(:text, [], ["  Green"]),
-            Element.new(:text, [], ["  Blue"])
-          ])
-        ]),
-        Element.new(:text, [], ["Other content"])
-      ])
+      el =
+        Element.new(:box, [width: 30, height: 10, flex_direction: :column], [
+          Element.new(:box, [border: :single, flex_direction: :column], [
+            Element.new(:text, [], ["Red ▾"]),
+            Element.new(
+              :box,
+              [
+                position: :absolute,
+                top: 1,
+                left: 0,
+                flex_direction: :column,
+                border: :single,
+                bg: :black,
+                align_items: :flex_start
+              ],
+              [
+                Element.new(:text, [bold: true, fg: :cyan], ["▸ Red"]),
+                Element.new(:text, [], ["  Green"]),
+                Element.new(:text, [], ["  Blue"])
+              ]
+            )
+          ]),
+          Element.new(:text, [], ["Other content"])
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 30, 10))
       buffer = Buffer.new(30, 10)
@@ -531,11 +623,12 @@ defmodule Courgette.Layout.EngineTest do
     end
 
     test "container with only text children" do
-      el = Element.new(:box, [width: 80, height: 24, align_items: :flex_start], [
-        Element.new(:text, [], ["A"]),
-        Element.new(:text, [], ["B"]),
-        Element.new(:text, [], ["C"])
-      ])
+      el =
+        Element.new(:box, [width: 80, height: 24, align_items: :flex_start], [
+          Element.new(:text, [], ["A"]),
+          Element.new(:text, [], ["B"]),
+          Element.new(:text, [], ["C"])
+        ])
 
       result = Engine.compute(el, Bounds.new(0, 0, 80, 24))
 

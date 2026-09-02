@@ -65,9 +65,10 @@ defmodule Courgette.ElementTest do
 
   describe "new/3" do
     test "creates element with type, props, and children" do
-      el = Element.new(:box, [border: :single], [
-        Element.new(:text, [], ["Hello"])
-      ])
+      el =
+        Element.new(:box, [border: :single], [
+          Element.new(:text, [], ["Hello"])
+        ])
 
       assert el.type == :box
       assert el.props == %{border: :single}
@@ -89,13 +90,14 @@ defmodule Courgette.ElementTest do
     end
 
     test "nested element tree" do
-      tree = Element.new(:box, [border: :single], [
-        Element.new(:text, [color: :green], ["Line 1"]),
-        Element.new(:text, [color: :red], ["Line 2"]),
-        Element.new(:box, [border: :rounded], [
-          Element.new(:text, [], ["Nested"])
+      tree =
+        Element.new(:box, [border: :single], [
+          Element.new(:text, [color: :green], ["Line 1"]),
+          Element.new(:text, [color: :red], ["Line 2"]),
+          Element.new(:box, [border: :rounded], [
+            Element.new(:text, [], ["Nested"])
+          ])
         ])
-      ])
 
       assert tree.type == :box
       assert length(tree.children) == 3
