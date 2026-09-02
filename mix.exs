@@ -8,7 +8,7 @@ defmodule Courgette.MixProject do
     [
       app: :courgette,
       version: @version,
-      elixir: "~> 1.18",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
@@ -52,13 +52,13 @@ defmodule Courgette.MixProject do
         Cheatsheets: ["guides/cheatsheets/dsl.cheatmd", "guides/cheatsheets/events.cheatmd"]
       ],
       groups_for_modules: [
-        "Core": [
+        Core: [
           Courgette,
           Courgette.App,
           Courgette.Element,
           Courgette.Theme
         ],
-        "Components": [
+        Components: [
           Courgette.Component,
           Courgette.Component.DSL,
           Courgette.LiveComponent,
@@ -71,7 +71,7 @@ defmodule Courgette.MixProject do
           Courgette.Components.ProgressBar,
           Courgette.Autocomplete
         ],
-        "Layout": [
+        Layout: [
           Courgette.Layout.Engine,
           Courgette.Layout.Engine.Flex,
           Courgette.Layout.Engine.Style,
@@ -80,7 +80,7 @@ defmodule Courgette.MixProject do
           Courgette.Layout.Engine.Round,
           Courgette.Layout.Bounds
         ],
-        "Rendering": [
+        Rendering: [
           Courgette.Renderer,
           Courgette.Painter,
           Courgette.Buffer,
@@ -97,15 +97,15 @@ defmodule Courgette.MixProject do
           Courgette.Terminal.SignalHandler,
           Courgette.FocusManager
         ],
-        "Animation": [
+        Animation: [
           Courgette.Animation.Easing,
           Courgette.Animation.Frames,
           Courgette.Animation.Tween
         ],
-        "Testing": [
+        Testing: [
           Courgette.ComponentTestHelpers
         ],
-        "Internal": [
+        Internal: [
           Courgette.ComponentRegistry,
           Courgette.LiveComponent.Server,
           Courgette.LiveComponent.Lifecycle

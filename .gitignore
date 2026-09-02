@@ -27,3 +27,6 @@ courgette-*.tar
 
 # MacOs finder files.
 .DS_Store
+
+# Expert language server
+.expert/
