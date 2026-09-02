@@ -54,7 +54,7 @@ defmodule FocusChild do
   end
 
   def handle_event({:key, :arrow_down}, assigns) do
-    {:noreply, update(assigns, :count, &(max(&1 - 1, 0)))}
+    {:noreply, update(assigns, :count, &max(&1 - 1, 0))}
   end
 
   def handle_event(_event, assigns) do

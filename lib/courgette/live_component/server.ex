@@ -314,21 +314,12 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   defp try_route_to_child(state, event) do
-    case FocusManager.current(state.focus) do
-      nil ->
-        false
-
-      focused_key ->
-        case Map.get(state.children, focused_key) do
-          {pid, _props} ->
-            case route_to_child(pid, event) do
-              {:ok, true} -> true
-              _ -> false
-            end
-
-          nil ->
-            false
-        end
+    with focused_key when not is_nil(focused_key) <- FocusManager.current(state.focus),
+         {pid, _props} <- Map.get(state.children, focused_key),
+         {:ok, true} <- route_to_child(pid, event) do
+      true
+    else
+      _ -> false
     end
   end
 

@@ -43,22 +43,29 @@ defmodule Example.BufferPipeline do
       end
 
     # Frame 1: draw a box with text
-    back = Buffer.new(cols, rows)
-           |> draw_box(@box_x, @box_y, @box_w, @box_h)
-           |> draw_title(" Buffer Pipeline ", @box_x, @box_y, @box_w)
-           |> draw_body()
+    back =
+      Buffer.new(cols, rows)
+      |> draw_box(@box_x, @box_y, @box_w, @box_h)
+      |> draw_title(" Buffer Pipeline ", @box_x, @box_y, @box_w)
+      |> draw_body()
 
     front = flush(front, back, cycle_num, 1)
     if quit?("any key = next, q = quit"), do: throw(:quit)
 
     # Frame 2: change one word
-    back2 = Buffer.put_string(back, @box_x + 3, @box_y + 3, "Howdy", fg: :bright_green, bold: true)
+    back2 =
+      Buffer.put_string(back, @box_x + 3, @box_y + 3, "Howdy", fg: :bright_green, bold: true)
+
     front = flush(front, back2, cycle_num, 2)
     if quit?("any key = next, q = quit"), do: throw(:quit)
 
     # Frame 3: change colors on another line
-    back3 = Buffer.put_string(back2, @box_x + 3, @box_y + 5,
-              "pipeline works!", fg: :bright_yellow, bold: true)
+    back3 =
+      Buffer.put_string(back2, @box_x + 3, @box_y + 5, "pipeline works!",
+        fg: :bright_yellow,
+        bold: true
+      )
+
     front = flush(front, back3, cycle_num, 3)
     if quit?("any key = next, q = quit"), do: throw(:quit)
 
@@ -81,12 +88,15 @@ defmodule Example.BufferPipeline do
     buf = Buffer.put_cell(buf, x + w - 1, y + h - 1, Cell.new("┘", fg: :bright_cyan))
 
     bar = Cell.new("─", fg: :bright_cyan)
-    buf = Enum.reduce((x + 1)..(x + w - 2), buf, fn col, b ->
-      b = Buffer.put_cell(b, col, y, bar)
-      Buffer.put_cell(b, col, y + h - 1, bar)
-    end)
+
+    buf =
+      Enum.reduce((x + 1)..(x + w - 2), buf, fn col, b ->
+        b = Buffer.put_cell(b, col, y, bar)
+        Buffer.put_cell(b, col, y + h - 1, bar)
+      end)
 
     pipe = Cell.new("│", fg: :bright_cyan)
+
     Enum.reduce((y + 1)..(y + h - 2), buf, fn row, b ->
       b = Buffer.put_cell(b, x, row, pipe)
       Buffer.put_cell(b, x + w - 1, row, pipe)

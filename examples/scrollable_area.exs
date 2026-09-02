@@ -72,14 +72,23 @@ defmodule Example.ScrollableArea do
   # ── Frame 1-3: Simple scrollable with 15 lines ─────────────────
 
   defp build_scrollable(cols, viewport_h, offset) do
-    lines = for i <- 0..14 do
-      color = Enum.at([:white, :cyan, :green, :yellow, :magenta], rem(i, 5))
-      Element.new(:text, [color: color], ["  Line #{String.pad_leading("#{i}", 2, "0")}: #{String.duplicate("·", cols - 14)}"])
-    end
+    lines =
+      for i <- 0..14 do
+        color = Enum.at([:white, :cyan, :green, :yellow, :magenta], rem(i, 5))
 
-    el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
-      Element.new(:box, [flex: 1, scroll_offset: offset, overflow: :scroll, flex_direction: :column], lines)
-    ])
+        Element.new(:text, [color: color], [
+          "  Line #{String.pad_leading("#{i}", 2, "0")}: #{String.duplicate("·", cols - 14)}"
+        ])
+      end
+
+    el =
+      Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
+        Element.new(
+          :box,
+          [flex: 1, scroll_offset: offset, overflow: :scroll, flex_direction: :column],
+          lines
+        )
+      ])
 
     Engine.compute(el, Bounds.new(0, 0, cols, viewport_h))
   end
@@ -87,15 +96,40 @@ defmodule Example.ScrollableArea do
   # ── Frame 4: Bordered + colored ────────────────────────────────
 
   defp build_bordered(cols, viewport_h) do
-    lines = for i <- 0..19 do
-      bg = if rem(i, 2) == 0, do: {30, 30, 50}, else: {20, 20, 35}
-      color = Enum.at([:bright_white, :bright_cyan, :bright_green, :bright_yellow, :bright_magenta], rem(i, 5))
-      Element.new(:text, [color: color, bg: bg], ["  Entry #{String.pad_leading("#{i}", 2, "0")}: This is a log message with details  "])
-    end
+    lines =
+      for i <- 0..19 do
+        bg = if rem(i, 2) == 0, do: {30, 30, 50}, else: {20, 20, 35}
 
-    el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column, bg: {20, 20, 35}], [
-      Element.new(:box, [flex: 1, border: :rounded, border_color: :cyan, scroll_offset: 6, overflow: :scroll, flex_direction: :column], lines)
-    ])
+        color =
+          Enum.at(
+            [:bright_white, :bright_cyan, :bright_green, :bright_yellow, :bright_magenta],
+            rem(i, 5)
+          )
+
+        Element.new(:text, [color: color, bg: bg], [
+          "  Entry #{String.pad_leading("#{i}", 2, "0")}: This is a log message with details  "
+        ])
+      end
+
+    el =
+      Element.new(
+        :box,
+        [width: cols, height: viewport_h, flex_direction: :column, bg: {20, 20, 35}],
+        [
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              border: :rounded,
+              border_color: :cyan,
+              scroll_offset: 6,
+              overflow: :scroll,
+              flex_direction: :column
+            ],
+            lines
+          )
+        ]
+      )
 
     Engine.compute(el, Bounds.new(0, 0, cols, viewport_h))
   end
@@ -103,9 +137,10 @@ defmodule Example.ScrollableArea do
   # ── Frame 5: Dashboard layout ──────────────────────────────────
 
   defp build_dashboard(cols, viewport_h) do
-    header = Element.new(:text, [color: :bright_white, bold: true, height: 1], [
-      " Courgette Dashboard — Scrollable Areas"
-    ])
+    header =
+      Element.new(:text, [color: :bright_white, bold: true, height: 1], [
+        " Courgette Dashboard — Scrollable Areas"
+      ])
 
     sidebar_items = [
       Element.new(:text, [color: :cyan, bold: true], ["  Navigation"]),
@@ -115,25 +150,51 @@ defmodule Example.ScrollableArea do
       Element.new(:text, [color: :bright_black], ["  Logout"])
     ]
 
-    sidebar = Element.new(:box, [width: min(20, div(cols, 4)), border: :single,
-                                  border_color: :bright_black, flex_direction: :column,
-                                  align_items: :flex_start], sidebar_items)
+    sidebar =
+      Element.new(
+        :box,
+        [
+          width: min(20, div(cols, 4)),
+          border: :single,
+          border_color: :bright_black,
+          flex_direction: :column,
+          align_items: :flex_start
+        ],
+        sidebar_items
+      )
 
-    log_lines = for i <- 1..30 do
-      ts = "12:#{String.pad_leading("#{rem(i + 14, 60)}", 2, "0")}:#{String.pad_leading("#{rem(i * 7, 60)}", 2, "0")}"
-      level = Enum.at(["INFO", "WARN", "DEBUG", "ERROR"], rem(i, 4))
-      color = Enum.at([:green, :yellow, :cyan, :red], rem(i, 4))
-      Element.new(:text, [color: color], ["  [#{ts}] #{level}: Process #{i} completed task #{i * 3}"])
-    end
+    log_lines =
+      for i <- 1..30 do
+        ts =
+          "12:#{String.pad_leading("#{rem(i + 14, 60)}", 2, "0")}:#{String.pad_leading("#{rem(i * 7, 60)}", 2, "0")}"
 
-    scroll_panel = Element.new(:box, [flex: 1, border: :rounded,
-                                       border_color: :yellow, scroll_offset: 8,
-                                       overflow: :scroll, flex_direction: :column], log_lines)
+        level = Enum.at(["INFO", "WARN", "DEBUG", "ERROR"], rem(i, 4))
+        color = Enum.at([:green, :yellow, :cyan, :red], rem(i, 4))
 
-    el = Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
-      header,
-      Element.new(:box, [flex: 1], [sidebar, scroll_panel])
-    ])
+        Element.new(:text, [color: color], [
+          "  [#{ts}] #{level}: Process #{i} completed task #{i * 3}"
+        ])
+      end
+
+    scroll_panel =
+      Element.new(
+        :box,
+        [
+          flex: 1,
+          border: :rounded,
+          border_color: :yellow,
+          scroll_offset: 8,
+          overflow: :scroll,
+          flex_direction: :column
+        ],
+        log_lines
+      )
+
+    el =
+      Element.new(:box, [width: cols, height: viewport_h, flex_direction: :column], [
+        header,
+        Element.new(:box, [flex: 1], [sidebar, scroll_panel])
+      ])
 
     Engine.compute(el, Bounds.new(0, 0, cols, viewport_h))
   end

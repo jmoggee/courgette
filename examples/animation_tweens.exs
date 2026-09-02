@@ -22,7 +22,16 @@ alias Courgette.Components.{ProgressBar, Spinner}
 defmodule AnimationDemo do
   use Courgette.App
 
-  @easings [:linear, :ease_in, :ease_out, :ease_in_out, :ease_in_cubic, :ease_out_cubic, :bounce_out, :elastic_out]
+  @easings [
+    :linear,
+    :ease_in,
+    :ease_out,
+    :ease_in_out,
+    :ease_in_cubic,
+    :ease_out_cubic,
+    :bounce_out,
+    :elastic_out
+  ]
 
   @impl true
   def mount(_assigns) do
@@ -30,6 +39,7 @@ defmodule AnimationDemo do
     easing = Frames.current(easing_frames)
 
     tween = Tween.new(0.0, 1.0, duration: 2000, easing: easing)
+
     assigns = %{
       tween: tween,
       progress: 0.0,
@@ -150,13 +160,14 @@ defmodule AnimationDemo do
         # Start new tween with next easing after brief pause
         tween = Tween.new(0.0, 1.0, duration: 2000, easing: next_easing)
 
-        assigns = assign(assigns,
-          progress: value,
-          easing_frames: easing_frames,
-          easing_name: next_easing,
-          tween: tween,
-          cycle_count: assigns.cycle_count + 1
-        )
+        assigns =
+          assign(assigns,
+            progress: value,
+            easing_frames: easing_frames,
+            easing_name: next_easing,
+            tween: tween,
+            cycle_count: assigns.cycle_count + 1
+          )
 
         # Brief pause then restart
         Process.send_after(self(), :restart_tween, 500)

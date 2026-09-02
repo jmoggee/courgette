@@ -57,12 +57,19 @@ defmodule Example.DslComponents do
     custom_theme = %Theme{
       name: "ocean",
       tokens: %{
-        bg: :black, fg: :white,
-        primary: :cyan, secondary: :blue,
-        success: {0, 200, 100}, warning: {255, 180, 0}, danger: {255, 60, 60},
-        muted: {100, 100, 120}, border: :cyan, surface: {20, 30, 50}
+        bg: :black,
+        fg: :white,
+        primary: :cyan,
+        secondary: :blue,
+        success: {0, 200, 100},
+        warning: {255, 180, 0},
+        danger: {255, 60, 60},
+        muted: {100, 100, 120},
+        border: :cyan,
+        surface: {20, 30, 50}
       }
     }
+
     tree3 = build_components_demo(cols, rows, custom_theme)
     front = flush(front, tree3, cols, rows, cycle_num, 3, "Built-in components (ocean theme)")
     if quit?("any key = next, q = quit", rows), do: throw(:quit)
@@ -76,7 +83,11 @@ defmodule Example.DslComponents do
 
   defp build_dsl_demo(cols, rows) do
     el =
-      box width: cols, height: rows - 2, flex_direction: :column, border: :rounded, border_color: :bright_white do
+      box width: cols,
+          height: rows - 2,
+          flex_direction: :column,
+          border: :rounded,
+          border_color: :bright_white do
         # Header
         box height: 3, bg: :blue, align_items: :center, padding_h: 2 do
           text color: :bright_white, bold: true do
@@ -87,20 +98,30 @@ defmodule Example.DslComponents do
         # Content area
         box flex: 1, flex_direction: :row do
           # Left panel
-          box flex: 1, border: :single, border_color: :cyan, flex_direction: :column, padding: 1 do
+          box flex: 1,
+              border: :single,
+              border_color: :cyan,
+              flex_direction: :column,
+              padding: 1 do
             text color: :cyan, bold: true do
               "Left Panel"
             end
+
             text color: :white do
               "Built with DSL macros"
             end
+
             text color: :bright_black do
               "box, text, etc."
             end
           end
 
           # Right panel
-          box flex: 2, border: :single, border_color: :green, flex_direction: :column, padding: 1 do
+          box flex: 2,
+              border: :single,
+              border_color: :green,
+              flex_direction: :column,
+              padding: 1 do
             text color: :green, bold: true do
               "Right Panel"
             end
@@ -123,7 +144,10 @@ defmodule Example.DslComponents do
     t = [theme: theme]
 
     el =
-      box width: cols, height: rows - 2, flex_direction: :column, border: :rounded,
+      box width: cols,
+          height: rows - 2,
+          flex_direction: :column,
+          border: :rounded,
           border_color: Theme.get(theme, :border) do
         # Heading
         heading(text: "Component Showcase", theme: theme)

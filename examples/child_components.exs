@@ -102,7 +102,14 @@ defmodule Example.ChildComponents do
   @impl true
   def handle_event({:key, {:char, "a"}}, assigns) do
     id = "c#{assigns.next_id}"
-    label = Enum.at(~w(Alpha Beta Gamma Delta Epsilon Zeta Eta Theta), assigns.next_id - 1, "N#{assigns.next_id}")
+
+    label =
+      Enum.at(
+        ~w(Alpha Beta Gamma Delta Epsilon Zeta Eta Theta),
+        assigns.next_id - 1,
+        "N#{assigns.next_id}"
+      )
+
     new_child = %{id: id, label: label}
 
     {:noreply,

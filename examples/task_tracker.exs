@@ -28,13 +28,14 @@ defmodule TaskTracker.TaskListComponent do
 
   @impl true
   def mount(assigns) do
-    {:ok, %{
-      tasks: assigns[:tasks] || [],
-      on_select: assigns[:on_select] || :task_selected,
-      cursor: 0,
-      focused: false,
-      parent_pid: assigns[:parent_pid]
-    }}
+    {:ok,
+     %{
+       tasks: assigns[:tasks] || [],
+       on_select: assigns[:on_select] || :task_selected,
+       cursor: 0,
+       focused: false,
+       parent_pid: assigns[:parent_pid]
+     }}
   end
 
   @impl true
@@ -71,20 +72,22 @@ defmodule TaskTracker.TaskListComponent do
     text_color = if is_selected and focused, do: :cyan, else: :white
 
     # Priority color
-    priority_color = case task.priority do
-      :critical -> :red
-      :high -> :yellow
-      :medium -> :blue
-      :low -> :bright_black
-    end
+    priority_color =
+      case task.priority do
+        :critical -> :red
+        :high -> :yellow
+        :medium -> :blue
+        :low -> :bright_black
+      end
 
     # Status indicator
-    status_icon = case task.status do
-      :done -> "✓"
-      :in_review -> "◎"
-      :in_progress -> "●"
-      :todo -> "○"
-    end
+    status_icon =
+      case task.status do
+        :done -> "✓"
+        :in_review -> "◎"
+        :in_progress -> "●"
+        :todo -> "○"
+      end
 
     # Text-based progress bar (avoids spawning ProgressBar processes)
     filled = round(task.progress * 10)
@@ -92,7 +95,10 @@ defmodule TaskTracker.TaskListComponent do
     progress_bar = String.duplicate("█", filled) <> String.duplicate("░", empty)
     pct = round(task.progress * 100)
 
-    title_style = [{:color, text_color} | if(is_selected, do: [{:bold, true}], else: [{:dim, true}])]
+    title_style = [
+      {:color, text_color} | if(is_selected, do: [{:bold, true}], else: [{:dim, true}])
+    ]
+
     progress_style = [{:color, :green} | if(is_selected, do: [], else: [{:dim, true}])]
 
     box flex_direction: :column do
@@ -171,7 +177,8 @@ defmodule TaskTracker do
     %{
       id: 1,
       title: "Implement user authentication",
-      description: "Add login/logout flow with session management.\nSupport email + password and OAuth providers.",
+      description:
+        "Add login/logout flow with session management.\nSupport email + password and OAuth providers.",
       status: :in_progress,
       priority: :high,
       tags: ["feature", "security"],
@@ -182,7 +189,8 @@ defmodule TaskTracker do
     %{
       id: 2,
       title: "Fix pagination bug",
-      description: "Page 2+ returns empty results when filter is active.\nRoot cause: offset not applied after WHERE clause.",
+      description:
+        "Page 2+ returns empty results when filter is active.\nRoot cause: offset not applied after WHERE clause.",
       status: :in_review,
       priority: :critical,
       tags: ["bug"],
@@ -204,7 +212,8 @@ defmodule TaskTracker do
     %{
       id: 4,
       title: "Add dark mode support",
-      description: "Implement theme switching with system preference detection.\nPersist user choice in local storage.",
+      description:
+        "Implement theme switching with system preference detection.\nPersist user choice in local storage.",
       status: :in_progress,
       priority: :medium,
       tags: ["feature", "ui"],
@@ -215,7 +224,8 @@ defmodule TaskTracker do
     %{
       id: 5,
       title: "Optimize database queries",
-      description: "Profile slow queries on the dashboard.\nAdd missing indexes and batch N+1 loads.",
+      description:
+        "Profile slow queries on the dashboard.\nAdd missing indexes and batch N+1 loads.",
       status: :todo,
       priority: :high,
       tags: ["performance"],
@@ -226,7 +236,8 @@ defmodule TaskTracker do
     %{
       id: 6,
       title: "Set up CI pipeline",
-      description: "Configure GitHub Actions for tests, lint, and deploy.\nAdd status badges to README.",
+      description:
+        "Configure GitHub Actions for tests, lint, and deploy.\nAdd status badges to README.",
       status: :done,
       priority: :low,
       tags: ["devops"],
@@ -240,26 +251,27 @@ defmodule TaskTracker do
 
   @impl true
   def mount(_assigns) do
-    {:ok, %{
-      current_view: :dashboard,
-      tasks: @initial_tasks,
-      next_id: 7,
+    {:ok,
+     %{
+       current_view: :dashboard,
+       tasks: @initial_tasks,
+       next_id: 7,
 
-      # Dashboard state
-      filter_index: 0,
-      sort_index: 0,
+       # Dashboard state
+       filter_index: 0,
+       sort_index: 0,
 
-      # Detail view state
-      selected_task: nil,
-      detail_progress: 0.0,
-      tween: nil,
+       # Detail view state
+       selected_task: nil,
+       detail_progress: 0.0,
+       tween: nil,
 
-      # New task form state
-      form_title: "",
-      form_description: "",
-      form_priority: nil,
-      form_status: nil
-    }}
+       # New task form state
+       form_title: "",
+       form_description: "",
+       form_priority: nil,
+       form_status: nil
+     }}
   end
 
   # ── Render dispatch ────────────────────────────────────────
@@ -281,9 +293,11 @@ defmodule TaskTracker do
     sort_label = @sorts |> Enum.at(assigns.sort_index) |> Atom.to_string() |> String.capitalize()
 
     total = length(assigns.tasks)
-    done = Enum.count(assigns.tasks, & &1.status == :done)
-    active = Enum.count(assigns.tasks, & &1.status in [:in_progress, :in_review])
-    avg_progress = if total > 0, do: Enum.sum(Enum.map(assigns.tasks, & &1.progress)) / total, else: 0.0
+    done = Enum.count(assigns.tasks, &(&1.status == :done))
+    active = Enum.count(assigns.tasks, &(&1.status in [:in_progress, :in_review]))
+
+    avg_progress =
+      if total > 0, do: Enum.sum(Enum.map(assigns.tasks, & &1.progress)) / total, else: 0.0
 
     box flex_direction: :column do
       # Title bar
@@ -308,7 +322,11 @@ defmodule TaskTracker do
         end
 
         # Sidebar (right, fixed-ish)
-        box flex_direction: :column, flex: 1, border: :rounded, border_color: :bright_black, padding_h: 1 do
+        box flex_direction: :column,
+            flex: 1,
+            border: :rounded,
+            border_color: :bright_black,
+            padding_h: 1 do
           # Stats
           heading(text: "Stats", color: :yellow, divider: false)
           key_value(label: "Total", value: "#{total}")
@@ -364,20 +382,22 @@ defmodule TaskTracker do
     task = assigns.selected_task
 
     # Priority badge color
-    priority_color = case task.priority do
-      :critical -> :red
-      :high -> :yellow
-      :medium -> :blue
-      :low -> :bright_black
-    end
+    priority_color =
+      case task.priority do
+        :critical -> :red
+        :high -> :yellow
+        :medium -> :blue
+        :low -> :bright_black
+      end
 
     # Status badge color
-    status_color = case task.status do
-      :done -> :green
-      :in_review -> :cyan
-      :in_progress -> :yellow
-      :todo -> :bright_black
-    end
+    status_color =
+      case task.status do
+        :done -> :green
+        :in_review -> :cyan
+        :in_progress -> :yellow
+        :todo -> :bright_black
+      end
 
     box flex_direction: :column do
       # Title bar
@@ -391,7 +411,11 @@ defmodule TaskTracker do
 
       # Metadata row
       box flex_direction: :row, padding_h: 1 do
-        badge(label: task.status |> Atom.to_string() |> String.replace("_", " "), color: status_color)
+        badge(
+          label: task.status |> Atom.to_string() |> String.replace("_", " "),
+          color: status_color
+        )
+
         badge(label: task.priority |> Atom.to_string(), color: priority_color)
 
         for tag <- task.tags do
@@ -617,13 +641,14 @@ defmodule TaskTracker do
         {:noreply, assign(assigns, :current_view, :dashboard)}
 
       :new_task ->
-        {:noreply, assign(assigns,
-          current_view: :dashboard,
-          form_title: "",
-          form_description: "",
-          form_priority: nil,
-          form_status: nil
-        )}
+        {:noreply,
+         assign(assigns,
+           current_view: :dashboard,
+           form_title: "",
+           form_description: "",
+           form_priority: nil,
+           form_status: nil
+         )}
 
       _ ->
         {:noreply, assigns}
@@ -632,13 +657,14 @@ defmodule TaskTracker do
 
   def handle_event({:key, {:char, "n"}}, assigns) do
     if assigns.current_view == :dashboard do
-      {:noreply, assign(assigns,
-        current_view: :new_task,
-        form_title: "",
-        form_description: "",
-        form_priority: nil,
-        form_status: nil
-      )}
+      {:noreply,
+       assign(assigns,
+         current_view: :new_task,
+         form_title: "",
+         form_description: "",
+         form_priority: nil,
+         form_status: nil
+       )}
     else
       {:noreply, assigns}
     end
@@ -671,18 +697,23 @@ defmodule TaskTracker do
   @impl true
   def handle_info({:task_selected, task}, assigns) do
     # Navigate to detail view with tween animation
-    tween = if Courgette.animations_enabled?() do
-      Tween.new(0.0, task.progress, duration: 800, easing: :ease_out_cubic)
-    end
+    tween =
+      if Courgette.animations_enabled?() do
+        Tween.new(0.0, task.progress, duration: 800, easing: :ease_out_cubic)
+      end
 
-    assigns = assign(assigns,
-      current_view: :detail,
-      selected_task: task,
-      detail_progress: 0.0,
-      tween: tween
-    )
+    assigns =
+      assign(assigns,
+        current_view: :detail,
+        selected_task: task,
+        detail_progress: 0.0,
+        tween: tween
+      )
 
-    assigns = if tween, do: Tween.start_timer(assigns, :detail_progress), else: assign(assigns, :detail_progress, task.progress)
+    assigns =
+      if tween,
+        do: Tween.start_timer(assigns, :detail_progress),
+        else: assign(assigns, :detail_progress, task.progress)
 
     {:noreply, assigns}
   end
@@ -775,15 +806,16 @@ defmodule TaskTracker do
         created: "2026-02-22"
       }
 
-      {:noreply, assign(assigns,
-        tasks: assigns.tasks ++ [new_task],
-        next_id: assigns.next_id + 1,
-        current_view: :dashboard,
-        form_title: "",
-        form_description: "",
-        form_priority: nil,
-        form_status: nil
-      )}
+      {:noreply,
+       assign(assigns,
+         tasks: assigns.tasks ++ [new_task],
+         next_id: assigns.next_id + 1,
+         current_view: :dashboard,
+         form_title: "",
+         form_description: "",
+         form_priority: nil,
+         form_status: nil
+       )}
     else
       {:noreply, assigns}
     end
@@ -801,13 +833,13 @@ defmodule TaskTracker do
 
     assigns.tasks
     |> then(fn tasks ->
-      if status_filter == :all, do: tasks, else: Enum.filter(tasks, & &1.status == status_filter)
+      if status_filter == :all, do: tasks, else: Enum.filter(tasks, &(&1.status == status_filter))
     end)
     |> sort_tasks(sort_key)
   end
 
   defp sort_tasks(tasks, :id), do: Enum.sort_by(tasks, & &1.id)
-  defp sort_tasks(tasks, :priority), do: Enum.sort_by(tasks, & @priority_order[&1.priority])
+  defp sort_tasks(tasks, :priority), do: Enum.sort_by(tasks, &@priority_order[&1.priority])
   defp sort_tasks(tasks, :progress), do: Enum.sort_by(tasks, & &1.progress, :desc)
 
   defp format_status(:all), do: "All"

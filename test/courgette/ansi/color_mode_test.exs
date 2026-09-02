@@ -128,7 +128,7 @@ defmodule Courgette.ANSI.ColorModeTest do
     test "gray maps to grayscale ramp" do
       result = ColorMode.downgrade({128, 128, 128}, :bit_8)
       # Should land in the grayscale ramp (232-255) or a neutral cube entry
-      assert is_integer(result) and result in 0..255
+      assert result in 0..255
     end
   end
 

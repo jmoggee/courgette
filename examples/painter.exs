@@ -139,7 +139,12 @@ defmodule Example.Painter do
               children: [
                 text_node("Recent Activity", [color: :blue, bold: true], content_x + 3, 9),
                 text_node("Agent-3 completed file_edit task", [color: :white], content_x + 3, 11),
-                text_node("Agent-1 started bash command", [color: :white, dim: true], content_x + 3, 12)
+                text_node(
+                  "Agent-1 started bash command",
+                  [color: :white, dim: true],
+                  content_x + 3,
+                  12
+                )
               ]
             }
           ]

@@ -80,7 +80,10 @@ defmodule Example.KeyParser do
           hex =
             bytes
             |> :binary.bin_to_list()
-            |> Enum.map_join(" ", &("0x" <> String.pad_leading(Integer.to_string(&1, 16), 2, "0")))
+            |> Enum.map_join(
+              " ",
+              &("0x" <> String.pad_leading(Integer.to_string(&1, 16), 2, "0"))
+            )
 
           line_y = rem(count, max(1, rows - 4)) + 3
 

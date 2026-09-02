@@ -81,27 +81,33 @@ defmodule Courgette.Painter do
         buffer
 
       clip_rect ->
-        buffer = paint_element(buffer, element, bounds, clip_rect)
+        buffer
+        |> paint_element(element, bounds, clip_rect)
+        |> paint_overflow(element, bounds, children, clip_rect)
+    end
+  end
 
-        case Map.get(element.props, :overflow, :visible) do
-          :visible ->
-            paint_children(buffer, children, clip_rect)
+  # Paints a node's children according to its overflow mode. :hidden and
+  # :scroll both clip to the inner content box; :scroll also shifts the
+  # subtree up by the current scroll offset.
+  defp paint_overflow(buffer, element, bounds, children, clip) do
+    case Map.get(element.props, :overflow, :visible) do
+      :visible ->
+        paint_children(buffer, children, clip)
 
-          :hidden ->
-            inner = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
-            if inner, do: paint_children(buffer, children, inner), else: buffer
+      :hidden ->
+        paint_clipped_children(buffer, element, bounds, children, clip)
 
-          :scroll ->
-            inner = compute_clip(inner_content_bounds(bounds, element.props), clip_rect)
+      :scroll ->
+        offset = Map.get(element.props, :scroll_offset, 0)
+        paint_clipped_children(buffer, element, bounds, shift_tree(children, 0, -offset), clip)
+    end
+  end
 
-            if inner do
-              offset = Map.get(element.props, :scroll_offset, 0)
-              shifted = shift_tree(children, 0, -offset)
-              paint_children(buffer, shifted, inner)
-            else
-              buffer
-            end
-        end
+  defp paint_clipped_children(buffer, element, bounds, children, clip) do
+    case compute_clip(inner_content_bounds(bounds, element.props), clip) do
+      nil -> buffer
+      inner -> paint_children(buffer, children, inner)
     end
   end
 

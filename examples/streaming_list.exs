@@ -51,10 +51,10 @@ defmodule StreamingList do
 
     box flex_direction: :column do
       box height: 1, padding_h: 1, flex_direction: :row do
-        text bold: true, color: :cyan, do: "Streaming Data"
+        text(bold: true, color: :cyan, do: "Streaming Data")
 
         box flex: 1, justify_content: :flex_end do
-          text color: status_color, do: status_text
+          text(color: status_color, do: status_text)
         end
       end
 
@@ -68,17 +68,19 @@ defmodule StreamingList do
         focusable: true
       ) do
         if assigns.items == [] do
-          text color: :bright_black, do: "  Waiting for data..."
+          text(color: :bright_black, do: "  Waiting for data...")
         end
 
         for item <- assigns.items do
-          text color: item.color, do: "  #{item.text}"
+          text(color: item.color, do: "  #{item.text}")
         end
       end
 
       box height: 1, padding_h: 1 do
-        text color: :bright_black,
-            do: " [↑/↓] scroll  [space] pause/resume  [q] quit"
+        text(
+          color: :bright_black,
+          do: " [↑/↓] scroll  [space] pause/resume  [q] quit"
+        )
       end
     end
   end

@@ -71,20 +71,52 @@ defmodule Example.LayoutFlexbox do
   # ── Frame 1: Flex row with equal grow ─────────────────────────────
 
   defp build_flex_row(cols, rows) do
-    el = Element.new(:box, [width: cols, height: rows - 2, border: :rounded, border_color: :bright_white], [
-      Element.new(:box, [flex: 1, bg: :blue, border: :single, border_color: :bright_blue,
-                         align_items: :flex_start], [
-        Element.new(:text, [color: :bright_white, bold: true], ["Panel A"])
-      ]),
-      Element.new(:box, [flex: 1, bg: :red, border: :single, border_color: :bright_red,
-                         align_items: :flex_start], [
-        Element.new(:text, [color: :bright_white, bold: true], ["Panel B"])
-      ]),
-      Element.new(:box, [flex: 1, bg: :green, border: :single, border_color: :bright_green,
-                         align_items: :flex_start], [
-        Element.new(:text, [color: :black, bold: true], ["Panel C"])
-      ])
-    ])
+    el =
+      Element.new(
+        :box,
+        [width: cols, height: rows - 2, border: :rounded, border_color: :bright_white],
+        [
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              bg: :blue,
+              border: :single,
+              border_color: :bright_blue,
+              align_items: :flex_start
+            ],
+            [
+              Element.new(:text, [color: :bright_white, bold: true], ["Panel A"])
+            ]
+          ),
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              bg: :red,
+              border: :single,
+              border_color: :bright_red,
+              align_items: :flex_start
+            ],
+            [
+              Element.new(:text, [color: :bright_white, bold: true], ["Panel B"])
+            ]
+          ),
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              bg: :green,
+              border: :single,
+              border_color: :bright_green,
+              align_items: :flex_start
+            ],
+            [
+              Element.new(:text, [color: :black, bold: true], ["Panel C"])
+            ]
+          )
+        ]
+      )
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
   end
@@ -92,22 +124,42 @@ defmodule Example.LayoutFlexbox do
   # ── Frame 2: Column layout ───────────────────────────────────────
 
   defp build_flex_column(cols, rows) do
-    el = Element.new(:box, [width: cols, height: rows - 2, flex_direction: :column,
-                            border: :single, border_color: :cyan], [
-      Element.new(:box, [height: 3, bg: :blue, align_items: :center, justify_content: :center], [
-        Element.new(:text, [color: :bright_white, bold: true], ["Header"])
-      ]),
-      Element.new(:box, [flex: 3, bg: :black, padding: 1, align_items: :flex_start,
-                         flex_direction: :column], [
-        Element.new(:text, [color: :green], ["Content area"]),
-        Element.new(:text, [color: :white], ["flex: 3 — takes most of the space"]),
-        Element.new(:text, [color: :bright_black], ["Grows to fill available height"])
-      ]),
-      Element.new(:box, [height: 3, bg: {40, 40, 40}, align_items: :center,
-                         justify_content: :center], [
-        Element.new(:text, [color: :bright_black], ["Footer — fixed height"])
-      ])
-    ])
+    el =
+      Element.new(
+        :box,
+        [
+          width: cols,
+          height: rows - 2,
+          flex_direction: :column,
+          border: :single,
+          border_color: :cyan
+        ],
+        [
+          Element.new(
+            :box,
+            [height: 3, bg: :blue, align_items: :center, justify_content: :center],
+            [
+              Element.new(:text, [color: :bright_white, bold: true], ["Header"])
+            ]
+          ),
+          Element.new(
+            :box,
+            [flex: 3, bg: :black, padding: 1, align_items: :flex_start, flex_direction: :column],
+            [
+              Element.new(:text, [color: :green], ["Content area"]),
+              Element.new(:text, [color: :white], ["flex: 3 — takes most of the space"]),
+              Element.new(:text, [color: :bright_black], ["Grows to fill available height"])
+            ]
+          ),
+          Element.new(
+            :box,
+            [height: 3, bg: {40, 40, 40}, align_items: :center, justify_content: :center],
+            [
+              Element.new(:text, [color: :bright_black], ["Footer — fixed height"])
+            ]
+          )
+        ]
+      )
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
   end
@@ -117,39 +169,71 @@ defmodule Example.LayoutFlexbox do
   defp build_dashboard(cols, rows) do
     sidebar_width = min(20, div(cols, 4))
 
-    sidebar = Element.new(:box, [width: sidebar_width, border: :single, border_color: :cyan,
-                                  flex_direction: :column, align_items: :flex_start,
-                                  padding: 1], [
-      Element.new(:text, [color: :cyan, bold: true], ["Navigation"]),
-      Element.new(:text, [color: :white], ["Home"]),
-      Element.new(:text, [color: :white], ["Settings"]),
-      Element.new(:text, [color: :white], ["Profile"]),
-      Element.new(:text, [color: :bright_black], ["Logout"])
-    ])
+    sidebar =
+      Element.new(
+        :box,
+        [
+          width: sidebar_width,
+          border: :single,
+          border_color: :cyan,
+          flex_direction: :column,
+          align_items: :flex_start,
+          padding: 1
+        ],
+        [
+          Element.new(:text, [color: :cyan, bold: true], ["Navigation"]),
+          Element.new(:text, [color: :white], ["Home"]),
+          Element.new(:text, [color: :white], ["Settings"]),
+          Element.new(:text, [color: :white], ["Profile"]),
+          Element.new(:text, [color: :bright_black], ["Logout"])
+        ]
+      )
 
-    content = Element.new(:box, [flex: 1, border: :rounded, border_color: :yellow,
-                                  flex_direction: :column, padding: 1, align_items: :flex_start], [
-      Element.new(:text, [color: :yellow, bold: true], ["Dashboard"]),
-      Element.new(:text, [], [""]),
-      Element.new(:text, [color: :white], ["Welcome to the Courgette TUI framework."]),
-      Element.new(:text, [color: :white], ["This layout is computed by the flexbox engine."]),
-      Element.new(:text, [], [""]),
-      Element.new(:box, [border: :single, border_color: :green, padding_h: 2, align_items: :flex_start,
-                          flex_direction: :column], [
-        Element.new(:text, [color: :green, bold: true], ["Activity"]),
-        Element.new(:text, [color: :white], ["Last login: just now"]),
-        Element.new(:text, [color: :white], ["Status: online"])
+    content =
+      Element.new(
+        :box,
+        [
+          flex: 1,
+          border: :rounded,
+          border_color: :yellow,
+          flex_direction: :column,
+          padding: 1,
+          align_items: :flex_start
+        ],
+        [
+          Element.new(:text, [color: :yellow, bold: true], ["Dashboard"]),
+          Element.new(:text, [], [""]),
+          Element.new(:text, [color: :white], ["Welcome to the Courgette TUI framework."]),
+          Element.new(:text, [color: :white], ["This layout is computed by the flexbox engine."]),
+          Element.new(:text, [], [""]),
+          Element.new(
+            :box,
+            [
+              border: :single,
+              border_color: :green,
+              padding_h: 2,
+              align_items: :flex_start,
+              flex_direction: :column
+            ],
+            [
+              Element.new(:text, [color: :green, bold: true], ["Activity"]),
+              Element.new(:text, [color: :white], ["Last login: just now"]),
+              Element.new(:text, [color: :white], ["Status: online"])
+            ]
+          )
+        ]
+      )
+
+    header =
+      Element.new(:text, [color: :bright_white, bold: true, height: 1], [
+        "Courgette Dashboard — Flexbox Layout"
       ])
-    ])
 
-    header = Element.new(:text, [color: :bright_white, bold: true, height: 1], [
-      "Courgette Dashboard — Flexbox Layout"
-    ])
-
-    el = Element.new(:box, [width: cols, height: rows - 2, flex_direction: :column], [
-      header,
-      Element.new(:box, [flex: 1], [sidebar, content])
-    ])
+    el =
+      Element.new(:box, [width: cols, height: rows - 2, flex_direction: :column], [
+        header,
+        Element.new(:box, [flex: 1], [sidebar, content])
+      ])
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
   end
@@ -157,35 +241,83 @@ defmodule Example.LayoutFlexbox do
   # ── Frame 4: Nested flex ─────────────────────────────────────────
 
   defp build_nested(cols, rows) do
-    el = Element.new(:box, [width: cols, height: rows - 2, gap: 1,
-                            border: :double, border_color: :bright_white], [
-      Element.new(:box, [flex: 1, border: :single, border_color: :magenta,
-                         flex_direction: :column, gap: 1, padding: 1], [
-        Element.new(:box, [flex: 1, bg: :magenta, align_items: :center, justify_content: :center], [
-          Element.new(:text, [color: :bright_white], ["A1"])
-        ]),
-        Element.new(:box, [flex: 1, bg: {100, 0, 100}, align_items: :center,
-                           justify_content: :center], [
-          Element.new(:text, [color: :bright_white], ["A2"])
-        ])
-      ]),
-      Element.new(:box, [flex: 2, border: :rounded, border_color: :cyan,
-                         flex_direction: :column, gap: 1, padding: 1], [
-        Element.new(:box, [flex: 1, bg: :cyan, align_items: :center, justify_content: :center], [
-          Element.new(:text, [color: :black, bold: true], ["B1 (flex: 2 outer)"])
-        ]),
-        Element.new(:box, [flex: 2, bg: {0, 100, 100}, align_items: :center,
-                           justify_content: :center], [
-          Element.new(:text, [color: :bright_white], ["B2"])
-        ])
-      ]),
-      Element.new(:box, [flex: 1, border: :single, border_color: :yellow,
-                         flex_direction: :column, padding: 1, align_items: :flex_start], [
-        Element.new(:text, [color: :yellow, bold: true], ["C"]),
-        Element.new(:text, [color: :white], ["Fixed"]),
-        Element.new(:text, [color: :white], ["panel"])
-      ])
-    ])
+    el =
+      Element.new(
+        :box,
+        [width: cols, height: rows - 2, gap: 1, border: :double, border_color: :bright_white],
+        [
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              border: :single,
+              border_color: :magenta,
+              flex_direction: :column,
+              gap: 1,
+              padding: 1
+            ],
+            [
+              Element.new(
+                :box,
+                [flex: 1, bg: :magenta, align_items: :center, justify_content: :center],
+                [
+                  Element.new(:text, [color: :bright_white], ["A1"])
+                ]
+              ),
+              Element.new(
+                :box,
+                [flex: 1, bg: {100, 0, 100}, align_items: :center, justify_content: :center],
+                [
+                  Element.new(:text, [color: :bright_white], ["A2"])
+                ]
+              )
+            ]
+          ),
+          Element.new(
+            :box,
+            [
+              flex: 2,
+              border: :rounded,
+              border_color: :cyan,
+              flex_direction: :column,
+              gap: 1,
+              padding: 1
+            ],
+            [
+              Element.new(
+                :box,
+                [flex: 1, bg: :cyan, align_items: :center, justify_content: :center],
+                [
+                  Element.new(:text, [color: :black, bold: true], ["B1 (flex: 2 outer)"])
+                ]
+              ),
+              Element.new(
+                :box,
+                [flex: 2, bg: {0, 100, 100}, align_items: :center, justify_content: :center],
+                [
+                  Element.new(:text, [color: :bright_white], ["B2"])
+                ]
+              )
+            ]
+          ),
+          Element.new(
+            :box,
+            [
+              flex: 1,
+              border: :single,
+              border_color: :yellow,
+              flex_direction: :column,
+              padding: 1,
+              align_items: :flex_start
+            ],
+            [
+              Element.new(:text, [color: :yellow, bold: true], ["C"]),
+              Element.new(:text, [color: :white], ["Fixed"]),
+              Element.new(:text, [color: :white], ["panel"])
+            ]
+          )
+        ]
+      )
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
   end
@@ -198,35 +330,68 @@ defmodule Example.LayoutFlexbox do
 
     modes = [:flex_start, :flex_end, :center, :space_between, :space_around, :space_evenly]
 
-    children = Enum.map(modes, fn mode ->
-      label = mode |> Atom.to_string() |> String.replace("_", " ")
+    children =
+      Enum.map(modes, fn mode ->
+        label = mode |> Atom.to_string() |> String.replace("_", " ")
 
-      Element.new(:box, [height: box_h + 2, flex_direction: :column, align_items: :flex_start], [
-        Element.new(:text, [color: :bright_black], ["  #{label}"]),
-        Element.new(:box, [height: box_h, justify_content: mode, align_items: :center,
-                           border: :single, border_color: :bright_black], [
-          Element.new(:box, [width: box_w, bg: :blue, align_items: :center,
-                             justify_content: :center], [
-            Element.new(:text, [color: :bright_white], ["1"])
-          ]),
-          Element.new(:box, [width: box_w, bg: :red, align_items: :center,
-                             justify_content: :center], [
-            Element.new(:text, [color: :bright_white], ["2"])
-          ]),
-          Element.new(:box, [width: box_w, bg: :green, align_items: :center,
-                             justify_content: :center], [
-            Element.new(:text, [color: :black], ["3"])
-          ])
-        ])
-      ])
-    end)
+        Element.new(
+          :box,
+          [height: box_h + 2, flex_direction: :column, align_items: :flex_start],
+          [
+            Element.new(:text, [color: :bright_black], ["  #{label}"]),
+            Element.new(
+              :box,
+              [
+                height: box_h,
+                justify_content: mode,
+                align_items: :center,
+                border: :single,
+                border_color: :bright_black
+              ],
+              [
+                Element.new(
+                  :box,
+                  [width: box_w, bg: :blue, align_items: :center, justify_content: :center],
+                  [
+                    Element.new(:text, [color: :bright_white], ["1"])
+                  ]
+                ),
+                Element.new(
+                  :box,
+                  [width: box_w, bg: :red, align_items: :center, justify_content: :center],
+                  [
+                    Element.new(:text, [color: :bright_white], ["2"])
+                  ]
+                ),
+                Element.new(
+                  :box,
+                  [width: box_w, bg: :green, align_items: :center, justify_content: :center],
+                  [
+                    Element.new(:text, [color: :black], ["3"])
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+      end)
 
-    el = Element.new(:box, [width: cols, height: rows - 2, flex_direction: :column,
-                            padding: 1, align_items: :flex_start], [
-      Element.new(:text, [color: :bright_white, bold: true], ["justify_content modes"]),
-      Element.new(:text, [], [""]) |
-      children
-    ])
+    el =
+      Element.new(
+        :box,
+        [
+          width: cols,
+          height: rows - 2,
+          flex_direction: :column,
+          padding: 1,
+          align_items: :flex_start
+        ],
+        [
+          Element.new(:text, [color: :bright_white, bold: true], ["justify_content modes"]),
+          Element.new(:text, [], [""])
+          | children
+        ]
+      )
 
     Engine.compute(el, Bounds.new(0, 0, cols, rows - 2))
   end

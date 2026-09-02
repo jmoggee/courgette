@@ -15,6 +15,7 @@ defmodule Example.OverlaySketch do
   import Courgette.Components.Overlay
 
   alias Courgette.Components.TextInput
+
   @items [
     "Checkbox",
     "Switch",
@@ -66,10 +67,20 @@ defmodule Example.OverlaySketch do
 
       # Overlay centered on screen
       if assigns.open do
-        box position: :absolute, top: 0, left: 0, right: 0, bottom: 0,
-            justify_content: :center, align_items: :center do
-          box border: :rounded, bg: :black, width: 50, height: 20,
-              flex_direction: :column, padding: 1, overflow: :hidden do
+        box position: :absolute,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justify_content: :center,
+            align_items: :center do
+          box border: :rounded,
+              bg: :black,
+              width: 50,
+              height: 20,
+              flex_direction: :column,
+              padding: 1,
+              overflow: :hidden do
             text bold: true do
               "Command Palette"
             end
@@ -82,7 +93,9 @@ defmodule Example.OverlaySketch do
               on_change: :filter_changed
             )
 
-            box height: @visible_height, overflow: :scroll, scroll_offset: scroll_offset,
+            box height: @visible_height,
+                overflow: :scroll,
+                scroll_offset: scroll_offset,
                 flex_direction: :column do
               for {label, idx} <- Enum.with_index(filtered) do
                 if idx == selected do

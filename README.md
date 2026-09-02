@@ -12,7 +12,7 @@ A declarative TUI framework for Elixir, built on OTP.
 Courgette gives you a component model inspired by Phoenix LiveView — stateful
 components with `mount`, `render`, and `handle_event` callbacks — but targeting
 the terminal instead of the browser. Layout uses a CSS inspired Flexbox engine.
-Rendering is incremental via double-buffered diffing. 
+Rendering is incremental via double-buffered diffing.
 
 ## Quick Start
 
