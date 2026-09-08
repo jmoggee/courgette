@@ -221,7 +221,7 @@ defmodule Courgette.Renderer do
 
   # -- Private --
 
-  defp do_render(state) do
+  defp do_render(state, prefix \\ []) do
     %{front: front, width: w, height: h, last_tree: tree} = state
 
     # 1. Layout
@@ -237,7 +237,7 @@ defmodule Courgette.Renderer do
     # 4. Write to terminal (unless headless)
     unless state.headless do
       iodata = Writer.render(runs)
-      Terminal.write([ANSI.sync_begin(), iodata, ANSI.sync_end()], state.terminal)
+      Terminal.write([ANSI.sync_begin(), prefix, iodata, ANSI.sync_end()], state.terminal)
     end
 
     # 5. Swap front buffer
@@ -252,7 +252,11 @@ defmodule Courgette.Renderer do
     state
   end
 
-  defp resize_frame(state), do: repaint(state)
+  defp resize_frame(%{headless: true} = state), do: repaint(state)
+
+  defp resize_frame(state) do
+    do_render(state, [ANSI.clear_screen(), ANSI.cursor_home()])
+  end
 
   defp selected_buffer(buffer, nil), do: buffer
   defp selected_buffer(buffer, selection), do: Selection.highlight(selection, buffer)

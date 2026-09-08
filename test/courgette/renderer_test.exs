@@ -328,6 +328,7 @@ defmodule Courgette.RendererTest do
 
       {_input, output} = StringIO.contents(device)
       sync_count = output |> String.split("\e[?2026h") |> length()
+      assert output =~ "\e[2J"
       assert sync_count == 2
 
       GenServer.stop(pid)
