@@ -67,6 +67,29 @@ defmodule Courgette.LiveComponent.ServerTest do
     end
   end
 
+  defmodule SelectionComponent do
+    use Courgette.LiveComponent
+
+    @impl true
+    def mount(assigns), do: {:ok, assigns}
+
+    @impl true
+    def render(_assigns), do: text(do: "select this text")
+
+    @impl true
+    def handle_event({:selection, :completed, text}, assigns) do
+      send(assigns.test_pid, {:selected, text})
+      {:noreply, assigns}
+    end
+
+    def handle_event({:mouse, _, _, _, _} = event, assigns) do
+      send(assigns.test_pid, event)
+      {:noreply, assigns}
+    end
+
+    def handle_event(_event, assigns), do: {:noreply, assigns}
+  end
+
   defmodule ResizeComponent do
     use Courgette.LiveComponent
 
@@ -107,6 +130,7 @@ defmodule Courgette.LiveComponent.ServerTest do
       Server.start_link(
         module: module,
         renderer: renderer_name,
+        text_selection: Keyword.get(opts, :text_selection, false),
         initial_assigns: initial_assigns
       )
 
@@ -156,6 +180,29 @@ defmodule Courgette.LiveComponent.ServerTest do
   end
 
   describe "handle_event via test_event" do
+    test "leaves mouse events with apps that do not enable text selection" do
+      ctx = start_server(SelectionComponent, initial_assigns: %{test_pid: self()})
+      event = {:mouse, :press, :left, 1, 1}
+
+      GenServer.call(ctx.server, {:test_event, event})
+
+      assert_receive ^event
+    end
+
+    test "turns a left-button drag into selected screen text" do
+      ctx =
+        start_server(SelectionComponent,
+          text_selection: true,
+          initial_assigns: %{test_pid: self()}
+        )
+
+      GenServer.call(ctx.server, {:test_event, {:mouse, :press, :left, 1, 1}})
+      GenServer.call(ctx.server, {:test_event, {:mouse, :drag, :left, 6, 1}})
+      GenServer.call(ctx.server, {:test_event, {:mouse, :release, :left, 6, 1}})
+
+      assert_receive {:selected, "select"}
+    end
+
     test "arrow_up increments counter" do
       ctx = start_server(CounterComponent)
 
@@ -300,6 +347,20 @@ defmodule Courgette.LiveComponent.ServerTest do
       :sys.get_state(ctx.server)
 
       assert extract_text(last_tree(ctx)) == "size: {120, 40}"
+
+      GenServer.stop(ctx.server)
+      GenServer.stop(ctx.renderer)
+    end
+
+    test "repaints after a duplicate same-size resize" do
+      ctx = start_server(ResizeComponent, width: 40, height: 10)
+
+      send(ctx.server, {:terminal_resize, 40, 10})
+      :sys.get_state(ctx.server)
+      send(ctx.server, {:terminal_resize, 40, 10})
+      :sys.get_state(ctx.server)
+
+      assert extract_text(last_tree(ctx)) == "size: {40, 10}"
 
       GenServer.stop(ctx.server)
       GenServer.stop(ctx.renderer)

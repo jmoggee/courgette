@@ -528,6 +528,12 @@ defmodule Courgette.ANSI do
   @doc "Disable basic mouse tracking."
   def mouse_disable, do: "\e[?1000l"
 
+  @doc "Enable mouse motion reports while a button is held."
+  def mouse_button_motion_enable, do: "\e[?1002h"
+
+  @doc "Disable mouse motion reports while a button is held."
+  def mouse_button_motion_disable, do: "\e[?1002l"
+
   @doc "Enable SGR mouse mode (extended coordinates, supports large terminals)."
   def mouse_sgr_enable, do: "\e[?1006h"
 

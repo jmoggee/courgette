@@ -49,7 +49,8 @@ defmodule Courgette.LiveComponent.Server do
           children: %{{module(), term()} => {pid(), map()}},
           child_trees: %{{module(), term()} => Courgette.Element.t()},
           raw_tree: Courgette.Element.t() | nil,
-          focus: FocusManager.t()
+          focus: FocusManager.t(),
+          text_selection?: boolean()
         }
 
   # -- Public API --
@@ -121,7 +122,8 @@ defmodule Courgette.LiveComponent.Server do
       children: %{},
       child_trees: %{},
       raw_tree: raw_tree,
-      focus: FocusManager.new()
+      focus: FocusManager.new(),
+      text_selection?: Keyword.get(opts, :text_selection, false)
     }
 
     # Reconcile any initial children from the raw tree
@@ -187,9 +189,8 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   def handle_info({:terminal_resize, cols, rows}, state) do
-    Renderer.resize(cols, rows, state.renderer)
-
     new_state = dispatch_event({:resize, cols, rows}, state)
+    Renderer.resize(cols, rows, state.renderer)
     {:noreply, new_state}
   end
 
@@ -276,12 +277,54 @@ defmodule Courgette.LiveComponent.Server do
   end
 
   defp dispatch_event(event, state) do
+    case select_text(event, state) do
+      {:selected, text} -> dispatch_event_local({:selection, :completed, text}, state)
+      :handled -> state
+      :continue -> dispatch_component_event(event, state)
+    end
+  end
+
+  defp dispatch_component_event(event, state) do
     if state.focus.order != [] do
       dispatch_event_root(event, state)
     else
       dispatch_event_local(event, state)
     end
   end
+
+  defp select_text(
+         {:mouse, :press, :left, column, row},
+         %{parent: nil, text_selection?: true} = state
+       ) do
+    :ok = Renderer.begin_selection(screen_point(column, row), state.renderer)
+    :handled
+  end
+
+  defp select_text(
+         {:mouse, :drag, :left, column, row},
+         %{parent: nil, text_selection?: true} = state
+       ) do
+    :ok = Renderer.extend_selection(screen_point(column, row), state.renderer)
+    :handled
+  end
+
+  defp select_text(
+         {:mouse, :release, :left, column, row},
+         %{parent: nil, text_selection?: true} = state
+       ) do
+    case Renderer.finish_selection(screen_point(column, row), state.renderer) do
+      nil -> :continue
+      text -> {:selected, text}
+    end
+  end
+
+  defp select_text({:mouse, action, :left, column, row, _modifiers}, state)
+       when action in [:press, :drag, :release],
+       do: select_text({:mouse, action, :left, column, row}, state)
+
+  defp select_text(_event, _state), do: :continue
+
+  defp screen_point(column, row), do: {max(column - 1, 0), max(row - 1, 0)}
 
   # Hierarchical Tab/Shift-Tab: route to focused child first so inner
   # controls cycle before advancing focus at this level.

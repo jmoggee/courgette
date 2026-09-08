@@ -29,18 +29,21 @@ defmodule Courgette.Renderer do
   alias Courgette.Layout.Bounds
   alias Courgette.Layout.Engine
   alias Courgette.Painter
+  alias Courgette.Selection
   alias Courgette.Terminal
 
   @frame_ms 16
 
   @type state :: %{
           front: Buffer.t(),
+          base: Buffer.t(),
           terminal: pid() | atom() | nil,
           width: pos_integer(),
           height: pos_integer(),
           headless: boolean(),
           last_tree: Courgette.Element.t() | nil,
-          dirty: boolean()
+          dirty: boolean(),
+          selection: Selection.t() | nil
         }
 
   # -- Public API --
@@ -94,6 +97,15 @@ defmodule Courgette.Renderer do
     GenServer.call(server, :get_last_tree)
   end
 
+  @doc "Start a screen-cell selection at a zero-based point."
+  def begin_selection(point, server), do: GenServer.call(server, {:begin_selection, point})
+
+  @doc "Extend the active screen-cell selection to a zero-based point."
+  def extend_selection(point, server), do: GenServer.call(server, {:extend_selection, point})
+
+  @doc "Finish the active selection and return its plain text, if non-empty."
+  def finish_selection(point, server), do: GenServer.call(server, {:finish_selection, point})
+
   # -- GenServer callbacks --
 
   @impl true
@@ -105,12 +117,14 @@ defmodule Courgette.Renderer do
 
     state = %{
       front: Buffer.new(width, height),
+      base: Buffer.new(width, height),
       terminal: terminal,
       width: width,
       height: height,
       headless: headless,
       last_tree: nil,
-      dirty: false
+      dirty: false,
+      selection: nil
     }
 
     unless headless do
@@ -142,24 +156,55 @@ defmodule Courgette.Renderer do
   end
 
   def handle_call({:resize, cols, rows}, _from, state) do
-    unless state.headless do
-      Terminal.write([ANSI.clear_screen(), ANSI.cursor_home()], state.terminal)
-    end
+    resized = %{
+      state
+      | front: Buffer.new(cols, rows),
+        base: Buffer.new(cols, rows),
+        width: cols,
+        height: rows,
+        dirty: false,
+        selection: nil
+    }
 
-    {:reply, :ok,
-     %{
-       state
-       | front: Buffer.new(cols, rows),
-         width: cols,
-         height: rows,
-         last_tree: nil,
-         dirty: false
-     }}
+    {:reply, :ok, resize_frame(resized)}
   end
 
   def handle_call(:get_last_tree, _from, state) do
     {:reply, state.last_tree, state}
   end
+
+  def handle_call({:begin_selection, point}, _from, state) do
+    state = repaint(%{state | selection: Selection.new(point)})
+    {:reply, :ok, state}
+  end
+
+  def handle_call(
+        {:extend_selection, point},
+        _from,
+        %{selection: %Selection{} = selection} = state
+      ) do
+    state = repaint(%{state | selection: Selection.extend(selection, point)})
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:extend_selection, _point}, _from, state), do: {:reply, :ok, state}
+
+  def handle_call(
+        {:finish_selection, point},
+        _from,
+        %{selection: %Selection{} = selection} = state
+      ) do
+    selection = Selection.extend(selection, point)
+
+    if Selection.empty?(selection) do
+      {:reply, nil, repaint(%{state | selection: nil})}
+    else
+      state = repaint(%{state | selection: selection})
+      {:reply, Selection.text(selection, state.base), state}
+    end
+  end
+
+  def handle_call({:finish_selection, _point}, _from, state), do: {:reply, nil, state}
 
   @impl true
   def handle_info(:tick, state) do
@@ -183,7 +228,8 @@ defmodule Courgette.Renderer do
     layout = Engine.compute(tree, Bounds.new(0, 0, w, h))
 
     # 2. Paint into back buffer
-    back = Painter.paint(layout, Buffer.new(w, h))
+    base = Painter.paint(layout, Buffer.new(w, h))
+    back = selected_buffer(base, state.selection)
 
     # 3. Diff
     runs = Diff.diff(front, back)
@@ -195,8 +241,21 @@ defmodule Courgette.Renderer do
     end
 
     # 5. Swap front buffer
-    %{state | front: back}
+    %{state | front: back, base: base}
   end
+
+  defp repaint(%{last_tree: nil} = state), do: state
+  defp repaint(state), do: do_render(state)
+
+  defp resize_frame(%{last_tree: nil, headless: false} = state) do
+    Terminal.write([ANSI.clear_screen(), ANSI.cursor_home()], state.terminal)
+    state
+  end
+
+  defp resize_frame(state), do: repaint(state)
+
+  defp selected_buffer(buffer, nil), do: buffer
+  defp selected_buffer(buffer, selection), do: Selection.highlight(selection, buffer)
 
   defp schedule_tick do
     Process.send_after(self(), :tick, @frame_ms)

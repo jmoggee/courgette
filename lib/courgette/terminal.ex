@@ -271,6 +271,7 @@ defmodule Courgette.Terminal do
     IO.write(device, [
       ANSI.bracketed_paste_disable(),
       ANSI.focus_events_disable(),
+      ANSI.mouse_button_motion_disable(),
       ANSI.mouse_disable(),
       ANSI.mouse_sgr_disable(),
       ANSI.cursor_show(),
@@ -283,6 +284,7 @@ defmodule Courgette.Terminal do
     IO.write(device, [
       ANSI.bracketed_paste_disable(),
       ANSI.focus_events_disable(),
+      ANSI.mouse_button_motion_disable(),
       ANSI.mouse_disable(),
       ANSI.mouse_sgr_disable(),
       ANSI.cursor_show(),

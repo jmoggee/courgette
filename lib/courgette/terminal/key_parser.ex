@@ -63,7 +63,7 @@ defmodule Courgette.Terminal.KeyParser do
           | {:alt, String.t()}
           | {:shift, :tab}
 
-  @type mouse_action :: :press | :release | :scroll_up | :scroll_down
+  @type mouse_action :: :press | :drag | :release | :scroll_up | :scroll_down
 
   @doc """
   Parse raw terminal bytes into structured events.
@@ -86,6 +86,7 @@ defmodule Courgette.Terminal.KeyParser do
   defp parse_bytes(<<0x1B, rest::binary>>, acc) do
     case parse_escape(rest) do
       {:ok, event, rest2} -> parse_bytes(rest2, [event | acc])
+      {:skip, rest2} -> parse_bytes(rest2, acc)
       {:ok_multi, events, rest2} -> parse_bytes(rest2, Enum.reverse(events) ++ acc)
       {:incomplete, remaining} -> {Enum.reverse(acc), remaining}
     end
@@ -289,6 +290,12 @@ defmodule Courgette.Terminal.KeyParser do
   end
 
   # Tilde keys: ESC[N~ or ESC[N;mod~
+  # Shift+Enter has two common xterm encodings. `13;2~` is used by terminal
+  # mappings, while modifyOtherKeys emits `27;2;13~`.
+  defp dispatch_csi(?~, "13;2", rest), do: {:ok, {:key, :enter, [:shift]}, rest}
+
+  defp dispatch_csi(?~, "27;2;13", rest), do: {:ok, {:key, :enter, [:shift]}, rest}
+
   defp dispatch_csi(?~, params, rest) do
     {key_num, mod_str} =
       case String.split(params, ";") do
@@ -316,21 +323,18 @@ defmodule Courgette.Terminal.KeyParser do
 
   # Kitty CSI u: ESC[codepoint;modifiersu
   defp dispatch_csi(?u, params, rest) do
-    {cp_str, mod_str} =
-      case String.split(params, ";") do
-        [cp] -> {cp, nil}
-        [cp, m] -> {cp, m}
-        _ -> {params, nil}
-      end
+    case parse_kitty_key(params) do
+      {:ok, _key, _mods, :release} ->
+        {:skip, rest}
 
-    codepoint = String.to_integer(cp_str)
-    mods = if mod_str, do: decode_modifiers(String.to_integer(mod_str)), else: []
+      {:ok, key, [], _event_type} ->
+        {:ok, {:key, key}, rest}
 
-    key = csi_u_key(codepoint)
+      {:ok, key, mods, _event_type} ->
+        {:ok, {:key, key, mods}, rest}
 
-    case mods do
-      [] -> {:ok, {:key, key}, rest}
-      mods -> {:ok, {:key, key, mods}, rest}
+      :error ->
+        {:ok, {:key, :escape}, rest}
     end
   end
 
@@ -382,6 +386,54 @@ defmodule Courgette.Terminal.KeyParser do
     {:char, <<cp::utf8>>}
   end
 
+  defp parse_kitty_key(params) do
+    case String.split(params, ";") do
+      [codepoint] ->
+        with {:ok, codepoint} <- parse_decimal(codepoint) do
+          {:ok, csi_u_key(codepoint), [], :press}
+        end
+
+      [codepoint, modifier_and_event] ->
+        with {:ok, codepoint} <- parse_decimal(codepoint),
+             {:ok, modifiers, event_type} <- parse_kitty_modifiers(modifier_and_event) do
+          {:ok, csi_u_key(codepoint), modifiers, event_type}
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp parse_kitty_modifiers(modifier_and_event) do
+    case String.split(modifier_and_event, ":") do
+      [modifier] ->
+        with {:ok, modifier} <- parse_decimal(modifier) do
+          {:ok, decode_modifiers(modifier), :press}
+        end
+
+      [modifier, event] ->
+        with {:ok, modifier} <- parse_decimal(modifier),
+             {:ok, event_type} <- parse_kitty_event_type(event) do
+          {:ok, decode_modifiers(modifier), event_type}
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp parse_kitty_event_type("1"), do: {:ok, :press}
+  defp parse_kitty_event_type("2"), do: {:ok, :repeat}
+  defp parse_kitty_event_type("3"), do: {:ok, :release}
+  defp parse_kitty_event_type(_event), do: :error
+
+  defp parse_decimal(value) do
+    case Integer.parse(value) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
+
   # -- Modifier decoding --
 
   # CSI modifier value: value - 1 = bitmask
@@ -406,7 +458,7 @@ defmodule Courgette.Terminal.KeyParser do
         button_code = String.to_integer(button_s)
         x = String.to_integer(x_s)
         y = String.to_integer(y_s)
-        action = if final == ?M, do: :press, else: :release
+        action = mouse_action(final, button_code)
 
         build_mouse_event(sgr_button(button_code), action, x, y, sgr_modifiers(button_code), rest)
 
@@ -414,6 +466,10 @@ defmodule Courgette.Terminal.KeyParser do
         {:ok, {:key, :escape}, rest}
     end
   end
+
+  defp mouse_action(?m, _button_code), do: :release
+  defp mouse_action(?M, button_code) when Bitwise.band(button_code, 32) != 0, do: :drag
+  defp mouse_action(?M, _button_code), do: :press
 
   defp build_mouse_event({:scroll, dir}, _action, x, y, [], rest) do
     {:ok, {:mouse, dir, x, y}, rest}

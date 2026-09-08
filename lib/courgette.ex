@@ -57,6 +57,7 @@ defmodule Courgette do
 
   - `:mode` — screen mode, `:fullscreen` (default) or `:inline`
   - `:initial_assigns` — map of initial assigns passed to `mount/1`
+  - `:text_selection` — enable renderer-owned mouse text selection (default `false`)
   """
   def run(module, opts \\ []) do
     screen_mode = Keyword.get(opts, :mode, :fullscreen)
@@ -88,6 +89,7 @@ defmodule Courgette do
       Server.start_link(
         module: module,
         renderer: renderer,
+        text_selection: Keyword.get(opts, :text_selection, false),
         initial_assigns: initial_assigns
       )
 

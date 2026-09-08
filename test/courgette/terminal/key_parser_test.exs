@@ -229,6 +229,14 @@ defmodule Courgette.Terminal.KeyParserTest do
     test "modified F5" do
       assert events("\e[15;2~") == [{:key, :f5, [:shift]}]
     end
+
+    test "Shift+Enter terminal mapping" do
+      assert events("\e[13;2~") == [{:key, :enter, [:shift]}]
+    end
+
+    test "Shift+Enter modifyOtherKeys fallback" do
+      assert events("\e[27;2;13~") == [{:key, :enter, [:shift]}]
+    end
   end
 
   describe "focus events" do
@@ -297,9 +305,25 @@ defmodule Courgette.Terminal.KeyParserTest do
     test "enter with shift" do
       assert events("\e[13;2u") == [{:key, :enter, [:shift]}]
     end
+
+    test "Shift+Enter press event" do
+      assert events("\e[13;2:1u") == [{:key, :enter, [:shift]}]
+    end
+
+    test "Shift+Enter release event is ignored" do
+      assert events("\e[13;2:3u") == []
+    end
+
+    test "unknown event type does not crash the parser" do
+      assert events("\e[13;2:4u") == [{:key, :escape}]
+    end
   end
 
   describe "SGR mouse" do
+    test "button motion is a drag event" do
+      assert events("\e[<32;7;4M") == [{:mouse, :drag, :left, 7, 4}]
+    end
+
     test "left press" do
       assert events("\e[<0;10;20M") == [{:mouse, :press, :left, 10, 20}]
     end

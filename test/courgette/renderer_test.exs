@@ -38,6 +38,36 @@ defmodule Courgette.RendererTest do
   end
 
   describe "push/2" do
+    test "selects rendered text in either direction" do
+      pid = start_renderer(width: 8, height: 3)
+
+      tree =
+        Element.new(:box, [flex_direction: :column], [
+          Element.new(:text, [], ["alpha"]),
+          Element.new(:text, [], ["beta"])
+        ])
+
+      Renderer.push(tree, pid)
+
+      :ok = Renderer.begin_selection({4, 0}, pid)
+      refute :sys.get_state(pid).front.cells[{4, 0}].style[:reverse]
+
+      :ok = Renderer.extend_selection({1, 0}, pid)
+      assert :sys.get_state(pid).front.cells[{1, 0}].style.reverse
+
+      assert Renderer.finish_selection({1, 0}, pid) == "lpha"
+    end
+
+    test "a click leaves no highlighted cell or selected text" do
+      pid = start_renderer()
+      Renderer.push(Element.new(:text, [], ["hello"]), pid)
+
+      :ok = Renderer.begin_selection({2, 0}, pid)
+
+      assert Renderer.finish_selection({2, 0}, pid) == nil
+      refute :sys.get_state(pid).front.cells[{2, 0}].style[:reverse]
+    end
+
     test "renders a simple text element" do
       pid = start_renderer()
 
@@ -141,8 +171,8 @@ defmodule Courgette.RendererTest do
       # Resize
       Renderer.resize(40, 10, pid)
 
-      # Last tree is cleared on resize
-      assert Renderer.get_last_tree(pid) == nil
+      # The current tree remains available for the resize repaint.
+      assert Renderer.get_last_tree(pid) == tree
 
       # Push at new size works
       tree2 = Element.new(:text, [], ["After resize"])
@@ -281,7 +311,7 @@ defmodule Courgette.RendererTest do
       Courgette.Terminal.stop(term_name)
     end
 
-    test "resize clears dirty flag" do
+    test "resize immediately repaints a pending tree" do
       %{pid: pid, device: device, terminal: term_name} = start_terminal_renderer()
 
       # Push to mark dirty
@@ -296,21 +326,9 @@ defmodule Courgette.RendererTest do
       # Wait for tick
       Process.sleep(25)
 
-      # Re-read — the resize cleared dirty, so tick should be no-op
-      # We verify by checking there's no sync marker after the resize
-      # (The resize itself wrote clear_screen, but not sync markers)
-      # Actually, let's check by reading the new output after a brief delay
-      # Since StringIO accumulates, we check the total output doesn't have sync markers
-      # after the clear screen from resize
       {_input, output} = StringIO.contents(device)
-      # Output should contain the clear screen from resize
-      assert output =~ "\e[2J"
-
-      # Count sync pairs: only from pushes that actually rendered (which is 0 since
-      # the push was before resize, and resize cleared dirty)
       sync_count = output |> String.split("\e[?2026h") |> length()
-      # 1 means zero occurrences (split of string with 0 matches gives 1 part)
-      assert sync_count == 1
+      assert sync_count == 2
 
       GenServer.stop(pid)
       Courgette.Terminal.stop(term_name)
