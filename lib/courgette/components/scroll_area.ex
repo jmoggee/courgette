@@ -12,6 +12,7 @@ defmodule Courgette.Components.ScrollArea do
   - `height` — viewport height in rows (integer, required)
   - `scrollbar` — show scrollbar when content overflows (boolean, default `true`)
   - `on_scroll` — optional message tag sent to parent on scroll offset change
+  - `follow` — keep the viewport at the bottom while content grows (default `false`)
   - `border` — border style passed to the scrollable area (atom, optional)
   - `border_color` — border color override (atom, optional)
   - `content_height` — explicit content height override; defaults to counting children
@@ -40,6 +41,8 @@ defmodule Courgette.Components.ScrollArea do
      |> assign_new(:inner_block, fn -> [] end)
      |> assign_new(:scrollbar, fn -> true end)
      |> assign_new(:on_scroll, fn -> nil end)
+     |> assign_new(:follow, fn -> false end)
+     |> assign_new(:follow_end?, fn -> Map.get(assigns, :follow, false) end)
      |> assign_new(:border, fn -> nil end)
      |> assign_new(:border_color, fn -> nil end)
      |> assign_new(:content_height, fn -> nil end)
@@ -49,7 +52,12 @@ defmodule Courgette.Components.ScrollArea do
 
   @impl true
   def update(props, assigns) do
-    {:ok, Map.merge(assigns, props)}
+    previous_max_offset = max_offset(assigns)
+    updated = Map.merge(assigns, props)
+    updated = follow_policy_changed(updated, assigns, props)
+    offset = updated_offset(updated, previous_max_offset)
+
+    {:ok, assign(updated, scroll_offset: offset)}
   end
 
   @impl true
@@ -57,7 +65,12 @@ defmodule Courgette.Components.ScrollArea do
     height = assigns.height
     content_h = assigns.content_height || length(assigns.inner_block)
     max_offset = max(0, content_h - height)
-    offset = clamp(assigns.scroll_offset, 0, max_offset)
+
+    offset =
+      if assigns.follow_end?,
+        do: max_offset,
+        else: clamp(assigns.scroll_offset, 0, max_offset)
+
     show_scrollbar = assigns.scrollbar && content_h > height
     children = render_slot(assigns.inner_block)
 
@@ -142,15 +155,19 @@ defmodule Courgette.Components.ScrollArea do
   # -- Private helpers --
 
   defp scroll_by(assigns, delta) do
-    scroll_to(assigns, assigns.scroll_offset + delta)
+    scroll_to(assigns, current_offset(assigns) + delta)
   end
 
   defp scroll_to(assigns, target) do
     max = max_offset(assigns)
     new_offset = clamp(target, 0, max)
 
-    if new_offset != assigns.scroll_offset do
-      new_assigns = assign(assigns, :scroll_offset, new_offset)
+    if new_offset != current_offset(assigns) do
+      new_assigns =
+        assigns
+        |> assign(:scroll_offset, new_offset)
+        |> assign(:follow_end?, new_offset == max)
+
       notify_parent(new_assigns, new_offset)
       {:noreply, new_assigns}
     else
@@ -161,6 +178,26 @@ defmodule Courgette.Components.ScrollArea do
   defp max_offset(assigns) do
     content_h = assigns.content_height || length(assigns.inner_block)
     max(0, content_h - assigns.height)
+  end
+
+  defp updated_offset(assigns, previous_max_offset) do
+    new_max_offset = max_offset(assigns)
+
+    if assigns.follow_end? && new_max_offset != previous_max_offset,
+      do: new_max_offset,
+      else: clamp(assigns.scroll_offset, 0, new_max_offset)
+  end
+
+  defp current_offset(assigns) do
+    if assigns.follow_end?, do: max_offset(assigns), else: assigns.scroll_offset
+  end
+
+  defp follow_policy_changed(updated, assigns, props) do
+    if Map.has_key?(props, :follow) && props.follow != assigns.follow do
+      assign(updated, :follow_end?, props.follow)
+    else
+      updated
+    end
   end
 
   defp clamp(value, min_val, max_val) do

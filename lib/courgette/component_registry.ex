@@ -2,8 +2,8 @@ defmodule Courgette.ComponentRegistry do
   @moduledoc """
   ETS-backed `{module, id} → pid` lookup table for live components.
 
-  Used by `send_update/2` to locate a running component by its identity,
-  and by the lifecycle reconciler to track child processes.
+  Used by `send_update/2` and `send_event/2` to locate a running component by
+  its identity, and by the lifecycle reconciler to track child processes.
   """
 
   @table :courgette_components

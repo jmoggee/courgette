@@ -131,6 +131,32 @@ defmodule Courgette do
   end
 
   @doc """
+  Send an event directly to a running child component identified by `{module, id}`.
+
+  The component must be registered in the ComponentRegistry (i.e., it was
+  started as a child via `live_component/2`). The event uses the component's
+  normal `handle_event/2` routing.
+
+      Courgette.send_event(ScrollArea, id: "transcript", event: {:key, :page_up})
+
+  Returns `:ok` if the component was found, `:error` otherwise.
+  """
+  @spec send_event(module(), keyword()) :: :ok | :error
+  def send_event(module, opts) do
+    id = Keyword.fetch!(opts, :id)
+    event = Keyword.fetch!(opts, :event)
+
+    case ComponentRegistry.lookup(module, id) do
+      {:ok, pid} ->
+        GenServer.call(pid, {:routed_event, event})
+        :ok
+
+      :error ->
+        :error
+    end
+  end
+
+  @doc """
   Stop the running app server.
 
   Call this from within `handle_event/2` to exit the app:

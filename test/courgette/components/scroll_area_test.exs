@@ -21,6 +21,7 @@ defmodule Courgette.Components.ScrollAreaTest do
        |> assign_new(:items, fn -> Enum.map(1..20, &"Line #{&1}") end)
        |> assign_new(:height, fn -> 5 end)
        |> assign_new(:show_scrollbar, fn -> true end)
+       |> assign_new(:follow, fn -> false end)
        |> assign_new(:on_scroll, fn -> nil end)
        |> assign_new(:border, fn -> nil end)
        |> assign_new(:content_height, fn -> nil end)
@@ -33,6 +34,7 @@ defmodule Courgette.Components.ScrollAreaTest do
         id: "scroll",
         height: assigns.height,
         scrollbar: assigns.show_scrollbar,
+        follow: assigns.follow,
         on_scroll: assigns.on_scroll,
         border: assigns.border,
         content_height: assigns.content_height,
@@ -297,6 +299,45 @@ defmodule Courgette.Components.ScrollAreaTest do
     tree = render_tree(view)
     sa = find_scroll_box(tree)
     assert sa.props.scroll_offset == 5
+  end
+
+  # -- Follow-end behavior and external commands --
+
+  test "starts and stays at the bottom while content grows" do
+    view = mount(Host, initial_assigns: %{follow: true})
+
+    assert find_scroll_box(render_tree(view)).props.scroll_offset == 15
+
+    send_info(view, {:set, :items, Enum.map(1..30, &"Line #{&1}")})
+
+    assert find_scroll_box(render_tree(view)).props.scroll_offset == 25
+  end
+
+  test "preserves the viewport after scrolling away from the bottom" do
+    view = mount(Host, initial_assigns: %{follow: true})
+    send_tab(view)
+    send_event(view, {:key, :page_up})
+
+    assert find_scroll_box(render_tree(view)).props.scroll_offset == 10
+
+    send_info(view, {:set, :items, Enum.map(1..30, &"Line #{&1}")})
+
+    assert find_scroll_box(render_tree(view)).props.scroll_offset == 10
+  end
+
+  test "accepts parent events through the public event boundary" do
+    view = mount(Host, initial_assigns: %{follow: true})
+
+    assert :ok =
+             Courgette.send_event(
+               ScrollArea,
+               id: "scroll",
+               event: {:mouse, :scroll_up, 5, 5}
+             )
+
+    :sys.get_state(view.server)
+
+    assert find_scroll_box(render_tree(view)).props.scroll_offset == 14
   end
 
   # -- Border pass-through --
