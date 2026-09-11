@@ -6,9 +6,10 @@ fork.
 
 ## Current upstream comparison
 
-Last checked against `origin/main` at `d461c72` on 2026-09-10. The fetched
-upstream had no commits after the fork's base, so it added no new functionality
-since the previous sync. None of the behaviors below has an upstream equivalent.
+Last checked against `origin/main` at `d461c72` on 2026-09-11 after fetching
+both `origin` and `fork`. Upstream remains at the fork's base, so it added no new
+functionality since the previous sync. None of the behaviors below has an
+upstream equivalent.
 
 Recheck each behavior against the fetched upstream on every sync. This section
 records the current result, not a permanent allowlist. If upstream implements a
