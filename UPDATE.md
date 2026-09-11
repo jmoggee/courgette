@@ -9,7 +9,8 @@ fork.
 Last checked against `origin/main` at `d461c72` on 2026-09-11 after fetching
 both `origin` and `fork`. Upstream remains at the fork's base, so it added no new
 functionality since the previous sync. None of the behaviors below has an
-upstream equivalent.
+upstream equivalent. Before this guide refresh, local `main` and `fork/main`
+both pointed to `4d3cecb`, so reconciling the writable fork required no commits.
 
 Recheck each behavior against the fetched upstream on every sync. This section
 records the current result, not a permanent allowlist. If upstream implements a
