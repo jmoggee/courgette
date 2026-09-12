@@ -6,11 +6,13 @@ fork.
 
 ## Current upstream comparison
 
-Last checked against `origin/main` at `d461c72` on 2026-09-11 after fetching
-both `origin` and `fork`. Upstream remains at the fork's base, so it added no new
-functionality since the previous sync. None of the behaviors below has an
-upstream equivalent. Before this guide refresh, local `main` and `fork/main`
-both pointed to `4d3cecb`, so reconciling the writable fork required no commits.
+Last checked against `origin/main` at `d461c72` on 2026-09-12 after fetching
+both `origin` and `fork`. Upstream is unchanged since the 2026-09-11 sync and
+remains at the fork's base, so no new upstream functionality arrived and none of
+the behaviors below has an upstream equivalent. Before this guide refresh,
+local `main` and `fork/main` both pointed to `55e8d7c`; reconciling the writable
+fork and rebasing onto the unchanged upstream therefore required no history
+changes.
 
 Recheck each behavior against the fetched upstream on every sync. This section
 records the current result, not a permanent allowlist. If upstream implements a
