@@ -6,11 +6,11 @@ fork.
 
 ## Current upstream comparison
 
-Last checked against `origin/main` at `d461c72` on 2026-09-12 after fetching
+Last checked against `origin/main` at `d461c72` on 2026-09-13 after fetching
 both `origin` and `fork`. Upstream is unchanged since the 2026-09-11 sync and
 remains at the fork's base, so no new upstream functionality arrived and none of
 the behaviors below has an upstream equivalent. Before this guide refresh,
-local `main` and `fork/main` both pointed to `55e8d7c`; reconciling the writable
+local `main` and `fork/main` both pointed to `3969497`; reconciling the writable
 fork and rebasing onto the unchanged upstream therefore required no history
 changes.
 
